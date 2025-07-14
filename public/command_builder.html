@@ -35,18 +35,23 @@
         
         .left-panel {
             flex: 1;
-            min-width: 0;
-            max-width: 33.33%;
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
         }
         
         .right-panel {
-            flex: 2;
+            flex: 4;
             background-color: #fff;
             height: fit-content;
             max-height: 80vh;
             overflow-y: auto;
             position: sticky;
             top: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
         }
         
         .doc-header {
@@ -345,9 +350,6 @@
 
                 <button id="generate-btn">生成命令</button>
 
-                <div id="output-columns-container">
-                    <!-- 生成的命令分列显示将在这里动态生成 -->
-                </div>
             </div>
 
             <!-- 右侧栏：文档展示 -->
@@ -667,7 +669,6 @@
 
         function generatePayloadColumnsUI(commandId) {
             payloadColumnsContainer.innerHTML = '';
-            outputColumnsContainer.innerHTML = '';
             
             if (!commandId) return;
             
@@ -796,54 +797,52 @@
         function generateCommand() {
             const protocol = protocolSelect.value;
             
-            // Clear previous output
-            outputColumnsContainer.innerHTML = '';
+            // Clear previous outputs from all rows
+            document.querySelectorAll('.generated-command').forEach(el => el.remove());
 
             if (!currentCommandKey) {
-                outputColumnsContainer.innerHTML = '<p style="text-align: center; color: #dc3545;">错误: 请选择一个有效的命令。</p>';
+                alert('错误: 请选择一个有效的命令。');
                 return;
             }
             
             const commandId = parseInt(currentCommandKey, 16);
             if (isNaN(commandId)) {
-                outputColumnsContainer.innerHTML = '<p style="text-align: center; color: #dc3545;">错误: 无效的命令ID。</p>';
+                alert('错误: 无效的命令ID。');
                 return;
             }
 
             const commandDef = commandDefs[currentCommandKey];
             if (!commandDef) {
-                outputColumnsContainer.innerHTML = `<p style="text-align: center; color: #dc3545;">错误: 未找到命令定义 (${currentCommandKey})。</p>`;
+                alert(`错误: 未找到命令定义 (${currentCommandKey})。`);
                 return;
             }
             
             const supportedPacketTypes = commandPacketTypes[currentCommandKey];
             if (!supportedPacketTypes) {
-                outputColumnsContainer.innerHTML = `<p style="text-align: center; color: #dc3545;">错误: 命令 ${currentCommandKey} 未定义支持的包类型。</p>`;
+                alert(`错误: 命令 ${currentCommandKey} 未定义支持的包类型。`);
                 return;
             }
 
             const vendorId = 0x2E50;
             const featureId = 0x11;
             
-            // Create output columns container
-            const outputColumnsDiv = document.createElement('div');
-            outputColumnsDiv.className = 'columns-container';
-            
             supportedPacketTypes.forEach(packetTypeName => {
-                const outputColumn = document.createElement('div');
-                outputColumn.className = 'output-column';
-                
-                const title = document.createElement('h3');
-                title.textContent = `${packetTypeName} 命令`;
-                outputColumn.appendChild(title);
-                
+                const outputContainer = document.getElementById(`payload-row-${packetTypeName.toLowerCase()}`);
+                if (!outputContainer) return;
+
                 const pre = document.createElement('pre');
-                
+                pre.className = 'generated-command'; // Add class for easy removal later
+                pre.style.backgroundColor = '#e9ecef';
+                pre.style.padding = '0.5rem';
+                pre.style.marginTop = '1rem';
+                pre.style.borderRadius = '4px';
+                pre.style.whiteSpace = 'pre-wrap';
+                pre.style.wordWrap = 'break-word';
+
                 try {
                     const packetType = packetTypeValues[packetTypeName];
                     let payloadBytes = [];
                     
-                    // Determine the correct payload definition, handling aliases
                     let payloadDef;
                     if (commandDef.payloads) {
                         const def = commandDef.payloads[packetTypeName.toUpperCase()];
@@ -855,7 +854,6 @@
                             payloadDef = def;
                         }
                     } else if (packetTypeName.toUpperCase() === 'COMMAND' && commandDef.payload) {
-                        // Fallback for old structure
                         payloadDef = commandDef.payload;
                     }
 
@@ -873,7 +871,7 @@
                             payloadDef.forEach(field => {
                                 const fieldId = `${packetTypeName.toLowerCase()}_${field.id}`;
                                 const el = document.getElementById(fieldId);
-                                if (!el) return; // Field not present in UI
+                                if (!el) return;
 
                                 if (field.type === 'enum' || field.type.includes('int')) {
                                     const value = parseInt(el.value, 10);
@@ -924,11 +922,8 @@
                     pre.style.color = '#dc3545';
                 }
                 
-                outputColumn.appendChild(pre);
-                outputColumnsDiv.appendChild(outputColumn);
+                outputContainer.appendChild(pre);
             });
-            
-            outputColumnsContainer.appendChild(outputColumnsDiv);
         }
 
         // Event Listeners
