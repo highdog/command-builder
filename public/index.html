@@ -19,19 +19,13 @@
       <input type="search" id="global-search-box" placeholder="Search all commands...">
     </div>
     <div class="header-controls">
+      <a href="#" id="command-builder-link" style="display: none; margin-right: 1rem;">Command Builder</a>
       <a href="/admin" id="ui-admin-link" style="display: none;">Admin</a>
     </div>
   </header>
 
   <div class="app-container">
     <div class="sidebar">
-      
-      <div class="sidebar-section">
-        <div class="sidebar-section-header" id="sidebar-builder-header">
-          <h2>Command Builder</h2>
-        </div>
-      </div>
-
       <div class="sidebar-section">
         <div class="sidebar-section-header active" id="sidebar-docs-header">
           <h2>Documentation</h2>
@@ -125,6 +119,7 @@
       const commandEditorContainer = document.getElementById('command-editor-container');
       const globalSearchBox = document.getElementById('global-search-box');
       const adminLink = document.getElementById('ui-admin-link');
+      const commandBuilderLink = document.getElementById('command-builder-link');
       const addCommandBtn = document.getElementById('add-command-btn');
       const editCommandBtn = document.getElementById('edit-command-btn');
       const saveCommandBtn = document.getElementById('save-command-btn');
@@ -140,8 +135,27 @@
         if (currentView === newView) return;
         currentView = newView;
         
+        const sidebar = document.querySelector('.sidebar');
+        const mainContent = document.querySelector('.main-content');
+        
+        if (newView === 'builder') {
+          // Hide sidebar and make main content full width for Command Builder
+          sidebar.style.display = 'none';
+          mainContent.style.marginLeft = '0';
+          mainContent.style.width = '100%';
+        } else {
+          // Show sidebar and restore normal layout for Documentation
+          sidebar.style.display = 'flex';
+          mainContent.style.marginLeft = '';
+          mainContent.style.width = '';
+        }
+        
+        // Update sidebar header active state
         document.getElementById('sidebar-docs-header').classList.toggle('active', newView === 'documentation');
-        document.getElementById('sidebar-builder-header').classList.toggle('active', newView === 'builder');
+        
+        // Update navigation link styles
+        commandBuilderLink.style.fontWeight = newView === 'builder' ? 'bold' : 'normal';
+        commandBuilderLink.style.color = newView === 'builder' ? '#0056b3' : '#007bff';
         
         // Keep all sidebar elements visible for consistent styling
         // Only hide admin-specific elements when not in documentation mode
@@ -166,6 +180,8 @@
           const data = await response.json();
           if (data.loggedIn) {
             currentUser = data.user;
+            // Show Command Builder link for all logged-in users
+            commandBuilderLink.style.display = 'inline-block';
             if (currentUser.role === 'admin') {
               adminLink.style.display = 'inline-block';
               addCommandBtn.style.display = 'block';
@@ -405,7 +421,10 @@
 
       // --- EVENT LISTENERS ---
       document.getElementById('sidebar-docs-header').addEventListener('click', () => switchView('documentation'));
-      document.getElementById('sidebar-builder-header').addEventListener('click', () => switchView('builder'));
+      commandBuilderLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        switchView('builder');
+      });
       globalSearchBox.addEventListener('input', (e) => searchCommands(e.target.value));
       
       editCommandBtn.addEventListener('click', enterEditMode);
@@ -423,7 +442,6 @@
         fetchCommands();
         // Default to documentation view
         document.getElementById('sidebar-docs-header').classList.add('active');
-        document.getElementById('sidebar-builder-header').classList.remove('active');
         switchView('documentation');
       };
 
