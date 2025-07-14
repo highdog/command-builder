@@ -26,7 +26,7 @@
             margin: 0;
         }
         
-        /* 两栏布局样式 - 左侧1/3，右侧2/3 */
+        /* 两栏布局样式 */
         .main-layout {
             display: flex;
             gap: 2rem;
@@ -34,13 +34,12 @@
         }
         
         .left-panel {
-            flex: 1;
+            flex: 1.5;
             min-width: 0;
-            max-width: 33.33%;
         }
         
         .right-panel {
-            flex: 2;
+            flex: 1;
             background-color: #fff;
             height: fit-content;
             max-height: 80vh;
@@ -128,19 +127,6 @@
         
         .doc-content ul {
             padding-left: 1.5em;
-        }
-
-        /* 简化样式 */
-        .payload-row {
-            margin: 1rem 0;
-            padding: 1rem;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .payload-row h3 {
-            margin: 0 0 0.5rem 0;
-            font-size: 1rem;
-            font-weight: bold;
         }
 
         /* 响应式设计 */
@@ -354,19 +340,72 @@
         let commandsData = {};
         let currentCommandId = null;
 
+        // 获取所有命令数据
+        async function fetchCommandsData() {
+            try {
+                console.log('Fetching commands from API...');
+                const response = await fetch('/api/commands');
+                console.log('API response:', response.status, response.statusText);
+                
+                if (response.ok) {
+                    commandsData = await response.json();
+                    console.log('Loaded commands data:', commandsData);
+                    return true;
+                } else if (response.status === 401) {
+                    console.warn('Authentication required, using fallback data');
+                    // 使用本地数据作为后备
+                    loadFallbackCommands();
+                    return false;
+                } else {
+                    console.warn('API returned status:', response.status, 'using fallback data');
+                    loadFallbackCommands();
+                    return false;
+                }
+            } catch (error) {
+                console.error('Failed to load commands:', error);
+                // 使用本地数据作为后备
+                loadFallbackCommands();
+                return false;
+            }
+        }
+
+        // 使用本地命令数据作为后备
+        function loadFallbackCommands() {
+            // 将本地commandDefs转换为类似API的格式
+            const fallbackData = {};
+            Object.keys(commandDefs).forEach(key => {
+                const command = commandDefs[key];
+                const category = command.category_en || 'General';
+                if (!fallbackData[category]) {
+                    fallbackData[category] = [];
+                }
+                fallbackData[category].push({
+                    id: key.replace('0x', ''),
+                    name: command.name,
+                    category_en: command.category_en || 'General',
+                    description_en: command.description_en || 'No description available',
+                    category_zh: command.category_zh || '通用',
+                    description_zh: command.description_zh || '暂无描述'
+                });
+            });
+            
+            commandsData = fallbackData;
+            console.log('Loaded fallback commands data:', commandsData);
+        }
+
         // 根据命令ID获取详细文档
         async function fetchCommandDocumentation(commandId) {
             if (!commandId) return null;
+            
             try {
                 const response = await fetch(`/api/commands/${commandId}`);
                 if (response.ok) {
                     return await response.json();
                 }
-                return null; // 如果API调用失败，则返回null
             } catch (error) {
                 console.error('Failed to load command documentation:', error);
-                return null;
             }
+            return null;
         }
 
         // 显示命令文档在右侧栏
@@ -374,12 +413,12 @@
             const docContainer = document.getElementById('command-documentation');
             
             if (!commandId) {
-                docContainer.innerHTML = '<p class="doc-placeholder">请在左侧选择一个命令以查看相关说明</p>';
+                docContainer.innerHTML = '<p class="doc-placeholder">请选择左侧命令以查看相关说明</p>';
                 return;
             }
 
             // 显示加载状态
-            docContainer.innerHTML = '<p>加载命令说明中...</p>';
+            docContainer.innerHTML = '<p class="doc-placeholder">加载命令说明中...</p>';
 
             const commandDoc = await fetchCommandDocumentation(commandId);
             
@@ -388,16 +427,21 @@
                 return;
             }
 
-            // 使用 marked.js 解析并显示中英文描述
-            let html = `<h1>${commandDoc.name_en}</h1>`;
-            if (commandDoc.description_en) {
-                html += marked.parse(commandDoc.description_en);
-            }
-            
+            // 使用Documentation页面的结构显示命令文档
+            let html = `
+                <h1>${commandDoc.name_en || '未知命令'}</h1>
+                <p><strong>分类：</strong> ${commandDoc.category_en || '未分类'}</p>
+                ${commandDoc.description_en ? marked.parse(commandDoc.description_en) : '<p>暂无描述</p>'}
+            `;
+
+            // 如果有中文版本也显示
             if (commandDoc.name_zh || commandDoc.description_zh) {
-                html += '<hr>';
-                html += `<h1>${commandDoc.name_zh}</h1>`;
-                html += marked.parse(commandDoc.description_zh || '');
+                html += `
+                    <hr style="margin: 2rem 0;">
+                    <h1>${commandDoc.name_zh || commandDoc.name_en}</h1>
+                    <p><strong>分类：</strong> ${commandDoc.category_zh || commandDoc.category_en || '未分类'}</p>
+                    ${commandDoc.description_zh ? marked.parse(commandDoc.description_zh) : (commandDoc.description_en ? marked.parse(commandDoc.description_en) : '<p>暂无描述</p>')}
+                `;
             }
 
             docContainer.innerHTML = html;
@@ -616,40 +660,25 @@
         const outputColumnsContainer = document.getElementById('output-columns-container');
         const generateBtn = document.getElementById('generate-btn');
         
-        let currentCommandKey = ''; // This will store the hex key, e.g., "0x00"
+        let currentCommandKey = '';
 
         function toHexString(byteArray) {
             return Array.from(byteArray, byte => ('0' + (byte & 0xFF).toString(16)).slice(-2)).join(' ').toUpperCase();
         }
 
-        // Fetches commands from the API and populates the dropdown with categories
-        async function populateCommandsFromAPI() {
-            try {
-                const response = await fetch('/api/commands');
-                if (!response.ok) throw new Error('Failed to fetch commands');
-                
-                const commandsByCat = await response.json();
-                
-                commandSelect.innerHTML = '<option value="">--请选择一个命令--</option>'; // Clear existing options
-
-                for (const category in commandsByCat) {
-                    const optgroup = document.createElement('optgroup');
-                    optgroup.label = category;
-                    
-                    commandsByCat[category].forEach(command => {
-                        const option = document.createElement('option');
-                        option.value = command.id; // Use database ID as the value
-                        option.textContent = command.name; // Full name, e.g., "0x00 Get Device Type"
-                        optgroup.appendChild(option);
-                    });
-                    
-                    commandSelect.appendChild(optgroup);
-                }
-            } catch (error) {
-                console.error("Error populating commands from API:", error);
-                // Fallback to a simple message if API fails
-                commandSelect.innerHTML = '<option value="">--无法加载命令--</option>';
-            }
+        function populateCommands() {
+            // 清空现有选项，保留默认选项
+            commandSelect.innerHTML = '<option value="">--请选择一个命令--</option>';
+            
+            // 从API获取命令数据并填充下拉菜单
+            Object.keys(commandsData).forEach(category => {
+                commandsData[category].forEach(command => {
+                    const option = document.createElement('option');
+                    option.value = command.id;
+                    option.textContent = command.name;
+                    commandSelect.appendChild(option);
+                });
+            });
         }
 
         function generatePayloadColumnsUI(commandId) {
@@ -668,18 +697,18 @@
                 return;
             }
             
-            // Create rows container instead of columns
-            const rowsDiv = document.createElement('div');
-            rowsDiv.className = 'payload-rows';
+            // Create columns container
+            const columnsDiv = document.createElement('div');
+            columnsDiv.className = 'columns-container';
             
             supportedPacketTypes.forEach(packetTypeName => {
-                const row = document.createElement('div');
-                row.className = 'payload-row';
-                row.id = `payload-row-${packetTypeName.toLowerCase()}`;
+                const column = document.createElement('div');
+                column.className = 'column';
+                column.id = `payload-column-${packetTypeName.toLowerCase()}`;
                 
                 const title = document.createElement('h3');
                 title.textContent = `${packetTypeName} Payload`;
-                row.appendChild(title);
+                column.appendChild(title);
                 
                 let payloadDef;
                 if (commandDef.payloads) {
@@ -701,7 +730,7 @@
                     noPayloadLabel.style.color = '#888';
                     noPayloadLabel.style.textAlign = 'center';
                     noPayloadLabel.style.fontStyle = 'italic';
-                    row.appendChild(noPayloadLabel);
+                    column.appendChild(noPayloadLabel);
                 } else {
                     if (commandDef.type === 'bitmask' && packetTypeName.toUpperCase() === 'COMMAND') {
                         payloadDef.forEach(field => {
@@ -716,21 +745,21 @@
                             label.textContent = field.name;
                             fieldGroup.appendChild(checkbox);
                             fieldGroup.appendChild(label);
-                            row.appendChild(fieldGroup);
+                            column.appendChild(fieldGroup);
                         });
                     } else {
                         payloadDef.forEach(field => {
                             const fieldId = `${packetTypeName.toLowerCase()}_${field.id}`;
                             const fieldGroup = createFieldUI(field, fieldId);
-                            row.appendChild(fieldGroup);
+                            column.appendChild(fieldGroup);
                         });
                     }
                 }
                 
-                rowsDiv.appendChild(row);
+                columnsDiv.appendChild(column);
             });
             
-            payloadColumnsContainer.appendChild(rowsDiv);
+            payloadColumnsContainer.appendChild(columnsDiv);
         }
 
         function createFieldUI(field, fieldId) {
@@ -916,29 +945,33 @@
 
         // Event Listeners
         commandSelect.addEventListener('change', (e) => {
-            const selectedOption = e.target.options[e.target.selectedIndex];
-            const commandId = selectedOption.value; // This is the database ID
-            
+            const commandId = e.target.value;
             if (!commandId) {
-                currentCommandKey = '';
-                generatePayloadColumnsUI(null);
-                displayCommandDocumentation(null);
+                generatePayloadColumnsUI('');
+                displayCommandDocumentation('');
                 return;
             }
-
-            // Extract hex key from the text content (e.g., "0x00 Get Device Type" -> "0x00")
-            const commandName = selectedOption.textContent;
-            const hexMatch = commandName.match(/^0x[0-9a-fA-F]+/);
-            currentCommandKey = hexMatch ? hexMatch[0] : '';
-
-            generatePayloadColumnsUI(currentCommandKey);
-            displayCommandDocumentation(commandId); // Use DB ID for fetching docs
+            
+            // 更新右侧文档
+            displayCommandDocumentation(commandId);
+            
+            // 由于Command Builder基于本地commandDefs，我们暂时不更新payload UI
+            // 保持payload UI为空，因为API命令和本地命令格式不同
+            generatePayloadColumnsUI('');
         });
         
         generateBtn.addEventListener('click', generateCommand);
 
         // Initial population
-        populateCommandsFromAPI();
+        generatePayloadColumnsUI('');
+        
+        // 加载命令数据后填充下拉菜单，无论API是否成功都确保有数据
+        fetchCommandsData().finally(() => {
+            if (Object.keys(commandsData).length === 0) {
+                loadFallbackCommands();
+            }
+            populateCommands();
+        });
 
     </script>
 

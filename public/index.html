@@ -275,47 +275,16 @@
         commandDisplayContainer.innerHTML = '<p>Loading Command Builder...</p>';
         
         try {
-            const response = await fetch('/command_builder.html');
-            if (!response.ok) throw new Error('Failed to load builder.');
-            const htmlText = await response.text();
+            // Create iframe instead of injecting content for better isolation
+            const iframe = document.createElement('iframe');
+            iframe.src = '/command_builder.html';
+            iframe.style.width = '100%';
+            iframe.style.height = 'calc(100vh - 60px)';
+            iframe.style.border = 'none';
             
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(htmlText, 'text/html');
+            commandDisplayContainer.innerHTML = '';
+            commandDisplayContainer.appendChild(iframe);
             
-            const builderContainer = doc.querySelector('.container');
-            const builderStyles = doc.querySelectorAll('style');
-            const builderScript = doc.querySelector('script');
-
-            if (!builderContainer) throw new Error('Could not find builder content.');
-
-            commandDisplayContainer.innerHTML = builderContainer.innerHTML;
-
-            // Inject styles from the builder
-            builderStyles.forEach(style => {
-                const newStyle = document.createElement('style');
-                newStyle.textContent = style.textContent;
-                newStyle.id = 'injected-builder-style';
-                // Remove old styles if they exist
-                const oldStyles = document.querySelectorAll('#injected-builder-style');
-                oldStyles.forEach(oldStyle => oldStyle.remove());
-                document.head.appendChild(newStyle);
-            });
-
-            // The script from the fetched HTML won't execute when injected via innerHTML.
-            // We need to create a new script element and append it.
-            if (builderScript) {
-                // Remove old script if it exists to prevent duplication
-                const oldScript = document.getElementById('injected-builder-script');
-                if (oldScript) oldScript.remove();
-                
-                // Use setTimeout to ensure DOM elements are ready before script execution
-                setTimeout(() => {
-                    const newScript = document.createElement('script');
-                    newScript.textContent = builderScript.textContent;
-                    newScript.id = 'injected-builder-script';
-                    commandDisplayContainer.appendChild(newScript);
-                }, 100);
-            }
         } catch (error) {
             commandDisplayContainer.innerHTML = `<p>Error: ${error.message}</p>`;
             console.error(error);
