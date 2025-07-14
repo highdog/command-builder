@@ -38,19 +38,6 @@
             border-radius: 4px;
             box-sizing: border-box;
         }
-        button {
-            background-color: #007aff;
-            color: white;
-            padding: .8rem 1.5rem;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background-color 0.2s;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
         #output {
             background-color: #282c34;
             color: #abb2bf;
@@ -60,6 +47,40 @@
             word-wrap: break-word;
             margin-top: 1.5rem;
             font-family: 'Menlo', 'Consolas', monospace;
+        }
+        .option-group {
+            display: flex;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .option-btn {
+            flex: 1;
+            padding: .8rem;
+            background-color: #fff;
+            border: 1px solid #007aff;
+            margin-left: -1px;
+            cursor: pointer;
+            text-align: center;
+            transition: background-color 0.2s, color 0.2s;
+            font-size: 0.9rem;
+            color: #007aff;
+        }
+        .option-btn:first-child {
+            margin-left: 0;
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: 4px;
+        }
+        .option-btn:last-child {
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+        }
+        .option-btn.active {
+            background-color: #007aff;
+            color: white;
+            border-color: #007aff;
+        }
+        .option-btn:hover:not(.active) {
+            background-color: #f0f7ff;
         }
         .form-group-checkbox {
             display: flex;
@@ -73,6 +94,57 @@
         .form-group-checkbox label {
             margin-bottom: 0;
             font-weight: normal;
+        }
+        .columns-container {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .column {
+            flex: 1;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 1rem;
+        }
+        .column h3 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            color: #495057;
+            font-size: 1.1rem;
+            border-bottom: 2px solid #007aff;
+            padding-bottom: 0.5rem;
+        }
+        .column.empty {
+            background: #f8f9fa;
+            color: #6c757d;
+            text-align: center;
+            padding: 2rem 1rem;
+        }
+        .output-column {
+            flex: 1;
+            background: #282c34;
+            color: #abb2bf;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        .output-column h3 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            color: #61dafb;
+            font-size: 1.1rem;
+            border-bottom: 2px solid #61dafb;
+            padding-bottom: 0.5rem;
+        }
+        .output-column pre {
+            background: none;
+            color: inherit;
+            padding: 0;
+            margin: 0;
+            font-family: 'Menlo', 'Consolas', monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
         }
     </style>
 </head>
@@ -90,42 +162,138 @@
         </div>
 
         <div class="form-group">
-            <label for="packet-type-select">选择包类型 (Packet Type):</label>
-            <select id="packet-type-select">
-                <option value="0">COMMAND (0x00)</option>
-                <option value="1">NOTIFICATION (0x01)</option>
-                <option value="2">RESPONSE (0x02)</option>
-                <option value="3">ERROR (0x03)</option>
-            </select>
-        </div>
-
-        <div class="form-group">
             <label for="command-select">选择命令:</label>
             <select id="command-select">
                 <option value="">--请选择一个命令--</option>
             </select>
         </div>
 
-        <div id="payload-container" class="form-group">
-            <!-- 载荷的输入字段将在这里动态生成 -->
+        <div id="payload-columns-container">
+            <!-- 载荷的分列显示将在这里动态生成 -->
         </div>
 
         <button id="generate-btn">生成命令</button>
 
-        <div class="form-group">
-            <label for="output">生成的命令 (Hex):</label>
-            <pre id="output"></pre>
+        <div id="output-columns-container">
+            <!-- 生成的命令分列显示将在这里动态生成 -->
         </div>
     </div>
 
     <script>
+        const commandPacketTypes = {
+            "0x00": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x19": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x01": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x02": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x03": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x06": ["COMMAND", "RESPONSE", "ERROR", "NOTIFICATION"],
+            "0x07": ["COMMAND", "RESPONSE", "ERROR", "NOTIFICATION"],
+            "0x08": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x09": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x0A": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x14": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x15": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x16": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x17": ["COMMAND", "RESPONSE", "ERROR", "NOTIFICATION"],
+            "0x41": ["COMMAND", "RESPONSE", "ERROR", "NOTIFICATION"],
+            "0x44": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x45": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x46": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x47": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x48": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x49": ["COMMAND", "RESPONSE", "ERROR", "NOTIFICATION"],
+            "0x4A": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x4B": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x4C": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x4D": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x4E": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x4F": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x59": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x5A": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x5B": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x5C": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x5E": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x5F": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x66": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x67": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x57": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x58": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x60": ["COMMAND", "RESPONSE", "ERROR", "NOTIFICATION"],
+            "0x61": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x30": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x31": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x32": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x33": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x34": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x35": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x36": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x37": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x38": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x62": ["COMMAND", "RESPONSE", "ERROR", "NOTIFICATION"],
+            "0x63": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x64": ["COMMAND", "RESPONSE", "ERROR", "NOTIFICATION"],
+            "0x65": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x68": ["COMMAND", "RESPONSE", "ERROR", "NOTIFICATION"],
+            "0x69": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x70": ["COMMAND", "RESPONSE", "ERROR", "NOTIFICATION"],
+            "0x71": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x72": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x73": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x7C": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x7D": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x7E": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x7F": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x5D": ["COMMAND", "RESPONSE", "ERROR"],
+            "0x20": ["COMMAND", "RESPONSE", "ERROR", "NOTIFICATION"],
+            "0x21": ["COMMAND", "RESPONSE", "ERROR"]
+        };
+
+        const packetTypeValues = {
+            "COMMAND": 0,
+            "NOTIFICATION": 1,
+            "RESPONSE": 2,
+            "ERROR": 3
+        };
+
+        const errorPayloadDef = [
+            { id: 'error_code', name: 'Error Code', type: 'enum', values: { 'NOT_SUPPORTED': 0x00, 'INVALID_PARAM': 0x01, 'INVALID_STATE': 0x02 } }
+        ];
+
         const commandDefs = {
-            // Get Commands (mostly no payload)
-            '0x00': { name: '0x00 Get Device Type', payload: [] },
+            // Get Commands (mostly no payload for COMMAND)
+            '0x00': { 
+                name: '0x00 Get Device Type', 
+                payloads: {
+                    'COMMAND': [],
+                    'RESPONSE': [{ id: 'device_type', name: 'Device Type', type: 'enum', values: { 'VERIO_100': 0x00, 'VERIO_200': 0x01, 'VERIO_300': 0x02, 'AVENTHO_300': 0x03 } }],
+                    'ERROR': errorPayloadDef
+                }
+            },
+            '0x06': {
+                name: '0x06 Get Battery Level',
+                payloads: {
+                    'COMMAND': [],
+                    'RESPONSE': [
+                        { id: 'level_left', name: 'Left Earbud Level (0-100, 0xFF=offline)', type: 'uint8', defaultValue: 100 },
+                        { id: 'level_right', name: 'Right Earbud Level (0-100, 0xFF=offline)', type: 'uint8', defaultValue: 100 },
+                        { id: 'level_case', name: 'Case Level (0-100, 0xFF=offline)', type: 'uint8', defaultValue: 100 }
+                    ],
+                    'NOTIFICATION': 'same_as_response',
+                    'ERROR': errorPayloadDef
+                }
+            },
+            '0x08': { 
+                name: '0x08 Set Bluetooth Led Configurations', 
+                payloads: {
+                    'COMMAND': [{ id: 'led_config', name: 'Bluetooth LED', type: 'enum', values: { 'On': 0x00, 'Off': 0x01 } }],
+                    'RESPONSE': 'same_as_command',
+                    'ERROR': errorPayloadDef
+                }
+            },
+            // --- Fallback for other commands (old structure) ---
             '0x19': { name: '0x19 Get Device MAC Address', payload: [] },
             '0x02': { name: '0x02 Get Serial Number', payload: [] },
             '0x03': { name: '0x03 Get Feature Version', payload: [] },
-            '0x06': { name: '0x06 Get Battery Level', payload: [] },
             '0x07': { name: '0x07 Get Bluetooth Led Configurations', payload: [] },
             '0x09': { name: '0x09 Get LE Configurations', payload: [] },
             '0x14': { name: '0x14 Get Firmware Version', payload: [] },
@@ -157,14 +325,9 @@
             '0x7C': { name: '0x7C Get Dolby Atmos Config', payload: [] },
             '0x7E': { name: '0x7E Get Audio Codecs Configurations', payload: [] },
             '0x20': { name: '0x20 Get Usage Statistics', payload: [] },
-
-            // Other Commands
             '0x01': { name: '0x01 Register Notification Listeners', payload: [{ id: 'feature', name: 'Feature ID', type: 'uint8', value: 0x11, readonly: true }] },
             '0x5D': { name: '0x5D Factory Reset', payload: [] },
             '0x21': { name: '0x21 Reset Usage Statistics', payload: [] },
-
-            // Set Commands
-            '0x08': { name: '0x08 Set Bluetooth Led Configurations', payload: [{ id: 'led_config', name: 'Bluetooth LED', type: 'enum', values: { 'On': 0x00, 'Off': 0x01 } }] },
             '0x0A': { name: '0x0A Set LE Configurations', type: 'bitmask', payload: [
                 { id: 'google_fast_pair', name: 'Google Fast Pair', type: 'bool', bit: 0 },
                 { id: 'le_audio', name: 'LE Audio', type: 'bool', bit: 1 }
@@ -220,10 +383,11 @@
 
         const protocolSelect = document.getElementById('protocol-select');
         const commandSelect = document.getElementById('command-select');
-        const payloadContainer = document.getElementById('payload-container');
+        const payloadColumnsContainer = document.getElementById('payload-columns-container');
+        const outputColumnsContainer = document.getElementById('output-columns-container');
         const generateBtn = document.getElementById('generate-btn');
-        const outputEl = document.getElementById('output');
-        const packetTypeSelect = document.getElementById('packet-type-select');
+        
+        let currentCommandKey = '';
 
         function toHexString(byteArray) {
             return Array.from(byteArray, byte => ('0' + (byte & 0xFF).toString(16)).slice(-2)).join(' ').toUpperCase();
@@ -240,180 +404,279 @@
             });
         }
 
-        function generatePayloadUI(commandId) {
-            payloadContainer.innerHTML = '';
-            if (!commandId || !commandDefs[commandId]) return;
-
-            const { payload, type: commandType } = commandDefs[commandId];
+        function generatePayloadColumnsUI(commandId) {
+            payloadColumnsContainer.innerHTML = '';
+            outputColumnsContainer.innerHTML = '';
             
-            if (commandType === 'bitmask') {
-                 payload.forEach(field => {
-                    const fieldGroup = document.createElement('div');
-                    fieldGroup.className = 'form-group-checkbox';
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.id = field.id;
-                    checkbox.dataset.bit = field.bit;
-                    const label = document.createElement('label');
-                    label.htmlFor = field.id;
-                    label.textContent = field.name;
-                    fieldGroup.appendChild(checkbox);
-                    fieldGroup.appendChild(label);
-                    payloadContainer.appendChild(fieldGroup);
-                });
+            if (!commandId) return;
+            
+            const commandDef = commandDefs[commandId];
+            if (!commandDef) return;
+            
+            const supportedPacketTypes = commandPacketTypes[commandId] || [];
+            
+            if (supportedPacketTypes.length === 0) {
+                payloadColumnsContainer.innerHTML = '<p style="text-align: center; color: #6c757d;">此命令没有定义包类型</p>';
                 return;
             }
-
-            payload.forEach(field => {
-                const fieldGroup = document.createElement('div');
-                fieldGroup.className = 'form-group';
-
-                const label = document.createElement('label');
-                label.htmlFor = field.id;
-                label.textContent = field.name;
-                fieldGroup.appendChild(label);
-
-                if (field.type === 'enum' || field.type === 'enum_nibble') {
-                    const select = document.createElement('select');
-                    select.id = field.id;
-                    Object.keys(field.values).forEach(name => {
-                        const option = document.createElement('option');
-                        option.value = field.values[name];
-                        option.textContent = name;
-                        select.appendChild(option);
-                    });
-                    fieldGroup.appendChild(select);
-                } else if (field.type === 'string') {
-                    const input = document.createElement('input');
-                    input.type = 'text';
-                    input.id = field.id;
-                    if (field.maxLength) input.maxLength = field.maxLength;
-                    fieldGroup.appendChild(input);
-                } else if (field.type.includes('int')) {
-                    const input = document.createElement('input');
-                    input.type = 'number';
-                    input.id = field.id;
-                    if (field.type === 'sint8') {
-                        input.min = -128;
-                        input.max = 127;
-                    } else {
-                        input.min = 0;
+            
+            // Create columns container
+            const columnsDiv = document.createElement('div');
+            columnsDiv.className = 'columns-container';
+            
+            supportedPacketTypes.forEach(packetTypeName => {
+                const column = document.createElement('div');
+                column.className = 'column';
+                column.id = `payload-column-${packetTypeName.toLowerCase()}`;
+                
+                const title = document.createElement('h3');
+                title.textContent = `${packetTypeName} Payload`;
+                column.appendChild(title);
+                
+                let payloadDef;
+                if (commandDef.payloads) {
+                    payloadDef = commandDef.payloads[packetTypeName.toUpperCase()];
+                    
+                    // Handle aliases
+                    if (payloadDef === 'same_as_response') {
+                        payloadDef = commandDef.payloads['RESPONSE'];
+                    } else if (payloadDef === 'same_as_command') {
+                        payloadDef = commandDef.payloads['COMMAND'];
                     }
-                    if (field.readonly) {
-                        input.value = field.value;
-                        input.readOnly = true;
-                    }
-                    fieldGroup.appendChild(input);
+                } else if (packetTypeName.toUpperCase() === 'COMMAND' && commandDef.payload) {
+                    payloadDef = commandDef.payload;
                 }
-                payloadContainer.appendChild(fieldGroup);
+                
+                if (!payloadDef || payloadDef.length === 0) {
+                    const noPayloadLabel = document.createElement('p');
+                    noPayloadLabel.textContent = '无载荷 (No payload)';
+                    noPayloadLabel.style.color = '#888';
+                    noPayloadLabel.style.textAlign = 'center';
+                    noPayloadLabel.style.fontStyle = 'italic';
+                    column.appendChild(noPayloadLabel);
+                } else {
+                    if (commandDef.type === 'bitmask' && packetTypeName.toUpperCase() === 'COMMAND') {
+                        payloadDef.forEach(field => {
+                            const fieldGroup = document.createElement('div');
+                            fieldGroup.className = 'form-group-checkbox';
+                            const checkbox = document.createElement('input');
+                            checkbox.type = 'checkbox';
+                            checkbox.id = `${packetTypeName.toLowerCase()}_${field.id}`;
+                            checkbox.dataset.bit = field.bit;
+                            const label = document.createElement('label');
+                            label.htmlFor = checkbox.id;
+                            label.textContent = field.name;
+                            fieldGroup.appendChild(checkbox);
+                            fieldGroup.appendChild(label);
+                            column.appendChild(fieldGroup);
+                        });
+                    } else {
+                        payloadDef.forEach(field => {
+                            const fieldId = `${packetTypeName.toLowerCase()}_${field.id}`;
+                            const fieldGroup = createFieldUI(field, fieldId);
+                            column.appendChild(fieldGroup);
+                        });
+                    }
+                }
+                
+                columnsDiv.appendChild(column);
             });
+            
+            payloadColumnsContainer.appendChild(columnsDiv);
+        }
+
+        function createFieldUI(field, fieldId) {
+            const fieldGroup = document.createElement('div');
+            fieldGroup.className = 'form-group';
+
+            const label = document.createElement('label');
+            label.htmlFor = fieldId;
+            label.textContent = field.name;
+            fieldGroup.appendChild(label);
+
+            if (field.type === 'enum' || field.type === 'enum_nibble') {
+                const select = document.createElement('select');
+                select.id = fieldId;
+                Object.keys(field.values).forEach(name => {
+                    const option = document.createElement('option');
+                    option.value = field.values[name];
+                    option.textContent = name;
+                    select.appendChild(option);
+                });
+                fieldGroup.appendChild(select);
+            } else if (field.type === 'string') {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = fieldId;
+                if (field.maxLength) input.maxLength = field.maxLength;
+                fieldGroup.appendChild(input);
+            } else if (field.type.includes('int')) {
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.id = fieldId;
+                if (field.type === 'sint8') {
+                    input.min = -128;
+                    input.max = 127;
+                } else {
+                    input.min = 0;
+                }
+                if (field.defaultValue !== undefined) {
+                    input.value = field.defaultValue;
+                }
+                if (field.readonly) {
+                    input.value = field.value;
+                    input.readOnly = true;
+                }
+                fieldGroup.appendChild(input);
+            }
+            return fieldGroup;
         }
         
         function generateCommand() {
             const protocol = protocolSelect.value;
             const commandKey = commandSelect.value;
+            
+            // Clear previous output
+            outputColumnsContainer.innerHTML = '';
+            
             const commandId = parseInt(commandKey, 16);
             if (isNaN(commandId)) {
-                outputEl.textContent = '错误: 请选择一个有效的命令。';
+                outputColumnsContainer.innerHTML = '<p style="text-align: center; color: #dc3545;">错误: 请选择一个有效的命令。</p>';
                 return;
             }
 
             const commandDef = commandDefs[commandKey];
-            let payloadBytes = [];
-
-            const packetType = parseInt(packetTypeSelect.value, 10);
-            if (isNaN(packetType)) {
-                outputEl.textContent = '错误: 请选择一个有效的包类型。';
-                return;
-            }
-
-            try {
-                if (commandDef.type === 'bitmask') {
-                    let byteValue = 0;
-                    commandDef.payload.forEach(field => {
-                        const el = document.getElementById(field.id);
-                        if (el.checked) {
-                            byteValue |= (1 << field.bit);
-                        }
-                    });
-                    payloadBytes.push(byteValue);
-                } else if (commandDef.type === 'nibble_array') {
-                    const nibbles = [];
-                    commandDef.payload.forEach(field => {
-                        const el = document.getElementById(field.id);
-                        nibbles.push(parseInt(el.value, 10));
-                    });
-                    for (let i = 0; i < nibbles.length; i += 2) {
-                        const byte = (nibbles[i] & 0x0F) | ((nibbles[i+1] & 0x0F) << 4);
-                        payloadBytes.push(byte);
-                    }
-                } else if (commandDef.type === 'bitfield_prompt') {
-                    const id = parseInt(document.getElementById('prompt_id').value, 10);
-                    const status = parseInt(document.getElementById('prompt_status').value, 10);
-                    // Payload is: 6 bits for ID, 2 bits for status
-                    const byte = ((id & 0x3F) << 2) | (status & 0x03);
-                    payloadBytes.push(byte);
-                } else {
-                    commandDef.payload.forEach(field => {
-                        const el = document.getElementById(field.id);
-                        if (field.type === 'enum' || field.type.includes('int')) {
-                            const value = parseInt(el.value, 10);
-                            if (isNaN(value)) throw new Error(`Invalid number for ${field.name}`);
-                            
-                            if (field.type === 'uint16') {
-                                payloadBytes.push((value >> 8) & 0xFF, value & 0xFF); // Big Endian
-                            } else { // uint8, sint8, enum
-                                payloadBytes.push(value & 0xFF);
-                            }
-                        } else if (field.type === 'string') {
-                            const textEncoder = new TextEncoder(); // UTF-8
-                            const strBytes = textEncoder.encode(el.value);
-                            payloadBytes.push(...strBytes);
-                        }
-                    });
-                }
-            } catch (e) {
-                outputEl.textContent = `错误: 生成载荷失败. ${e.message}`;
+            if (!commandDef) {
+                outputColumnsContainer.innerHTML = '<p style="text-align: center; color: #dc3545;">错误: 未找到命令定义。</p>';
                 return;
             }
             
-            let headerBytes = [];
-            const vendorId = 0x2E50;
-            const featureId = 0x11;
-
-            const feat_pkt_cmd = ((featureId & 0x7F) << 9) | ((packetType & 0x03) << 7) | (commandId & 0x7F);
-
-            if (protocol === 'gatt') {
-                headerBytes.push((vendorId >> 8) & 0xFF, vendorId & 0xFF);
-                headerBytes.push((feat_pkt_cmd >> 8) & 0xFF, feat_pkt_cmd & 0xFF);
-            } else { // rfcomm
-                const sof = 0xFF;
-                const version = 4;
-                const payloadLength = payloadBytes.length;
-                const useLengthExtension = payloadLength > 255;
-                const flags = useLengthExtension ? 0b00000010 : 0b00000000;
-
-                headerBytes.push(sof, version, flags);
-                if (useLengthExtension) {
-                    headerBytes.push((payloadLength >> 8) & 0xFF, payloadLength & 0xFF);
-                } else {
-                    headerBytes.push(payloadLength & 0xFF);
-                }
-                headerBytes.push((vendorId >> 8) & 0xFF, vendorId & 0xFF);
-                headerBytes.push((feat_pkt_cmd >> 8) & 0xFF, feat_pkt_cmd & 0xFF);
+            const supportedPacketTypes = commandPacketTypes[commandKey];
+            if (!supportedPacketTypes) {
+                outputColumnsContainer.innerHTML = `<p style="text-align: center; color: #dc3545;">错误: 命令 ${commandKey} 未定义支持的包类型。</p>`;
+                return;
             }
 
-            const finalCommand = new Uint8Array([...headerBytes, ...payloadBytes]);
-            outputEl.textContent = toHexString(finalCommand);
+            const vendorId = 0x2E50;
+            const featureId = 0x11;
+            
+            // Create output columns container
+            const outputColumnsDiv = document.createElement('div');
+            outputColumnsDiv.className = 'columns-container';
+            
+            supportedPacketTypes.forEach(packetTypeName => {
+                const outputColumn = document.createElement('div');
+                outputColumn.className = 'output-column';
+                
+                const title = document.createElement('h3');
+                title.textContent = `${packetTypeName} 命令`;
+                outputColumn.appendChild(title);
+                
+                const pre = document.createElement('pre');
+                
+                try {
+                    const packetType = packetTypeValues[packetTypeName];
+                    let payloadBytes = [];
+                    
+                    // Determine the correct payload definition, handling aliases
+                    let payloadDef;
+                    if (commandDef.payloads) {
+                        const def = commandDef.payloads[packetTypeName.toUpperCase()];
+                        if (def === 'same_as_response') {
+                            payloadDef = commandDef.payloads['RESPONSE'];
+                        } else if (def === 'same_as_command') {
+                            payloadDef = commandDef.payloads['COMMAND'];
+                        } else {
+                            payloadDef = def;
+                        }
+                    } else if (packetTypeName.toUpperCase() === 'COMMAND' && commandDef.payload) {
+                        // Fallback for old structure
+                        payloadDef = commandDef.payload;
+                    }
+
+                    if (payloadDef) {
+                        if (commandDef.type === 'bitmask' && packetTypeName.toUpperCase() === 'COMMAND') {
+                            let byteValue = 0;
+                            payloadDef.forEach(field => {
+                                const el = document.getElementById(`${packetTypeName.toLowerCase()}_${field.id}`);
+                                if (el && el.checked) {
+                                    byteValue |= (1 << field.bit);
+                                }
+                            });
+                            payloadBytes.push(byteValue);
+                        } else {
+                            payloadDef.forEach(field => {
+                                const fieldId = `${packetTypeName.toLowerCase()}_${field.id}`;
+                                const el = document.getElementById(fieldId);
+                                if (!el) return; // Field not present in UI
+
+                                if (field.type === 'enum' || field.type.includes('int')) {
+                                    const value = parseInt(el.value, 10);
+                                    if (isNaN(value)) throw new Error(`Invalid number for ${field.name}`);
+                                    
+                                    if (field.type === 'uint16') {
+                                        payloadBytes.push((value >> 8) & 0xFF, value & 0xFF);
+                                    } else {
+                                        payloadBytes.push(value & 0xFF);
+                                    }
+                                } else if (field.type === 'string') {
+                                    const textEncoder = new TextEncoder();
+                                    const strBytes = textEncoder.encode(el.value);
+                                    payloadBytes.push(...strBytes);
+                                }
+                            });
+                        }
+                    }
+                    
+                    const feat_pkt_cmd = ((featureId & 0x7F) << 9) | ((packetType & 0x03) << 7) | (commandId & 0x7F);
+                    let headerBytes = [];
+
+                    if (protocol === 'gatt') {
+                        headerBytes.push((vendorId >> 8) & 0xFF, vendorId & 0xFF);
+                        headerBytes.push((feat_pkt_cmd >> 8) & 0xFF, feat_pkt_cmd & 0xFF);
+                    } else { // rfcomm
+                        const sof = 0xFF;
+                        const version = 4;
+                        const payloadLength = payloadBytes.length;
+                        const useLengthExtension = payloadLength > 255;
+                        const flags = useLengthExtension ? 0b00000010 : 0b00000000;
+
+                        headerBytes.push(sof, version, flags);
+                        if (useLengthExtension) {
+                            headerBytes.push((payloadLength >> 8) & 0xFF, payloadLength & 0xFF);
+                        } else {
+                            headerBytes.push(payloadLength & 0xFF);
+                        }
+                        headerBytes.push((vendorId >> 8) & 0xFF, vendorId & 0xFF);
+                        headerBytes.push((feat_pkt_cmd >> 8) & 0xFF, feat_pkt_cmd & 0xFF);
+                    }
+
+                    const finalCommand = new Uint8Array([...headerBytes, ...payloadBytes]);
+                    pre.textContent = toHexString(finalCommand);
+                    
+                } catch (e) {
+                    pre.textContent = `错误: 生成载荷失败\n${e.message}`;
+                    pre.style.color = '#dc3545';
+                }
+                
+                outputColumn.appendChild(pre);
+                outputColumnsDiv.appendChild(outputColumn);
+            });
+            
+            outputColumnsContainer.appendChild(outputColumnsDiv);
         }
 
         // Event Listeners
-        commandSelect.addEventListener('change', (e) => generatePayloadUI(e.target.value));
+        commandSelect.addEventListener('change', (e) => {
+            currentCommandKey = e.target.value;
+            generatePayloadColumnsUI(currentCommandKey);
+        });
+        
         generateBtn.addEventListener('click', generateCommand);
 
         // Initial population
         populateCommands();
-        generatePayloadUI(commandSelect.value);
+        generatePayloadColumnsUI('');
 
     </script>
 
