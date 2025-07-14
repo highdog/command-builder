@@ -69,6 +69,11 @@
             font-size: 1.75rem;
             color: #333;
         }
+
+        .lang-switcher {
+            margin-left: auto;
+            display: flex;
+        }
         
         .doc-content {
             margin-top: 1rem;
@@ -710,12 +715,7 @@
                 }
                 
                 if (!payloadDef || payloadDef.length === 0) {
-                    const noPayloadLabel = document.createElement('p');
-                    noPayloadLabel.textContent = '无载荷 (No payload)';
-                    noPayloadLabel.style.color = '#888';
-                    noPayloadLabel.style.textAlign = 'center';
-                    noPayloadLabel.style.fontStyle = 'italic';
-                    row.appendChild(noPayloadLabel);
+                    // Do nothing, leave the section empty
                 } else {
                     if (commandDef.type === 'bitmask' && packetTypeName.toUpperCase() === 'COMMAND') {
                         payloadDef.forEach(field => {
