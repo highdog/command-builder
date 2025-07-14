@@ -304,9 +304,22 @@
     </style>
 </head>
 <body>
+    <header class="global-header">
+        <div class="header-left">
+            <div class="header-title">
+                <h1>蓝牙命令构建器</h1>
+            </div>
+        </div>
+        <div class="header-search">
+            <input type="search" id="global-search-box" placeholder="Search (not active on this page)">
+        </div>
+        <div class="header-controls">
+            <a href="/">Command Builder</a>
+            <a href="/documentation">Documentation</a>
+        </div>
+    </header>
 
-    <div class="container">
-        <h1>蓝牙命令构建器 (基于 Mobile.md)</h1>
+    <div class="container" style="padding-top: 2rem;">
         
         <div class="main-layout">
             <!-- 左侧栏：命令构建器 -->
@@ -782,26 +795,30 @@
         
         function generateCommand() {
             const protocol = protocolSelect.value;
-            const commandKey = commandSelect.value;
             
             // Clear previous output
             outputColumnsContainer.innerHTML = '';
-            
-            const commandId = parseInt(commandKey, 16);
-            if (isNaN(commandId)) {
+
+            if (!currentCommandKey) {
                 outputColumnsContainer.innerHTML = '<p style="text-align: center; color: #dc3545;">错误: 请选择一个有效的命令。</p>';
                 return;
             }
+            
+            const commandId = parseInt(currentCommandKey, 16);
+            if (isNaN(commandId)) {
+                outputColumnsContainer.innerHTML = '<p style="text-align: center; color: #dc3545;">错误: 无效的命令ID。</p>';
+                return;
+            }
 
-            const commandDef = commandDefs[commandKey];
+            const commandDef = commandDefs[currentCommandKey];
             if (!commandDef) {
-                outputColumnsContainer.innerHTML = '<p style="text-align: center; color: #dc3545;">错误: 未找到命令定义。</p>';
+                outputColumnsContainer.innerHTML = `<p style="text-align: center; color: #dc3545;">错误: 未找到命令定义 (${currentCommandKey})。</p>`;
                 return;
             }
             
-            const supportedPacketTypes = commandPacketTypes[commandKey];
+            const supportedPacketTypes = commandPacketTypes[currentCommandKey];
             if (!supportedPacketTypes) {
-                outputColumnsContainer.innerHTML = `<p style="text-align: center; color: #dc3545;">错误: 命令 ${commandKey} 未定义支持的包类型。</p>`;
+                outputColumnsContainer.innerHTML = `<p style="text-align: center; color: #dc3545;">错误: 命令 ${currentCommandKey} 未定义支持的包类型。</p>`;
                 return;
             }
 

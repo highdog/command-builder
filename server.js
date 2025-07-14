@@ -213,9 +213,18 @@ app.delete('/api/users/:id', isAuthenticated, isAdmin, (req, res) => {
 
 
 // --- Static File Serving and Routes ---
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  index: false, // Disable default index.html handling
+  setHeaders: (res, filePath) => {
+    // Disable caching for HTML files to ensure the latest version is always served
+    if (path.extname(filePath) === '.html') {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  }
+}));
 app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
-app.get('/', isAuthenticated, (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/', isAuthenticated, (req, res) => res.sendFile(path.join(__dirname, 'public', 'command_builder.html')));
+app.get('/documentation', isAuthenticated, (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/admin', isAuthenticated, isAdmin, (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 
 // Start server
