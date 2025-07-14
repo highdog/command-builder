@@ -288,15 +288,17 @@
             // The script from the fetched HTML won't execute when injected via innerHTML.
             // We need to create a new script element and append it.
             if (builderScript) {
-                const newScript = document.createElement('script');
-                newScript.textContent = builderScript.textContent;
-                // Add an ID to find and remove it later if needed
-                newScript.id = 'injected-builder-script'; 
                 // Remove old script if it exists to prevent duplication
-                const oldScript = document.getElementById(newScript.id);
+                const oldScript = document.getElementById('injected-builder-script');
                 if (oldScript) oldScript.remove();
                 
-                commandDisplayContainer.appendChild(newScript);
+                // Use setTimeout to ensure DOM elements are ready before script execution
+                setTimeout(() => {
+                    const newScript = document.createElement('script');
+                    newScript.textContent = builderScript.textContent;
+                    newScript.id = 'injected-builder-script';
+                    commandDisplayContainer.appendChild(newScript);
+                }, 100);
             }
         } catch (error) {
             commandDisplayContainer.innerHTML = `<p>Error: ${error.message}</p>`;
