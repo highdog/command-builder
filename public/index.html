@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Command Documentation & Builder</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+  <header class="global-header">
+    <div class="header-left">
+      <div class="header-title">
+        <h1>Documentation</h1>
+      </div>
+    </div>
+    <div class="header-search">
+      <input type="search" id="global-search-box" placeholder="Search all commands...">
+    </div>
+    <div class="header-controls">
+      <a href="/admin" id="ui-admin-link" style="display: none;">Admin</a>
+    </div>
+  </header>
+
+  <div class="app-container">
+    <div class="sidebar">
+      
+      <div class="sidebar-section">
+        <div class="sidebar-section-header" id="sidebar-builder-header">
+          <h2>Command Builder</h2>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-header active" id="sidebar-docs-header">
+          <h2>Documentation</h2>
+        </div>
+        <div class="sidebar-section-content" id="sidebar-docs-content">
+          <div id="docs-command-list-container"></div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <button id="add-command-btn" class="button" style="display: none; width: 100%; margin-bottom: 1rem;">New Command</button>
+        <form action="/logout" method="POST">
+          <button type="submit">Logout</button>
+        </form>
+      </div>
+    </div>
+    <div class="main-content">
+      <div class="main-content-header">
+        <h1 id="command-name">Select a command</h1>
+        <button id="edit-command-btn" class="button" style="display: none;">Edit</button>
+        <button id="save-command-btn" class="button" style="display: none;">Save</button>
+        <button id="cancel-edit-command-btn" class="button" style="display: none;">Cancel</button>
+      </div>
+      <div id="command-display-container">
+        <p>Select a command from the sidebar to get started.</p>
+      </div>
+      <div id="command-editor-container" style="display: none;">
+        <!-- Form for editing will be injected here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Modal -->
+  <div id="command-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <span class="close-btn">&times;</span>
+      <h2 id="modal-title">Add New Command</h2>
+      <form id="modal-form">
+          <input type="hidden" id="modal-command-id">
+          <div class="form-row">
+              <div class="form-column">
+                  <h3>English</h3>
+                  <div class="form-group">
+                      <label for="modal-category-en">Category</label>
+                      <input type="text" id="modal-category-en" required>
+                  </div>
+                  <div class="form-group">
+                      <label for="modal-name-en">Name</label>
+                      <input type="text" id="modal-name-en" required>
+                  </div>
+                  <div class="form-group">
+                      <label for="modal-description-en">Description (Markdown)</label>
+                      <textarea id="modal-description-en" rows="10" required></textarea>
+                  </div>
+              </div>
+              <div class="form-column">
+                  <h3>Chinese</h3>
+                  <div class="form-group">
+                      <label for="modal-category-zh">类别 (Category)</label>
+                      <input type="text" id="modal-category-zh" required>
+                  </div>
+                  <div class="form-group">
+                      <label for="modal-name-zh">名称 (Name)</label>
+                      <input type="text" id="modal-name-zh" required>
+                  </div>
+                  <div class="form-group">
+                      <label for="modal-description-zh">描述 (Description - Markdown)</label>
+                      <textarea id="modal-description-zh" rows="10" required></textarea>
+                  </div>
+              </div>
+          </div>
+          <button type="submit">Save Command</button>
+      </form>
+    </div>
+  </div>
+
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // --- STATE ---
+      let currentView = 'documentation';
+      let currentUser = null;
+      let currentCommandData = null;
+      let allCommands = {};
+
+      // --- UI ELEMENTS ---
+      const docsListContainer = document.getElementById('docs-command-list-container');
+      const mainContentHeader = document.querySelector('.main-content-header');
+      const commandName = document.getElementById('command-name');
+      const commandDisplayContainer = document.getElementById('command-display-container');
+      const commandEditorContainer = document.getElementById('command-editor-container');
+      const globalSearchBox = document.getElementById('global-search-box');
+      const adminLink = document.getElementById('ui-admin-link');
+      const addCommandBtn = document.getElementById('add-command-btn');
+      const editCommandBtn = document.getElementById('edit-command-btn');
+      const saveCommandBtn = document.getElementById('save-command-btn');
+      const cancelEditCommandBtn = document.getElementById('cancel-edit-command-btn');
+      const modal = document.getElementById('command-modal');
+      const modalForm = document.getElementById('modal-form');
+      const modalTitle = document.getElementById('modal-title');
+      const closeModalBtn = document.querySelector('.close-btn');
+
+      // --- FUNCTIONS ---
+
+      const switchView = (newView) => {
+        if (currentView === newView) return;
+        currentView = newView;
+        
+        document.getElementById('sidebar-docs-header').classList.toggle('active', newView === 'documentation');
+        document.getElementById('sidebar-builder-header').classList.toggle('active', newView === 'builder');
+        
+        // Toggle visibility of documentation-specific elements
+        const docElements = [docsListContainer.parentElement, globalSearchBox, addCommandBtn];
+        docElements.forEach(el => el.style.display = newView === 'documentation' ? '' : 'none');
+
+        if (newView === 'documentation') {
+          displayInitialMessage();
+        } else {
+          displayCommandBuilder();
+        }
+      };
+
+      const checkSession = async () => {
+        try {
+          const response = await fetch('/api/session');
+          const data = await response.json();
+          if (data.loggedIn) {
+            currentUser = data.user;
+            if (currentUser.role === 'admin') {
+              adminLink.style.display = 'inline-block';
+              addCommandBtn.style.display = 'block';
+            }
+          } else {
+            window.location.href = '/login';
+          }
+        } catch (error) {
+          console.error('Session check failed:', error);
+        }
+      };
+
+      const fetchCommands = () => {
+        fetch(`/api/commands`)
+          .then(response => response.json())
+          .then(data => {
+            allCommands = data;
+            renderCommandList(allCommands, docsListContainer);
+            displayInitialMessage();
+          });
+      };
+
+      const searchCommands = (searchTerm) => {
+        const term = searchTerm.toLowerCase();
+        const filteredData = {};
+        for (const category in allCommands) {
+          const filteredCommands = allCommands[category].filter(command => 
+            command.name.toLowerCase().includes(term)
+          );
+          if (filteredCommands.length > 0) {
+            filteredData[category] = filteredCommands;
+          }
+        }
+        renderCommandList(filteredData, docsListContainer);
+      };
+
+      const renderCommandList = (data, container) => {
+        container.innerHTML = '';
+        for (const category in data) {
+          const categoryDiv = document.createElement('div');
+          categoryDiv.className = 'category collapsed';
+          const categoryHeader = document.createElement('div');
+          categoryHeader.className = 'category-header';
+          categoryHeader.textContent = category;
+          categoryHeader.addEventListener('click', () => categoryDiv.classList.toggle('collapsed'));
+          const commandList = document.createElement('ul');
+          commandList.className = 'command-list';
+          data[category].forEach(command => {
+            const li = document.createElement('li');
+            li.textContent = command.name;
+            li.dataset.id = command.id;
+            li.addEventListener('click', (e) => {
+              e.stopPropagation();
+              document.querySelectorAll('.command-list li').forEach(item => item.classList.remove('active'));
+              li.classList.add('active');
+              displayCommand(command.id);
+            });
+            commandList.appendChild(li);
+          });
+          categoryDiv.appendChild(categoryHeader);
+          categoryDiv.appendChild(commandList);
+          container.appendChild(categoryDiv);
+        }
+      };
+
+      const displayCommand = (id) => {
+        exitEditMode();
+        mainContentHeader.style.display = '';
+        commandName.textContent = 'Loading...';
+        commandDisplayContainer.innerHTML = '';
+        
+        fetch(`/api/commands/${id}`)
+          .then(response => response.json())
+          .then(data => {
+            currentCommandData = data;
+            commandName.textContent = data.name_en;
+            displayCommandDocumentation(data);
+          });
+      };
+
+      const displayCommandDocumentation = (data) => {
+        commandDisplayContainer.innerHTML = marked.parse(data.description_en || '');
+        if (currentUser && currentUser.role === 'admin') {
+          editCommandBtn.style.display = 'inline-block';
+        }
+      };
+      
+      const displayCommandBuilder = async () => {
+        exitEditMode();
+        mainContentHeader.style.display = 'none';
+        commandDisplayContainer.innerHTML = '<p>Loading Command Builder...</p>';
+        
+        try {
+            const response = await fetch('/command_builder.html');
+            if (!response.ok) throw new Error('Failed to load builder.');
+            const htmlText = await response.text();
+            
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlText, 'text/html');
+            
+            const builderContainer = doc.querySelector('.container');
+            const builderScript = doc.querySelector('script');
+
+            if (!builderContainer) throw new Error('Could not find builder content.');
+
+            commandDisplayContainer.innerHTML = builderContainer.innerHTML;
+
+            // The script from the fetched HTML won't execute when injected via innerHTML.
+            // We need to create a new script element and append it.
+            if (builderScript) {
+                const newScript = document.createElement('script');
+                newScript.textContent = builderScript.textContent;
+                // Add an ID to find and remove it later if needed
+                newScript.id = 'injected-builder-script'; 
+                // Remove old script if it exists to prevent duplication
+                const oldScript = document.getElementById(newScript.id);
+                if (oldScript) oldScript.remove();
+                
+                commandDisplayContainer.appendChild(newScript);
+            }
+        } catch (error) {
+            commandDisplayContainer.innerHTML = `<p>Error: ${error.message}</p>`;
+            console.error(error);
+        }
+      };
+
+      const displayInitialMessage = () => {
+        exitEditMode();
+        mainContentHeader.style.display = '';
+        currentCommandData = null;
+        editCommandBtn.style.display = 'none';
+        commandName.textContent = 'Select a command';
+        const prompt = 'Select a command from the sidebar to view its documentation.';
+        commandDisplayContainer.innerHTML = `<p>${prompt}</p>`;
+      };
+
+      const enterEditMode = () => {
+        if (!currentCommandData) return;
+        commandDisplayContainer.style.display = 'none';
+        editCommandBtn.style.display = 'none';
+        saveCommandBtn.style.display = 'inline-block';
+        cancelEditCommandBtn.style.display = 'inline-block';
+        commandEditorContainer.innerHTML = `
+          <form id="inline-edit-form">
+            <div class="form-row">
+              <div class="form-column">
+                <h3>English</h3>
+                <div class="form-group"><label>Category</label><input type="text" id="inline-category-en" value="${currentCommandData.category_en}" required></div>
+                <div class="form-group"><label>Name</label><input type="text" id="inline-name-en" value="${currentCommandData.name_en}" required></div>
+                <div class="form-group"><label>Description (Markdown)</label><textarea id="inline-description-en" rows="15" required>${currentCommandData.description_en}</textarea></div>
+              </div>
+              <div class="form-column">
+                <h3>Chinese</h3>
+                <div class="form-group"><label>类别</label><input type="text" id="inline-category-zh" value="${currentCommandData.category_zh}" required></div>
+                <div class="form-group"><label>名称</label><input type="text" id="inline-name-zh" value="${currentCommandData.name_zh}" required></div>
+                <div class="form-group"><label>描述</label><textarea id="inline-description-zh" rows="15" required>${currentCommandData.description_zh}</textarea></div>
+              </div>
+            </div>
+          </form>
+        `;
+        commandEditorContainer.style.display = 'block';
+      };
+
+      const exitEditMode = () => {
+        commandEditorContainer.style.display = 'none';
+        commandEditorContainer.innerHTML = '';
+        commandDisplayContainer.style.display = 'block';
+        saveCommandBtn.style.display = 'none';
+        cancelEditCommandBtn.style.display = 'none';
+        if (currentView === 'documentation' && currentUser?.role === 'admin' && currentCommandData) {
+          editCommandBtn.style.display = 'inline-block';
+        }
+      };
+      
+      const saveInlineEdit = async () => {
+        const id = currentCommandData.id;
+        const body = {
+          category_en: document.getElementById('inline-category-en').value,
+          name_en: document.getElementById('inline-name-en').value,
+          description_en: document.getElementById('inline-description-en').value,
+          category_zh: document.getElementById('inline-category-zh').value,
+          name_zh: document.getElementById('inline-name-zh').value,
+          description_zh: document.getElementById('inline-description-zh').value,
+        };
+        try {
+          const response = await fetch(`/api/commands/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+          if (!response.ok) throw new Error('Failed to save');
+          fetchCommands();
+          displayCommand(id);
+        } catch (error) {
+          alert(`Save failed: ${error.message}`);
+        }
+      };
+
+      const openModalForNew = () => {
+        modalForm.reset();
+        document.getElementById('modal-command-id').value = '';
+        modalTitle.textContent = 'Add New Command';
+        modal.style.display = 'block';
+      };
+
+      const saveModalForm = async () => {
+        const id = document.getElementById('modal-command-id').value;
+        const url = id ? `/api/commands/${id}` : '/api/commands';
+        const method = id ? 'PUT' : 'POST';
+        const body = {
+          category_en: document.getElementById('modal-category-en').value,
+          name_en: document.getElementById('modal-name-en').value,
+          description_en: document.getElementById('modal-description-en').value,
+          category_zh: document.getElementById('modal-category-zh').value,
+          name_zh: document.getElementById('modal-name-zh').value,
+          description_zh: document.getElementById('modal-description-zh').value,
+        };
+        try {
+          const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+          if (!response.ok) throw new Error('Failed to save command from modal');
+          modal.style.display = 'none';
+          fetchCommands();
+        } catch (error) {
+          alert(`Error: ${error.message}`);
+        }
+      };
+
+      // --- EVENT LISTENERS ---
+      document.getElementById('sidebar-docs-header').addEventListener('click', () => switchView('documentation'));
+      document.getElementById('sidebar-builder-header').addEventListener('click', () => switchView('builder'));
+      globalSearchBox.addEventListener('input', (e) => searchCommands(e.target.value));
+      
+      editCommandBtn.addEventListener('click', enterEditMode);
+      cancelEditCommandBtn.addEventListener('click', exitEditMode);
+      saveCommandBtn.addEventListener('click', saveInlineEdit);
+      
+      addCommandBtn.addEventListener('click', openModalForNew);
+      closeModalBtn.addEventListener('click', () => modal.style.display = 'none');
+      modalForm.addEventListener('submit', (e) => { e.preventDefault(); saveModalForm(); });
+      window.addEventListener('click', (e) => { if (e.target == modal) modal.style.display = 'none'; });
+
+      // --- INITIALIZATION ---
+      const init = async () => {
+        await checkSession();
+        fetchCommands();
+        // Default to documentation view
+        document.getElementById('sidebar-docs-header').classList.add('active');
+        document.getElementById('sidebar-builder-header').classList.remove('active');
+        switchView('documentation');
+      };
+
+      init();
+    });
+  </script>

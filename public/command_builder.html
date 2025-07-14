@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蓝牙命令构建器</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 2rem;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        h1 {
+            color: #1a1a1a;
+        }
+        .container {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: auto;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            margin-bottom: .5rem;
+            font-weight: 600;
+        }
+        select, input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: .8rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007aff;
+            color: white;
+            padding: .8rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #output {
+            background-color: #282c34;
+            color: #abb2bf;
+            padding: 1rem;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin-top: 1.5rem;
+            font-family: 'Menlo', 'Consolas', monospace;
+        }
+        .form-group-checkbox {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .form-group-checkbox input {
+            width: auto;
+            margin-right: 10px;
+        }
+        .form-group-checkbox label {
+            margin-bottom: 0;
+            font-weight: normal;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>蓝牙命令构建器 (基于 Mobile.md)</h1>
+
+        <div class="form-group">
+            <label for="protocol-select">选择协议:</label>
+            <select id="protocol-select">
+                <option value="gatt">GATT over BLE</option>
+                <option value="rfcomm">RFCOMM</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="packet-type-select">选择包类型 (Packet Type):</label>
+            <select id="packet-type-select">
+                <option value="0">COMMAND (0x00)</option>
+                <option value="1">NOTIFICATION (0x01)</option>
+                <option value="2">RESPONSE (0x02)</option>
+                <option value="3">ERROR (0x03)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="command-select">选择命令:</label>
+            <select id="command-select">
+                <option value="">--请选择一个命令--</option>
+            </select>
+        </div>
+
+        <div id="payload-container" class="form-group">
+            <!-- 载荷的输入字段将在这里动态生成 -->
+        </div>
+
+        <button id="generate-btn">生成命令</button>
+
+        <div class="form-group">
+            <label for="output">生成的命令 (Hex):</label>
+            <pre id="output"></pre>
+        </div>
+    </div>
+
+    <script>
+        const commandDefs = {
+            // Get Commands (mostly no payload)
+            '0x00': { name: '0x00 Get Device Type', payload: [] },
+            '0x19': { name: '0x19 Get Device MAC Address', payload: [] },
+            '0x02': { name: '0x02 Get Serial Number', payload: [] },
+            '0x03': { name: '0x03 Get Feature Version', payload: [] },
+            '0x06': { name: '0x06 Get Battery Level', payload: [] },
+            '0x07': { name: '0x07 Get Bluetooth Led Configurations', payload: [] },
+            '0x09': { name: '0x09 Get LE Configurations', payload: [] },
+            '0x14': { name: '0x14 Get Firmware Version', payload: [] },
+            '0x15': { name: '0x15 Get Earbuds Color', payload: [] },
+            '0x17': { name: '0x17 Get Peripheral States', payload: [] },
+            '0x41': { name: '0x41 Get Remaining Battery Time', payload: [] },
+            '0x44': { name: '0x44 Get Equalizer Mode', payload: [] },
+            '0x46': { name: '0x46 Get User Equalizer Configuration', payload: [] },
+            '0x49': { name: '0x49 Play Status', payload: [] },
+            '0x4A': { name: '0x4A Get Device Name', payload: [] },
+            '0x4C': { name: '0x4C Get Auto Shutdown Time', payload: [] },
+            '0x4E': { name: '0x4E Get Selected Voice Assistant Mode', payload: [] },
+            '0x59': { name: '0x59 Get Custom Keys', payload: [] },
+            '0x5B': { name: '0x5B Get Prompt Language', payload: [] },
+            '0x5E': { name: '0x5E Get Prompt Sound State', payload: [] },
+            '0x66': { name: '0x66 Get Enabled Voice Prompts', payload: [{ id: 'batch_index', name: 'Batch Index', type: 'uint8' }] },
+            '0x57': { name: '0x57 Get Voice Prompts Volume Level', payload: [] },
+            '0x60': { name: '0x60 Get ANC Mode', payload: [] },
+            '0x30': { name: '0x30 Get Non-Adaptive ANC Level', payload: [] },
+            '0x32': { name: '0x32 Get ANC Transparency Gain', payload: [] },
+            '0x34': { name: '0x34 Get ANC Wind Noise Detection Mode', payload: [] },
+            '0x36': { name: '0x36 Get Adaptive ANC Level', payload: [] },
+            '0x37': { name: '0x37 Get ANC On Mode', payload: [] },
+            '0x62': { name: '0x62 Get Low Latency Mode', payload: [] },
+            '0x64': { name: '0x64 Get Wearing Detection Configuration', payload: [] },
+            '0x68': { name: '0x68 Get LED Brightness', payload: [] },
+            '0x70': { name: '0x70 Get Sidetone Mode', payload: [] },
+            '0x72': { name: '0x72 Get Sidetone Gain', payload: [] },
+            '0x7C': { name: '0x7C Get Dolby Atmos Config', payload: [] },
+            '0x7E': { name: '0x7E Get Audio Codecs Configurations', payload: [] },
+            '0x20': { name: '0x20 Get Usage Statistics', payload: [] },
+
+            // Other Commands
+            '0x01': { name: '0x01 Register Notification Listeners', payload: [{ id: 'feature', name: 'Feature ID', type: 'uint8', value: 0x11, readonly: true }] },
+            '0x5D': { name: '0x5D Factory Reset', payload: [] },
+            '0x21': { name: '0x21 Reset Usage Statistics', payload: [] },
+
+            // Set Commands
+            '0x08': { name: '0x08 Set Bluetooth Led Configurations', payload: [{ id: 'led_config', name: 'Bluetooth LED', type: 'enum', values: { 'On': 0x00, 'Off': 0x01 } }] },
+            '0x0A': { name: '0x0A Set LE Configurations', type: 'bitmask', payload: [
+                { id: 'google_fast_pair', name: 'Google Fast Pair', type: 'bool', bit: 0 },
+                { id: 'le_audio', name: 'LE Audio', type: 'bool', bit: 1 }
+            ]},
+            '0x16': { name: '0x16 Set Earbuds Color', payload: [{ id: 'color', name: 'Color', type: 'enum', values: { 'Color1': 0x00, 'Color2': 0x01, 'Color3': 0x02, 'Color4': 0x03 } }] },
+            '0x45': { name: '0x45 Set Equalizer Mode (v1)', payload: [{ id: 'eq_mode', name: 'Equalizer Mode', type: 'enum', values: { 'Off': 0x00, 'Rock': 0x01, 'Jazz': 0x02, 'Classical': 0x03, 'Pop': 0x04, 'User': 0x05, 'Bass Boost': 0x06, 'Smooth Treble': 0x07, 'Loudness': 0x08, 'Neutral': 0x09, 'Speech': 0x0A, 'Shooting': 0x0B, 'Battle Royal': 0x0C, 'Adventure': 0x0D, 'Racing': 0x0E, 'Strategy': 0x0F } }] },
+            '0x47': { name: '0x47 Set User Equalizer (v1, 5 bands)', payload: [
+                { id: 'band1', name: 'Band 1 Gain (-12 to 12)', type: 'sint8' },
+                { id: 'band2', name: 'Band 2 Gain (-12 to 12)', type: 'sint8' },
+                { id: 'band3', name: 'Band 3 Gain (-12 to 12)', type: 'sint8' },
+                { id: 'band4', name: 'Band 4 Gain (-12 to 12)', type: 'sint8' },
+                { id: 'band5', name: 'Band 5 Gain (-12 to 12)', type: 'sint8' }
+            ]},
+            '0x48': { name: '0x48 Trigger Media Button', payload: [{ id: 'media_button', name: 'Media Button', type: 'enum', values: { 'PLAY_PAUSE': 0x00, 'PREVIOUS_SONG': 0x01, 'NEXT_SONG': 0x02 } }] },
+            '0x4B': { name: '0x4B Set Device Name', payload: [{ id: 'device_name', name: 'Device Name (max 31 chars)', type: 'string', maxLength: 31 }] },
+            '0x4D': { name: '0x4D Set Auto Shutdown Time', payload: [{ id: 'shutdown_time', name: 'Shutdown Time (minutes, 0-360)', type: 'uint16' }] },
+            '0x4F': { name: '0x4F Set Selected Voice Assistant Mode', payload: [{ id: 'va_mode', name: 'Voice Assistant', type: 'enum', values: { 'DEFAULT': 0x00, 'NONE': 0x01 } }] },
+            '0x5A': { name: '0x5A Set Custom Keys (v1, Earbuds)', type: 'nibble_array', payload: [
+                { id: 'l_single', name: 'Left Single Tap', type: 'enum_nibble', values: { 'PLAY_PAUSE': 0x0, 'NONE': 0x1 } },
+                { id: 'l_long', name: 'Left Long Press', type: 'enum_nibble', values: { 'VOICE_ASSISTANT': 0x0, 'NONE': 0x1, 'VOLUME_UP': 0x2, 'VOLUME_DOWN': 0x3 } },
+                { id: 'l_double', name: 'Left Double Tap', type: 'enum_nibble', values: { 'NEXT_SONG': 0x0, 'PLAY_PAUSE': 0x1, 'PREVIOUS_SONG': 0x2, 'NONE': 0x3, 'VOICE_ASSISTANT': 0x4, 'SWITCH_ANC_MODE': 0x5 } },
+                { id: 'l_triple', name: 'Left Triple Tap', type: 'enum_nibble', values: { 'PREVIOUS_SONG': 0x0, 'PLAY_PAUSE': 0x1, 'NEXT_SONG': 0x2, 'NONE': 0x3, 'VOICE_ASSISTANT': 0x4, 'SWITCH_ANC_MODE': 0x5 } },
+                { id: 'r_single', name: 'Right Single Tap', type: 'enum_nibble', values: { 'PLAY_PAUSE': 0x0, 'NONE': 0x1 } },
+                { id: 'r_long', name: 'Right Long Press', type: 'enum_nibble', values: { 'VOICE_ASSISTANT': 0x0, 'NONE': 0x1, 'VOLUME_UP': 0x2, 'VOLUME_DOWN': 0x3 } },
+                { id: 'r_double', name: 'Right Double Tap', type: 'enum_nibble', values: { 'NEXT_SONG': 0x0, 'PLAY_PAUSE': 0x1, 'PREVIOUS_SONG': 0x2, 'NONE': 0x3, 'VOICE_ASSISTANT': 0x4, 'SWITCH_ANC_MODE': 0x5 } },
+                { id: 'r_triple', name: 'Right Triple Tap', type: 'enum_nibble', values: { 'PREVIOUS_SONG': 0x0, 'PLAY_PAUSE': 0x1, 'NEXT_SONG': 0x2, 'NONE': 0x3, 'VOICE_ASSISTANT': 0x4, 'SWITCH_ANC_MODE': 0x5 } }
+            ]},
+            '0x5C': { name: '0x5C Set Prompt Language', payload: [{ id: 'prompt_lang', name: 'Prompt Language', type: 'enum', values: { 'CHINESE': 0x01, 'ENGLISH': 0x02, 'GERMAN': 0x03 } }] },
+            '0x5F': { name: '0x5F Set Prompt Sound State', payload: [{ id: 'prompt_state', name: 'Prompt Sound', type: 'enum', values: { 'ON': 0x00, 'OFF': 0x01 } }] },
+            '0x67': { name: '0x67 Set Enabled Voice Prompts (v1, single)', type: 'bitfield_prompt', payload: [
+                { id: 'prompt_id', name: 'Prompt Type', type: 'enum', values: { 'POWER_OFF':0,'POWER_ON':1,'BATTERY_LOW':2,'ANC_ON':3,'PASS_THROUGH':4,'ANC_OFF':5,'PAIRING':6,'CONNECTED':7,'VOLUME_UP_MAX':8,'VOLUME_DOWN_MIN':9,'RINGTONE':10,'SINGLE_TAP':11,'DOUBLE_TAP':12,'TRIPLE_TAP':13,'EAR_CONNECTED':14,'DOUBLE_PRESS_AND_HOLD':15,'EAR_DISCONNECTED':16,'FOUR_TAP':17 } },
+                { id: 'prompt_status', name: 'Status', type: 'enum', values: { 'ON': 0, 'OFF': 1 } }
+            ]},
+            '0x58': { name: '0x58 Set Voice Prompts Volume Level (Headset)', payload: [{ id: 'volume', name: 'Volume Level', type: 'uint8' }] },
+            '0x61': { name: '0x61 Set ANC Mode', payload: [{ id: 'anc_mode', name: 'ANC Mode', type: 'enum', values: { 'OFF': 0x00, 'TRANSPARENCY': 0x01, 'ON': 0x02 } }] },
+            '0x31': { name: '0x31 Set Non-Adaptive ANC Level', payload: [{ id: 'anc_level', name: 'ANC Level', type: 'uint8' }] },
+            '0x33': { name: '0x33 Set ANC Transparency Gain', payload: [{ id: 'anc_gain', name: 'Transparency Gain', type: 'uint8' }] },
+            '0x35': { name: '0x35 Set ANC Wind Noise Detection Mode', payload: [{ id: 'wind_mode', name: 'Wind Noise Detection', type: 'enum', values: { 'OFF': 0, 'ON': 1 } }] },
+            '0x38': { name: '0x38 Set ANC On Mode', payload: [{ id: 'anc_on_mode', name: 'ANC On Mode', type: 'enum', values: { 'MODE_1': 0, 'MODE_2': 1 } }] },
+            '0x63': { name: '0x63 Set Low Latency Mode', payload: [{ id: 'll_mode', name: 'Low Latency Mode', type: 'enum', values: { 'OFF': 0, 'ON': 1 } }] },
+            '0x65': { name: '0x65 Set Wearing Detection Configuration', payload: [{ id: 'wear_detect', name: 'Wearing Detection', type: 'enum', values: { 'OFF': 0, 'ON': 1 } }] },
+            '0x69': { name: '0x69 Set LED Brightness', payload: [{ id: 'brightness', name: 'LED Brightness', type: 'uint8' }] },
+            '0x71': { name: '0x71 Set Sidetone Mode', payload: [{ id: 'sidetone_mode', name: 'Sidetone Mode', type: 'enum', values: { 'OFF': 0, 'ON': 1 } }] },
+            '0x73': { name: '0x73 Set Sidetone Gain', payload: [{ id: 'sidetone_gain', name: 'Sidetone Gain', type: 'uint8' }] },
+            '0x7D': { name: '0x7D Set Dolby Atmos Config', payload: [{ id: 'dolby_config', name: 'Dolby Atmos', type: 'enum', values: { 'OFF': 0, 'ON': 1 } }] },
+            '0x7F': { name: '0x7F Set Audio Codecs Configurations', type: 'bitmask', payload: [
+                { id: 'sbc', name: 'SBC', type: 'bool', bit: 0},
+                { id: 'aac', name: 'AAC', type: 'bool', bit: 1},
+                { id: 'aptx', name: 'aptX', type: 'bool', bit: 2},
+                { id: 'aptx_hd', name: 'aptX HD', type: 'bool', bit: 3}
+            ]},
+        };
+
+        const protocolSelect = document.getElementById('protocol-select');
+        const commandSelect = document.getElementById('command-select');
+        const payloadContainer = document.getElementById('payload-container');
+        const generateBtn = document.getElementById('generate-btn');
+        const outputEl = document.getElementById('output');
+        const packetTypeSelect = document.getElementById('packet-type-select');
+
+        function toHexString(byteArray) {
+            return Array.from(byteArray, byte => ('0' + (byte & 0xFF).toString(16)).slice(-2)).join(' ').toUpperCase();
+        }
+
+        function populateCommands() {
+            // Sort command keys for ordered display
+            const sortedKeys = Object.keys(commandDefs).sort();
+            sortedKeys.forEach(key => {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = commandDefs[key].name;
+                commandSelect.appendChild(option);
+            });
+        }
+
+        function generatePayloadUI(commandId) {
+            payloadContainer.innerHTML = '';
+            if (!commandId || !commandDefs[commandId]) return;
+
+            const { payload, type: commandType } = commandDefs[commandId];
+            
+            if (commandType === 'bitmask') {
+                 payload.forEach(field => {
+                    const fieldGroup = document.createElement('div');
+                    fieldGroup.className = 'form-group-checkbox';
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = field.id;
+                    checkbox.dataset.bit = field.bit;
+                    const label = document.createElement('label');
+                    label.htmlFor = field.id;
+                    label.textContent = field.name;
+                    fieldGroup.appendChild(checkbox);
+                    fieldGroup.appendChild(label);
+                    payloadContainer.appendChild(fieldGroup);
+                });
+                return;
+            }
+
+            payload.forEach(field => {
+                const fieldGroup = document.createElement('div');
+                fieldGroup.className = 'form-group';
+
+                const label = document.createElement('label');
+                label.htmlFor = field.id;
+                label.textContent = field.name;
+                fieldGroup.appendChild(label);
+
+                if (field.type === 'enum' || field.type === 'enum_nibble') {
+                    const select = document.createElement('select');
+                    select.id = field.id;
+                    Object.keys(field.values).forEach(name => {
+                        const option = document.createElement('option');
+                        option.value = field.values[name];
+                        option.textContent = name;
+                        select.appendChild(option);
+                    });
+                    fieldGroup.appendChild(select);
+                } else if (field.type === 'string') {
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.id = field.id;
+                    if (field.maxLength) input.maxLength = field.maxLength;
+                    fieldGroup.appendChild(input);
+                } else if (field.type.includes('int')) {
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.id = field.id;
+                    if (field.type === 'sint8') {
+                        input.min = -128;
+                        input.max = 127;
+                    } else {
+                        input.min = 0;
+                    }
+                    if (field.readonly) {
+                        input.value = field.value;
+                        input.readOnly = true;
+                    }
+                    fieldGroup.appendChild(input);
+                }
+                payloadContainer.appendChild(fieldGroup);
+            });
+        }
+        
+        function generateCommand() {
+            const protocol = protocolSelect.value;
+            const commandKey = commandSelect.value;
+            const commandId = parseInt(commandKey, 16);
+            if (isNaN(commandId)) {
+                outputEl.textContent = '错误: 请选择一个有效的命令。';
+                return;
+            }
+
+            const commandDef = commandDefs[commandKey];
+            let payloadBytes = [];
+
+            const packetType = parseInt(packetTypeSelect.value, 10);
+            if (isNaN(packetType)) {
+                outputEl.textContent = '错误: 请选择一个有效的包类型。';
+                return;
+            }
+
+            try {
+                if (commandDef.type === 'bitmask') {
+                    let byteValue = 0;
+                    commandDef.payload.forEach(field => {
+                        const el = document.getElementById(field.id);
+                        if (el.checked) {
+                            byteValue |= (1 << field.bit);
+                        }
+                    });
+                    payloadBytes.push(byteValue);
+                } else if (commandDef.type === 'nibble_array') {
+                    const nibbles = [];
+                    commandDef.payload.forEach(field => {
+                        const el = document.getElementById(field.id);
+                        nibbles.push(parseInt(el.value, 10));
+                    });
+                    for (let i = 0; i < nibbles.length; i += 2) {
+                        const byte = (nibbles[i] & 0x0F) | ((nibbles[i+1] & 0x0F) << 4);
+                        payloadBytes.push(byte);
+                    }
+                } else if (commandDef.type === 'bitfield_prompt') {
+                    const id = parseInt(document.getElementById('prompt_id').value, 10);
+                    const status = parseInt(document.getElementById('prompt_status').value, 10);
+                    // Payload is: 6 bits for ID, 2 bits for status
+                    const byte = ((id & 0x3F) << 2) | (status & 0x03);
+                    payloadBytes.push(byte);
+                } else {
+                    commandDef.payload.forEach(field => {
+                        const el = document.getElementById(field.id);
+                        if (field.type === 'enum' || field.type.includes('int')) {
+                            const value = parseInt(el.value, 10);
+                            if (isNaN(value)) throw new Error(`Invalid number for ${field.name}`);
+                            
+                            if (field.type === 'uint16') {
+                                payloadBytes.push((value >> 8) & 0xFF, value & 0xFF); // Big Endian
+                            } else { // uint8, sint8, enum
+                                payloadBytes.push(value & 0xFF);
+                            }
+                        } else if (field.type === 'string') {
+                            const textEncoder = new TextEncoder(); // UTF-8
+                            const strBytes = textEncoder.encode(el.value);
+                            payloadBytes.push(...strBytes);
+                        }
+                    });
+                }
+            } catch (e) {
+                outputEl.textContent = `错误: 生成载荷失败. ${e.message}`;
+                return;
+            }
+            
+            let headerBytes = [];
+            const vendorId = 0x2E50;
+            const featureId = 0x11;
+
+            const feat_pkt_cmd = ((featureId & 0x7F) << 9) | ((packetType & 0x03) << 7) | (commandId & 0x7F);
+
+            if (protocol === 'gatt') {
+                headerBytes.push((vendorId >> 8) & 0xFF, vendorId & 0xFF);
+                headerBytes.push((feat_pkt_cmd >> 8) & 0xFF, feat_pkt_cmd & 0xFF);
+            } else { // rfcomm
+                const sof = 0xFF;
+                const version = 4;
+                const payloadLength = payloadBytes.length;
+                const useLengthExtension = payloadLength > 255;
+                const flags = useLengthExtension ? 0b00000010 : 0b00000000;
+
+                headerBytes.push(sof, version, flags);
+                if (useLengthExtension) {
+                    headerBytes.push((payloadLength >> 8) & 0xFF, payloadLength & 0xFF);
+                } else {
+                    headerBytes.push(payloadLength & 0xFF);
+                }
+                headerBytes.push((vendorId >> 8) & 0xFF, vendorId & 0xFF);
+                headerBytes.push((feat_pkt_cmd >> 8) & 0xFF, feat_pkt_cmd & 0xFF);
+            }
+
+            const finalCommand = new Uint8Array([...headerBytes, ...payloadBytes]);
+            outputEl.textContent = toHexString(finalCommand);
+        }
+
+        // Event Listeners
+        commandSelect.addEventListener('change', (e) => generatePayloadUI(e.target.value));
+        generateBtn.addEventListener('click', generateCommand);
+
+        // Initial population
+        populateCommands();
+        generatePayloadUI(commandSelect.value);
+
+    </script>
+
+</body>
+</html>
