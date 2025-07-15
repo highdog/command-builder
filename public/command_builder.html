@@ -311,6 +311,50 @@
             white-space: pre-wrap;
             word-wrap: break-word;
         }
+        .editable-desc {
+            border: 1px dashed #ccc;
+            padding: 10px;
+            min-height: 100px;
+            margin-top: 10px;
+            background-color: #f9f9f9;
+        }
+        .save-btn {
+            background-color: #007aff;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            float: right;
+        }
+        .save-btn:hover {
+            background-color: #0056b3;
+        }
+        .doc-action-btn {
+            background-color: #007aff;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 5px 10px 0;
+            float: right;
+            font-size: 0.85rem;
+        }
+        .doc-action-btn.cancel {
+            background-color: #6c757d;
+        }
+        .doc-action-btn:hover {
+            opacity: 0.9;
+        }
+        .view-desc, .editable-desc {
+            clear: both;
+        }
+        .editable-desc {
+            border: 1px dashed #007aff;
+            background-color: #f8f9fa;
+        }
     </style>
 </head>
 <body>
@@ -361,6 +405,9 @@
             <div class="right-panel">
                 <div class="doc-header">
                     <h3>命令说明</h3>
+                    <div class="lang-switcher">
+                        <button id="lang-switch-btn" class="doc-action-btn" style="float: left; margin-right: auto;">切换语言</button>
+                    </div>
                 </div>
                 <div id="command-documentation" class="doc-content">
                     <p class="doc-placeholder">请在左侧选择一个命令以查看相关说明</p>
@@ -373,55 +420,176 @@
         // 获取命令文档数据
         let commandsData = {};
         let currentCommandId = null;
+        let userRole = ''; // To store user role
+
+        // Check user session
+        async function checkSession() {
+            try {
+                const response = await fetch('/api/session');
+                const session = await response.json();
+                if (session.loggedIn) {
+                    userRole = session.user.role;
+                    // Add admin link if user is admin
+                    if (userRole === 'admin') {
+                        const adminLink = document.createElement('a');
+                        adminLink.href = '/admin';
+                        adminLink.textContent = 'Admin';
+                        document.querySelector('.header-controls').appendChild(adminLink);
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking session:', error);
+            }
+        }
+
+        // Update description
+        async function updateDescription(commandId, lang, description) {
+            try {
+                const response = await fetch(`/api/commands/${commandId}/description`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ lang, description }),
+                });
+                if (response.ok) {
+                    alert('Description updated successfully!');
+                } else {
+                    const error = await response.json();
+                    alert(`Failed to update description: ${error.message}`);
+                }
+            } catch (error) {
+                console.error('Error updating description:', error);
+                alert('An error occurred while saving.');
+            }
+        }
+
+        let docState = {
+            commandDoc: null,
+            editMode: false,
+            currentLanguage: 'zh' // 'zh' or 'en'
+        };
 
         // 根据命令ID获取详细文档
         async function fetchCommandDocumentation(commandId) {
-            if (!commandId) return null;
-            try {
-                const response = await fetch(`/api/commands/${commandId}`);
-                if (response.ok) {
-                    return await response.json();
-                }
-                return null; // 如果API调用失败，则返回null
-            } catch (error) {
-                console.error('Failed to load command documentation:', error);
-                return null;
+            const docContainer = document.getElementById('command-documentation');
+            currentCommandId = commandId;
+            docState.editMode = false; // Reset edit mode on new command selection
+
+            if (!commandId) {
+                docState.commandDoc = null;
+                renderDocumentation();
+                return;
             }
+
+            docContainer.innerHTML = '<p>加载命令说明中...</p>';
+            docState.commandDoc = await fetch(`/api/commands/${commandId}`).then(res => res.ok ? res.json() : null);
+            renderDocumentation();
         }
 
-        // 显示命令文档在右侧栏
-        async function displayCommandDocumentation(commandId) {
+        // Render the entire documentation panel based on the current state
+        function renderDocumentation() {
             const docContainer = document.getElementById('command-documentation');
-            
-            if (!commandId) {
-                docContainer.innerHTML = '<p class="doc-placeholder">请在左侧选择一个命令以查看相关说明</p>';
-                return;
-            }
+            const { commandDoc, editMode, currentLanguage } = docState;
+            const langSwitchBtn = document.getElementById('lang-switch-btn');
 
-            // 显示加载状态
-            docContainer.innerHTML = '<p>加载命令说明中...</p>';
-
-            const commandDoc = await fetchCommandDocumentation(commandId);
-            
             if (!commandDoc) {
-                docContainer.innerHTML = '<p class="doc-placeholder">无法加载该命令的说明</p>';
+                docContainer.innerHTML = '<p class="doc-placeholder">请在左侧选择一个命令以查看相关说明</p>';
+                if(langSwitchBtn) langSwitchBtn.style.display = 'none';
                 return;
             }
-
-            // 使用 marked.js 解析并显示中英文描述
-            let html = `<h1>${commandDoc.name_en}</h1>`;
-            if (commandDoc.description_en) {
-                html += marked.parse(commandDoc.description_en);
-            }
             
-            if (commandDoc.name_zh || commandDoc.description_zh) {
+            if(langSwitchBtn) langSwitchBtn.style.display = 'block';
+
+            let html = '';
+
+            // Admin and language buttons
+            if (userRole === 'admin' && editMode) {
+                html += `
+                    <button id="save-doc-btn" class="doc-action-btn">保存</button>
+                    <button id="cancel-doc-btn" class="doc-action-btn cancel">取消</button>
+                `;
+                if(langSwitchBtn) langSwitchBtn.style.display = 'none'; // Hide lang switch in edit mode
+            } else {
+                if(langSwitchBtn) {
+                    langSwitchBtn.style.display = 'inline-block';
+                    langSwitchBtn.textContent = currentLanguage === 'zh' ? 'Switch to English' : '切换到中文';
+                }
+                if (userRole === 'admin') {
+                     html += `<button id="edit-doc-btn" class="doc-action-btn">编辑</button>`;
+                }
+            }
+
+            if (editMode && userRole === 'admin') {
+                // Edit Mode: show both languages
+                html += `<h1>${commandDoc.name_en}</h1>`;
+                html += `<div id="description-en-editor" class="editable-desc">${commandDoc.description_en || ''}</div>`;
                 html += '<hr>';
                 html += `<h1>${commandDoc.name_zh}</h1>`;
-                html += marked.parse(commandDoc.description_zh || '');
+                html += `<div id="description-zh-editor" class="editable-desc">${commandDoc.description_zh || ''}</div>`;
+            } else {
+                // View Mode: show only current language
+                if (currentLanguage === 'zh') {
+                    html += `<h1>${commandDoc.name_zh}</h1>`;
+                    html += `<div class="view-desc">${marked.parse(commandDoc.description_zh || '暂无中文说明。')}</div>`;
+                } else {
+                    html += `<h1>${commandDoc.name_en}</h1>`;
+                    html += `<div class="view-desc">${marked.parse(commandDoc.description_en || 'No English description available.')}</div>`;
+                }
+            }
+            
+            docContainer.innerHTML = html;
+            attachDocButtonListeners();
+        }
+
+        function attachDocButtonListeners() {
+            const editBtn = document.getElementById('edit-doc-btn');
+            if (editBtn) {
+                editBtn.addEventListener('click', () => {
+                    docState.editMode = true;
+                    renderDocumentation();
+                });
             }
 
-            docContainer.innerHTML = html;
+            const saveBtn = document.getElementById('save-doc-btn');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', async () => {
+                    const descEnEditor = document.getElementById('description-en-editor');
+                    const descZhEditor = document.getElementById('description-zh-editor');
+
+                    if (!descEnEditor || !descZhEditor) return;
+
+                    const descEn = descEnEditor.innerHTML;
+                    const descZh = descZhEditor.innerHTML;
+
+                    // Save both descriptions
+                    await Promise.all([
+                        updateDescription(currentCommandId, 'en', descEn),
+                        updateDescription(currentCommandId, 'zh', descZh)
+                    ]);
+                    
+                    // Update local state and re-render
+                    docState.commandDoc.description_en = descEn;
+                    docState.commandDoc.description_zh = descZh;
+                    docState.editMode = false;
+                    renderDocumentation();
+                });
+            }
+
+            const cancelBtn = document.getElementById('cancel-doc-btn');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', () => {
+                    docState.editMode = false;
+                    renderDocumentation(); // Re-render without saving changes
+                });
+            }
         }
+
+        // Separate listener for the main language switch button as it's always in the DOM
+        document.getElementById('lang-switch-btn').addEventListener('click', () => {
+            docState.currentLanguage = docState.currentLanguage === 'zh' ? 'en' : 'zh';
+            renderDocumentation();
+        });
 
         // 将十六进制命令键转换为命令ID
         function hexKeyToCommandId(hexKey) {
@@ -934,7 +1102,7 @@
             if (!commandId) {
                 currentCommandKey = '';
                 generatePayloadColumnsUI(null);
-                displayCommandDocumentation(null);
+                fetchCommandDocumentation(null);
                 return;
             }
 
@@ -944,13 +1112,18 @@
             currentCommandKey = hexMatch ? hexMatch[0] : '';
 
             generatePayloadColumnsUI(currentCommandKey);
-            displayCommandDocumentation(commandId); // Use DB ID for fetching docs
+            fetchCommandDocumentation(commandId); // Use DB ID for fetching docs
         });
         
         generateBtn.addEventListener('click', generateCommand);
 
         // Initial population
-        populateCommandsFromAPI();
+        async function initializePage() {
+            await checkSession();
+            await populateCommandsFromAPI();
+        }
+
+        initializePage();
 
     </script>
 

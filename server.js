@@ -211,6 +211,28 @@ app.delete('/api/users/:id', isAuthenticated, isAdmin, (req, res) => {
   });
 });
 
+app.patch('/api/commands/:id/description', isAuthenticated, isAdmin, (req, res) => {
+    const { lang, description } = req.body;
+    const { id } = req.params;
+
+    if (!['en', 'zh'].includes(lang)) {
+        return res.status(400).json({ message: 'Invalid language specified.' });
+    }
+
+    const column = lang === 'en' ? 'description_en' : 'description_zh';
+
+    db.run(`UPDATE commands SET ${column} = ? WHERE id = ?`, [description, id], function(err) {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        if (this.changes === 0) {
+            return res.status(404).json({ message: 'Command not found.' });
+        }
+        res.json({ message: 'Description updated successfully.' });
+    });
+});
+
+
 
 // --- Static File Serving and Routes ---
 app.use(express.static(path.join(__dirname, 'public'), {
