@@ -397,7 +397,7 @@
                     <!-- 载荷的分列显示将在这里动态生成 -->
                 </div>
 
-                <button id="generate-btn">生成命令</button>
+                
 
             </div>
 
@@ -802,7 +802,6 @@
         const commandSelect = document.getElementById('command-select');
         const payloadColumnsContainer = document.getElementById('payload-columns-container');
         const outputColumnsContainer = document.getElementById('output-columns-container');
-        const generateBtn = document.getElementById('generate-btn');
         
         let currentCommandKey = ''; // This will store the hex key, e.g., "0x00"
 
@@ -893,6 +892,7 @@
                             checkbox.type = 'checkbox';
                             checkbox.id = `${packetTypeName.toLowerCase()}_${field.id}`;
                             checkbox.dataset.bit = field.bit;
+                            checkbox.addEventListener('change', generateCommand); // Add listener
                             const label = document.createElement('label');
                             label.htmlFor = checkbox.id;
                             label.textContent = field.name;
@@ -913,6 +913,7 @@
             });
             
             payloadColumnsContainer.appendChild(rowsDiv);
+            generateCommand(); // Initial generation for the new command
         }
 
         function createFieldUI(field, fieldId) {
@@ -924,41 +925,44 @@
             label.textContent = field.name;
             fieldGroup.appendChild(label);
 
+            let inputElement;
+
             if (field.type === 'enum' || field.type === 'enum_nibble') {
-                const select = document.createElement('select');
-                select.id = fieldId;
+                inputElement = document.createElement('select');
                 Object.keys(field.values).forEach(name => {
                     const option = document.createElement('option');
                     option.value = field.values[name];
                     option.textContent = name;
-                    select.appendChild(option);
+                    inputElement.appendChild(option);
                 });
-                fieldGroup.appendChild(select);
             } else if (field.type === 'string') {
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.id = fieldId;
-                if (field.maxLength) input.maxLength = field.maxLength;
-                fieldGroup.appendChild(input);
+                inputElement = document.createElement('input');
+                inputElement.type = 'text';
+                if (field.maxLength) inputElement.maxLength = field.maxLength;
             } else if (field.type.includes('int')) {
-                const input = document.createElement('input');
-                input.type = 'number';
-                input.id = fieldId;
+                inputElement = document.createElement('input');
+                inputElement.type = 'number';
                 if (field.type === 'sint8') {
-                    input.min = -128;
-                    input.max = 127;
+                    inputElement.min = -128;
+                    inputElement.max = 127;
                 } else {
-                    input.min = 0;
+                    inputElement.min = 0;
                 }
                 if (field.defaultValue !== undefined) {
-                    input.value = field.defaultValue;
+                    inputElement.value = field.defaultValue;
                 }
                 if (field.readonly) {
-                    input.value = field.value;
-                    input.readOnly = true;
+                    inputElement.value = field.value;
+                    inputElement.readOnly = true;
                 }
-                fieldGroup.appendChild(input);
             }
+            
+            if (inputElement) {
+                inputElement.id = fieldId;
+                inputElement.addEventListener('change', generateCommand);
+                fieldGroup.appendChild(inputElement);
+            }
+            
             return fieldGroup;
         }
         
@@ -1115,7 +1119,7 @@
             fetchCommandDocumentation(commandId); // Use DB ID for fetching docs
         });
         
-        generateBtn.addEventListener('click', generateCommand);
+        protocolSelect.addEventListener('change', generateCommand);
 
         // Initial population
         async function initializePage() {
