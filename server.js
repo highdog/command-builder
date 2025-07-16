@@ -26,6 +26,34 @@ app.use(session({
   cookie: { secure: false }
 }));
 
+// --- ASYNC DB HELPERS ---
+function dbGet(query, params = []) {
+    return new Promise((resolve, reject) => {
+        db.get(query, params, (err, row) => {
+            if (err) return reject(err);
+            resolve(row);
+        });
+    });
+}
+
+function dbAll(query, params = []) {
+    return new Promise((resolve, reject) => {
+        db.all(query, params, (err, rows) => {
+            if (err) return reject(err);
+            resolve(rows);
+        });
+    });
+}
+
+function dbRun(query, params = []) {
+    return new Promise((resolve, reject) => {
+        db.run(query, params, function(err) {
+            if (err) return reject(err);
+            resolve(this);
+        });
+    });
+}
+
 // --- AUTH MIDDLEWARE ---
 
 function isAuthenticated(req, res, next) {
@@ -83,13 +111,13 @@ app.post('/logout', (req, res) => {
 // --- Command Documentation API (English only) ---
 
 app.get('/api/commands', isAuthenticated, (req, res) => {
-  const query = `SELECT category_en as category, id, name_en as name FROM commands ORDER BY category_en, name_en`;
+  const query = `SELECT category_en as category, id, name_en as name, hex_id FROM commands ORDER BY category_en, name_en`;
   db.all(query, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     const groupedCommands = rows.reduce((acc, row) => {
       const category = row.category;
       if (!acc[category]) acc[category] = [];
-      acc[category].push({ id: row.id, name: row.name });
+      acc[category].push({ id: row.id, name: row.name, hex_id: row.hex_id });
       return acc;
     }, {});
     res.json(groupedCommands);
@@ -123,6 +151,54 @@ app.get('/api/commands/:id', isAuthenticated, (req, res) => {
     else res.status(404).json({ message: 'Command not found' });
   });
 });
+
+app.get('/api/command-definitions/:hex_id', isAuthenticated, async (req, res) => {
+    const { hex_id } = req.params;
+    try {
+        // 1. Get command_id from hex_id
+        const command = await dbGet('SELECT id, name_en as name, type FROM commands WHERE hex_id = ?', [hex_id]);
+        if (!command) {
+            return res.status(404).json({ message: 'Command definition not found.' });
+        }
+        const commandId = command.id;
+
+        // 2. Get all packet types for this command
+        const packetTypes = await dbAll('SELECT id, name FROM packet_types WHERE command_id = ?', [commandId]);
+
+        const definition = {
+            name: command.name,
+            type: command.type, // e.g., bitmask, nibble_array
+            payloads: {}
+        };
+
+        // 3. For each packet type, get its fields
+        for (const packetType of packetTypes) {
+            const fields = await dbAll('SELECT id, field_name as id, display_name as name, type, default_value, is_readonly, bit_position, max_length FROM payload_fields WHERE packet_type_id = ? ORDER BY display_order', [packetType.id]);
+
+            // 4. For each field, get its enum values if it's an enum
+            for (const field of fields) {
+                if (field.type === 'enum' || field.type === 'enum_nibble') {
+                    const enums = await dbAll('SELECT name, value FROM enum_values WHERE field_id = ? ORDER BY display_order', [field.id]);
+                    field.values = enums.reduce((acc, cur) => {
+                        // Convert numeric strings back to numbers
+                        acc[cur.name] = isNaN(cur.value) ? cur.value : Number(cur.value);
+                        return acc;
+                    }, {});
+                }
+                // Clean up unnecessary properties
+                delete field.field_id; 
+            }
+            definition.payloads[packetType.name] = fields;
+        }
+        
+        res.json(definition);
+
+    } catch (error) {
+        console.error(`Failed to get command definition for ${hex_id}:`, error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 
 app.get('/api/document', isAuthenticated, (req, res) => {
   fs.readFile(path.join(__dirname, 'Mobile.md'), 'utf8', (err, data) => {
@@ -232,6 +308,86 @@ app.patch('/api/commands/:id/description', isAuthenticated, isAdmin, (req, res) 
     });
 });
 
+// --- Command Payload Editor APIs (Admins only) ---
+
+// Add a new payload field
+app.post('/api/payload-fields', isAuthenticated, isAdmin, async (req, res) => {
+    const { packet_type_id, field_name, display_name, type, display_order } = req.body;
+    try {
+        const result = await dbRun(
+            'INSERT INTO payload_fields (packet_type_id, field_name, display_name, type, display_order) VALUES (?, ?, ?, ?, ?)',
+            [packet_type_id, field_name, display_name, type, display_order]
+        );
+        res.status(201).json({ id: result.lastID });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Update a payload field
+app.put('/api/payload-fields/:id', isAuthenticated, isAdmin, async (req, res) => {
+    const { field_name, display_name, type, default_value, is_readonly, bit_position, max_length, display_order } = req.body;
+    try {
+        await dbRun(
+            'UPDATE payload_fields SET field_name = ?, display_name = ?, type = ?, default_value = ?, is_readonly = ?, bit_position = ?, max_length = ?, display_order = ? WHERE id = ?',
+            [field_name, display_name, type, default_value, is_readonly, bit_position, max_length, display_order, req.params.id]
+        );
+        res.json({ message: 'Field updated successfully.' });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Delete a payload field
+app.delete('/api/payload-fields/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+        // Also need to delete associated enum values
+        await dbRun('DELETE FROM enum_values WHERE field_id = ?', [req.params.id]);
+        await dbRun('DELETE FROM payload_fields WHERE id = ?', [req.params.id]);
+        res.json({ message: 'Field deleted successfully.' });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Add an enum value
+app.post('/api/enum-values', isAuthenticated, isAdmin, async (req, res) => {
+    const { field_id, name, value, display_order } = req.body;
+    try {
+        const result = await dbRun(
+            'INSERT INTO enum_values (field_id, name, value, display_order) VALUES (?, ?, ?, ?)',
+            [field_id, name, value, display_order]
+        );
+        res.status(201).json({ id: result.lastID });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Update an enum value
+app.put('/api/enum-values/:id', isAuthenticated, isAdmin, async (req, res) => {
+    const { name, value, display_order } = req.body;
+    try {
+        await dbRun(
+            'UPDATE enum_values SET name = ?, value = ?, display_order = ? WHERE id = ?',
+            [name, value, display_order, req.params.id]
+        );
+        res.json({ message: 'Enum value updated successfully.' });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Delete an enum value
+app.delete('/api/enum-values/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+        await dbRun('DELETE FROM enum_values WHERE id = ?', [req.params.id]);
+        res.json({ message: 'Enum value deleted successfully.' });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
 
 
 // --- Static File Serving and Routes ---
@@ -248,6 +404,7 @@ app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'public', 'log
 app.get('/', isAuthenticated, (req, res) => res.sendFile(path.join(__dirname, 'public', 'command_builder.html')));
 app.get('/documentation', isAuthenticated, (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/admin', isAuthenticated, isAdmin, (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/command-editor', isAuthenticated, isAdmin, (req, res) => res.sendFile(path.join(__dirname, 'public', 'command_editor.html')));
 
 // Start server
 app.listen(port, () => {

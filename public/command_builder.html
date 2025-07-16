@@ -7,1129 +7,233 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            background-color: transparent;
-            color: #333;
-        }
-        h1 {
-            color: #1a1a1a;
-            margin-bottom: 1.5rem;
-        }
-        .container {
-            background: transparent;
-            padding: 0;
-            border-radius: 0;
-            box-shadow: none;
-            max-width: none;
-            margin: 0;
-        }
-        
-        /* 两栏布局样式 - 左侧1/3，右侧2/3 */
-        .main-layout {
-            display: flex;
-            gap: 2rem;
-            align-items: flex-start;
-        }
-        
-        .left-panel {
-            flex: 1;
-            background-color: #f8f9fa;
-            padding: 1rem;
-            border-radius: 8px;
-            border: 1px solid #e9ecef;
-        }
-        
-        .right-panel {
-            flex: 4;
-            background-color: #fff;
-            height: fit-content;
-            max-height: 80vh;
-            overflow-y: auto;
-            position: sticky;
-            top: 1rem;
-            padding: 1rem;
-            border-radius: 8px;
-            border: 1px solid #e9ecef;
-        }
-        
-        .doc-header {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 1rem;
-            margin-bottom: 1rem;
-        }
-        
-        .doc-header h3 {
-            margin: 0;
-            flex-grow: 1;
-            font-size: 1.75rem;
-            color: #333;
-        }
-
-        .lang-switcher {
-            margin-left: auto;
-            display: flex;
-        }
-        
-        .doc-content {
-            margin-top: 1rem;
-        }
-        
-        .doc-placeholder {
-            color: #666;
-            font-style: italic;
-            text-align: center;
-            margin: 2rem 0;
-        }
-        
-        /* Documentation样式匹配 */
-        .doc-content h1, .doc-content h2, .doc-content h3 {
-            border-bottom: 1px solid #eee;
-            padding-bottom: 0.3em;
-            margin-top: 1.5em;
-        }
-        
-        .doc-content table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 1em 0;
-        }
-        
-        .doc-content th, .doc-content td {
-            border: 1px solid #ddd;
-            padding: 0.8em;
-            text-align: left;
-        }
-        
-        .doc-content th {
-            background-color: #f7f7f7;
-            font-weight: 600;
-        }
-        
-        .doc-content pre {
-            background-color: #f3f4f6;
-            padding: 1em;
-            border-radius: 6px;
-            overflow-x: auto;
-        }
-        
-        .doc-content code {
-            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
-            background-color: #f3f4f6;
-            padding: 0.2em 0.4em;
-            border-radius: 3px;
-        }
-        
-        .doc-content pre code {
-            padding: 0;
-            background-color: transparent;
-        }
-        
-        .doc-content blockquote {
-            border-left: 4px solid #ddd;
-            padding-left: 1em;
-            color: #666;
-            margin-left: 0;
-        }
-        
-        .doc-content ul {
-            padding-left: 1.5em;
-        }
-
-        /* 简化样式 */
-        .payload-row {
-            margin: 1rem 0;
-            padding: 1rem;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .payload-row h3 {
-            margin: 0 0 0.5rem 0;
-            font-size: 1rem;
-            font-weight: bold;
-        }
-
-        /* 响应式设计 */
-        @media (max-width: 768px) {
-            .main-layout {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            .right-panel {
-                position: static;
-                max-height: none;
-                margin-top: 1rem;
-            }
-            
-            .left-panel {
-                order: 1;
-            }
-            
-            .right-panel {
-                order: 2;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .main-layout {
-                gap: 0.5rem;
-            }
-            
-            .doc-content {
-                padding: 1rem;
-            }
-            
-            .right-panel {
-                margin-top: 0.5rem;
-            }
-        }
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        label {
-            display: block;
-            margin-bottom: .5rem;
-            font-weight: 600;
-        }
-        select, input[type="text"], input[type="number"] {
-            width: 100%;
-            padding: .8rem;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        #output {
-            background-color: #282c34;
-            color: #abb2bf;
-            padding: 1rem;
-            border-radius: 4px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            margin-top: 1.5rem;
-            font-family: 'Menlo', 'Consolas', monospace;
-        }
-        .option-group {
-            display: flex;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        .option-btn {
-            flex: 1;
-            padding: .8rem;
-            background-color: #fff;
-            border: 1px solid #007aff;
-            margin-left: -1px;
-            cursor: pointer;
-            text-align: center;
-            transition: background-color 0.2s, color 0.2s;
-            font-size: 0.9rem;
-            color: #007aff;
-        }
-        .option-btn:first-child {
-            margin-left: 0;
-            border-top-left-radius: 4px;
-            border-bottom-left-radius: 4px;
-        }
-        .option-btn:last-child {
-            border-top-right-radius: 4px;
-            border-bottom-right-radius: 4px;
-        }
-        .option-btn.active {
-            background-color: #007aff;
-            color: white;
-            border-color: #007aff;
-        }
-        .option-btn:hover:not(.active) {
-            background-color: #f0f7ff;
-        }
-        .form-group-checkbox {
-            display: flex;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-        .form-group-checkbox input {
-            width: auto;
-            margin-right: 10px;
-        }
-        .form-group-checkbox label {
-            margin-bottom: 0;
-            font-weight: normal;
-        }
-        .columns-container {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1.5rem;
-        }
-        .column {
-            flex: 1;
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            padding: 1rem;
-        }
-        .column h3 {
-            margin-top: 0;
-            margin-bottom: 1rem;
-            color: #495057;
-            font-size: 1.1rem;
-            border-bottom: 2px solid #007aff;
-            padding-bottom: 0.5rem;
-        }
-        .column.empty {
-            background: #f8f9fa;
-            color: #6c757d;
-            text-align: center;
-            padding: 2rem 1rem;
-        }
-        .output-column {
-            flex: 1;
-            background: #282c34;
-            color: #abb2bf;
-            border-radius: 6px;
-            padding: 1rem;
-            margin-top: 1rem;
-        }
-        .output-column h3 {
-            margin-top: 0;
-            margin-bottom: 1rem;
-            color: #61dafb;
-            font-size: 1.1rem;
-            border-bottom: 2px solid #61dafb;
-            padding-bottom: 0.5rem;
-        }
-        .output-column pre {
-            background: none;
-            color: inherit;
-            padding: 0;
-            margin: 0;
-            font-family: 'Menlo', 'Consolas', monospace;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        .editable-desc {
-            border: 1px dashed #ccc;
-            padding: 10px;
-            min-height: 100px;
-            margin-top: 10px;
-            background-color: #f9f9f9;
-        }
-        .save-btn {
-            background-color: #007aff;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 10px;
-            float: right;
-        }
-        .save-btn:hover {
-            background-color: #0056b3;
-        }
-        .doc-action-btn {
-            background-color: #007aff;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin: 0 5px 10px 0;
-            float: right;
-            font-size: 0.85rem;
-        }
-        .doc-action-btn.cancel {
-            background-color: #6c757d;
-        }
-        .doc-action-btn:hover {
-            opacity: 0.9;
-        }
-        .view-desc, .editable-desc {
-            clear: both;
-        }
-        .editable-desc {
-            border: 1px dashed #007aff;
-            background-color: #f8f9fa;
-        }
+        /* Using styles from the main style.css, but adding specific layout rules */
+        .main-layout { display: flex; gap: 2rem; align-items: flex-start; padding: 2rem; }
+        .left-panel { flex: 1; background-color: #f8f9fa; padding: 1.5rem; border-radius: 8px; border: 1px solid #e9ecef; }
+        .right-panel { flex: 2; position: sticky; top: 2rem; }
+        .doc-content { background-color: #fff; padding: 1.5rem; border-radius: 8px; border: 1px solid #e9ecef; max-height: 85vh; overflow-y: auto; }
+        .doc-placeholder { color: #6c757d; text-align: center; padding: 3rem 0; }
+        .editable-desc { border: 1px dashed #007bff; padding: 10px; min-height: 150px; margin-top: 10px; background-color: #f8f9fa; }
+        .doc-action-btn { margin-left: 10px; }
+        .lang-switcher { float: right; }
+        #payload-columns-container { margin-top: 2rem; }
     </style>
 </head>
 <body>
-    <header class="global-header">
-        <div class="header-left">
-            <div class="header-title">
-                <h1>蓝牙命令构建器</h1>
-            </div>
+
+  <header class="global-header">
+    <div class="header-left">
+      <div class="header-title">
+        <h1>蓝牙命令构建器</h1>
+      </div>
+    </div>
+    <div class="header-controls">
+      <a href="/">Command Builder</a>
+      <a href="/documentation">Documentation</a>
+      <a href="/admin" id="ui-admin-link" style="display: none;">Admin</a>
+    </div>
+  </header>
+
+  <div class="main-layout">
+    <!-- Left Panel: Builder -->
+    <div class="left-panel">
+        <h2>命令构建</h2>
+        <div class="form-group">
+            <label for="protocol-select">选择协议:</label>
+            <select id="protocol-select">
+                <option value="gatt">GATT over BLE</option>
+                <option value="rfcomm">RFCOMM</option>
+            </select>
         </div>
-        <div class="header-search">
-            <input type="search" id="global-search-box" placeholder="Search (not active on this page)">
+        <div class="form-group">
+            <label for="command-select">选择命令:</label>
+            <select id="command-select">
+                <option value="">-- 请先登录 --</option>
+            </select>
         </div>
-        <div class="header-controls">
-            <a href="/">Command Builder</a>
-            <a href="/documentation">Documentation</a>
-        </div>
-    </header>
-
-    <div class="container" style="padding-top: 2rem;">
-        
-        <div class="main-layout">
-            <!-- 左侧栏：命令构建器 -->
-            <div class="left-panel">
-                <div class="form-group">
-                    <label for="protocol-select">选择协议:</label>
-                    <select id="protocol-select">
-                        <option value="gatt">GATT over BLE</option>
-                        <option value="rfcomm">RFCOMM</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="command-select">选择命令:</label>
-                    <select id="command-select">
-                        <option value="">--请选择一个命令--</option>
-                    </select>
-                </div>
-
-                <div id="payload-columns-container">
-                    <!-- 载荷的分列显示将在这里动态生成 -->
-                </div>
-
-                
-
-            </div>
-
-            <!-- 右侧栏：文档展示 -->
-            <div class="right-panel">
-                <div class="doc-header">
-                    <h3>命令说明</h3>
-                    <div class="lang-switcher">
-                        <button id="lang-switch-btn" class="doc-action-btn" style="float: left; margin-right: auto;">切换语言</button>
-                    </div>
-                </div>
-                <div id="command-documentation" class="doc-content">
-                    <p class="doc-placeholder">请在左侧选择一个命令以查看相关说明</p>
-                </div>
-            </div>
+        <div id="payload-columns-container">
+            <!-- Payload fields will be generated here -->
         </div>
     </div>
 
-    <script>
-        // 获取命令文档数据
-        let commandsData = {};
-        let currentCommandId = null;
-        let userRole = ''; // To store user role
+    <!-- Right Panel: Documentation -->
+    <div class="right-panel">
+        <div id="command-documentation" class="doc-content">
+            <p class="doc-placeholder">请在左侧选择一个命令以查看其说明。</p>
+        </div>
+    </div>
+  </div>
 
-        // Check user session
-        async function checkSession() {
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- STATE ---
+        let currentUser = null;
+        let currentCommand = null;
+        let editMode = false;
+        let currentLanguage = 'zh';
+
+        // --- UI ELEMENTS ---
+        const adminLink = document.getElementById('ui-admin-link');
+        const commandSelect = document.getElementById('command-select');
+        const docContainer = document.getElementById('command-documentation');
+
+        // --- FUNCTIONS ---
+
+        const checkSession = async () => {
             try {
                 const response = await fetch('/api/session');
-                const session = await response.json();
-                if (session.loggedIn) {
-                    userRole = session.user.role;
-                    // Add admin link if user is admin
-                    if (userRole === 'admin') {
-                        const adminLink = document.createElement('a');
-                        adminLink.href = '/admin';
-                        adminLink.textContent = 'Admin';
-                        document.querySelector('.header-controls').appendChild(adminLink);
+                const data = await response.json();
+                if (data.loggedIn) {
+                    currentUser = data.user;
+                    if (currentUser.role === 'admin') {
+                        adminLink.style.display = 'inline-block';
                     }
+                } else {
+                    // If not logged in, redirect to login page
+                    window.location.href = '/login';
                 }
             } catch (error) {
-                console.error('Error checking session:', error);
+                console.error('Session check failed:', error);
+                // Also redirect if the API call fails
+                window.location.href = '/login';
             }
-        }
-
-        // Update description
-        async function updateDescription(commandId, lang, description) {
-            try {
-                const response = await fetch(`/api/commands/${commandId}/description`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ lang, description }),
-                });
-                if (response.ok) {
-                    alert('Description updated successfully!');
-                } else {
-                    const error = await response.json();
-                    alert(`Failed to update description: ${error.message}`);
-                }
-            } catch (error) {
-                console.error('Error updating description:', error);
-                alert('An error occurred while saving.');
-            }
-        }
-
-        let docState = {
-            commandDoc: null,
-            editMode: false,
-            currentLanguage: 'zh' // 'zh' or 'en'
         };
 
-        // 根据命令ID获取详细文档
-        async function fetchCommandDocumentation(commandId) {
-            const docContainer = document.getElementById('command-documentation');
-            currentCommandId = commandId;
-            docState.editMode = false; // Reset edit mode on new command selection
-
-            if (!commandId) {
-                docState.commandDoc = null;
-                renderDocumentation();
-                return;
-            }
-
-            docContainer.innerHTML = '<p>加载命令说明中...</p>';
-            docState.commandDoc = await fetch(`/api/commands/${commandId}`).then(res => res.ok ? res.json() : null);
-            renderDocumentation();
-        }
-
-        // Render the entire documentation panel based on the current state
-        function renderDocumentation() {
-            const docContainer = document.getElementById('command-documentation');
-            const { commandDoc, editMode, currentLanguage } = docState;
-            const langSwitchBtn = document.getElementById('lang-switch-btn');
-
-            if (!commandDoc) {
-                docContainer.innerHTML = '<p class="doc-placeholder">请在左侧选择一个命令以查看相关说明</p>';
-                if(langSwitchBtn) langSwitchBtn.style.display = 'none';
-                return;
-            }
-            
-            if(langSwitchBtn) langSwitchBtn.style.display = 'block';
-
-            let html = '';
-
-            // Admin and language buttons
-            if (userRole === 'admin' && editMode) {
-                html += `
-                    <button id="save-doc-btn" class="doc-action-btn">保存</button>
-                    <button id="cancel-doc-btn" class="doc-action-btn cancel">取消</button>
-                `;
-                if(langSwitchBtn) langSwitchBtn.style.display = 'none'; // Hide lang switch in edit mode
-            } else {
-                if(langSwitchBtn) {
-                    langSwitchBtn.style.display = 'inline-block';
-                    langSwitchBtn.textContent = currentLanguage === 'zh' ? 'Switch to English' : '切换到中文';
-                }
-                if (userRole === 'admin') {
-                     html += `<button id="edit-doc-btn" class="doc-action-btn">编辑</button>`;
-                }
-            }
-
-            if (editMode && userRole === 'admin') {
-                // Edit Mode: show both languages
-                html += `<h1>${commandDoc.name_en}</h1>`;
-                html += `<div id="description-en-editor" class="editable-desc">${commandDoc.description_en || ''}</div>`;
-                html += '<hr>';
-                html += `<h1>${commandDoc.name_zh}</h1>`;
-                html += `<div id="description-zh-editor" class="editable-desc">${commandDoc.description_zh || ''}</div>`;
-            } else {
-                // View Mode: show only current language
-                if (currentLanguage === 'zh') {
-                    html += `<h1>${commandDoc.name_zh}</h1>`;
-                    html += `<div class="view-desc">${marked.parse(commandDoc.description_zh || '暂无中文说明。')}</div>`;
-                } else {
-                    html += `<h1>${commandDoc.name_en}</h1>`;
-                    html += `<div class="view-desc">${marked.parse(commandDoc.description_en || 'No English description available.')}</div>`;
-                }
-            }
-            
-            docContainer.innerHTML = html;
-            attachDocButtonListeners();
-        }
-
-        function attachDocButtonListeners() {
-            const editBtn = document.getElementById('edit-doc-btn');
-            if (editBtn) {
-                editBtn.addEventListener('click', () => {
-                    docState.editMode = true;
-                    renderDocumentation();
-                });
-            }
-
-            const saveBtn = document.getElementById('save-doc-btn');
-            if (saveBtn) {
-                saveBtn.addEventListener('click', async () => {
-                    const descEnEditor = document.getElementById('description-en-editor');
-                    const descZhEditor = document.getElementById('description-zh-editor');
-
-                    if (!descEnEditor || !descZhEditor) return;
-
-                    const descEn = descEnEditor.innerHTML;
-                    const descZh = descZhEditor.innerHTML;
-
-                    // Save both descriptions
-                    await Promise.all([
-                        updateDescription(currentCommandId, 'en', descEn),
-                        updateDescription(currentCommandId, 'zh', descZh)
-                    ]);
-                    
-                    // Update local state and re-render
-                    docState.commandDoc.description_en = descEn;
-                    docState.commandDoc.description_zh = descZh;
-                    docState.editMode = false;
-                    renderDocumentation();
-                });
-            }
-
-            const cancelBtn = document.getElementById('cancel-doc-btn');
-            if (cancelBtn) {
-                cancelBtn.addEventListener('click', () => {
-                    docState.editMode = false;
-                    renderDocumentation(); // Re-render without saving changes
-                });
-            }
-        }
-
-        // Separate listener for the main language switch button as it's always in the DOM
-        document.getElementById('lang-switch-btn').addEventListener('click', () => {
-            docState.currentLanguage = docState.currentLanguage === 'zh' ? 'en' : 'zh';
-            renderDocumentation();
-        });
-
-        // 将十六进制命令键转换为命令ID
-        function hexKeyToCommandId(hexKey) {
-            // 从 "0x00" 格式中提取 "00"
-            return hexKey.replace('0x', '');
-        }
-
-        const commandPacketTypes = {
-            "0x00": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x19": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x01": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x02": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x03": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x06": ["COMMAND", "RESPONSE", "ERROR", "NOTIFICATION"],
-            "0x07": ["COMMAND", "RESPONSE", "ERROR", "NOTIFICATION"],
-            "0x08": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x09": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x0A": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x14": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x15": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x16": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x17": ["COMMAND", "RESPONSE", "ERROR", "NOTIFICATION"],
-            "0x41": ["COMMAND", "RESPONSE", "ERROR", "NOTIFICATION"],
-            "0x44": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x45": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x46": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x47": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x48": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x49": ["COMMAND", "RESPONSE", "ERROR", "NOTIFICATION"],
-            "0x4A": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x4B": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x4C": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x4D": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x4E": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x4F": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x59": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x5A": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x5B": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x5C": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x5E": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x5F": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x66": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x67": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x57": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x58": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x60": ["COMMAND", "RESPONSE", "ERROR", "NOTIFICATION"],
-            "0x61": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x30": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x31": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x32": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x33": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x34": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x35": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x36": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x37": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x38": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x62": ["COMMAND", "RESPONSE", "ERROR", "NOTIFICATION"],
-            "0x63": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x64": ["COMMAND", "RESPONSE", "ERROR", "NOTIFICATION"],
-            "0x65": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x68": ["COMMAND", "RESPONSE", "ERROR", "NOTIFICATION"],
-            "0x69": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x70": ["COMMAND", "RESPONSE", "ERROR", "NOTIFICATION"],
-            "0x71": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x72": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x73": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x7C": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x7D": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x7E": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x7F": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x5D": ["COMMAND", "RESPONSE", "ERROR"],
-            "0x20": ["COMMAND", "RESPONSE", "ERROR", "NOTIFICATION"],
-            "0x21": ["COMMAND", "RESPONSE", "ERROR"]
-        };
-
-        const packetTypeValues = {
-            "COMMAND": 0,
-            "NOTIFICATION": 1,
-            "RESPONSE": 2,
-            "ERROR": 3
-        };
-
-        const errorPayloadDef = [
-            { id: 'error_code', name: 'Error Code', type: 'enum', values: { 'NOT_SUPPORTED': 0x00, 'INVALID_PARAM': 0x01, 'INVALID_STATE': 0x02 } }
-        ];
-
-        const commandDefs = {
-            // Get Commands (mostly no payload for COMMAND)
-            '0x00': { 
-                name: '0x00 Get Device Type', 
-                payloads: {
-                    'COMMAND': [],
-                    'RESPONSE': [{ id: 'device_type', name: 'Device Type', type: 'enum', values: { 'VERIO_100': 0x00, 'VERIO_200': 0x01, 'VERIO_300': 0x02, 'AVENTHO_300': 0x03 } }],
-                    'ERROR': errorPayloadDef
-                }
-            },
-            '0x06': {
-                name: '0x06 Get Battery Level',
-                payloads: {
-                    'COMMAND': [],
-                    'RESPONSE': [
-                        { id: 'level_left', name: 'Left Earbud Level (0-100, 0xFF=offline)', type: 'uint8', defaultValue: 100 },
-                        { id: 'level_right', name: 'Right Earbud Level (0-100, 0xFF=offline)', type: 'uint8', defaultValue: 100 },
-                        { id: 'level_case', name: 'Case Level (0-100, 0xFF=offline)', type: 'uint8', defaultValue: 100 }
-                    ],
-                    'NOTIFICATION': 'same_as_response',
-                    'ERROR': errorPayloadDef
-                }
-            },
-            '0x08': { 
-                name: '0x08 Set Bluetooth Led Configurations', 
-                payloads: {
-                    'COMMAND': [{ id: 'led_config', name: 'Bluetooth LED', type: 'enum', values: { 'On': 0x00, 'Off': 0x01 } }],
-                    'RESPONSE': 'same_as_command',
-                    'ERROR': errorPayloadDef
-                }
-            },
-            // --- Fallback for other commands (old structure) ---
-            '0x19': { name: '0x19 Get Device MAC Address', payload: [] },
-            '0x02': { name: '0x02 Get Serial Number', payload: [] },
-            '0x03': { name: '0x03 Get Feature Version', payload: [] },
-            '0x07': { name: '0x07 Get Bluetooth Led Configurations', payload: [] },
-            '0x09': { name: '0x09 Get LE Configurations', payload: [] },
-            '0x14': { name: '0x14 Get Firmware Version', payload: [] },
-            '0x15': { name: '0x15 Get Earbuds Color', payload: [] },
-            '0x17': { name: '0x17 Get Peripheral States', payload: [] },
-            '0x41': { name: '0x41 Get Remaining Battery Time', payload: [] },
-            '0x44': { name: '0x44 Get Equalizer Mode', payload: [] },
-            '0x46': { name: '0x46 Get User Equalizer Configuration', payload: [] },
-            '0x49': { name: '0x49 Play Status', payload: [] },
-            '0x4A': { name: '0x4A Get Device Name', payload: [] },
-            '0x4C': { name: '0x4C Get Auto Shutdown Time', payload: [] },
-            '0x4E': { name: '0x4E Get Selected Voice Assistant Mode', payload: [] },
-            '0x59': { name: '0x59 Get Custom Keys', payload: [] },
-            '0x5B': { name: '0x5B Get Prompt Language', payload: [] },
-            '0x5E': { name: '0x5E Get Prompt Sound State', payload: [] },
-            '0x66': { name: '0x66 Get Enabled Voice Prompts', payload: [{ id: 'batch_index', name: 'Batch Index', type: 'uint8' }] },
-            '0x57': { name: '0x57 Get Voice Prompts Volume Level', payload: [] },
-            '0x60': { name: '0x60 Get ANC Mode', payload: [] },
-            '0x30': { name: '0x30 Get Non-Adaptive ANC Level', payload: [] },
-            '0x32': { name: '0x32 Get ANC Transparency Gain', payload: [] },
-            '0x34': { name: '0x34 Get ANC Wind Noise Detection Mode', payload: [] },
-            '0x36': { name: '0x36 Get Adaptive ANC Level', payload: [] },
-            '0x37': { name: '0x37 Get ANC On Mode', payload: [] },
-            '0x62': { name: '0x62 Get Low Latency Mode', payload: [] },
-            '0x64': { name: '0x64 Get Wearing Detection Configuration', payload: [] },
-            '0x68': { name: '0x68 Get LED Brightness', payload: [] },
-            '0x70': { name: '0x70 Get Sidetone Mode', payload: [] },
-            '0x72': { name: '0x72 Get Sidetone Gain', payload: [] },
-            '0x7C': { name: '0x7C Get Dolby Atmos Config', payload: [] },
-            '0x7E': { name: '0x7E Get Audio Codecs Configurations', payload: [] },
-            '0x20': { name: '0x20 Get Usage Statistics', payload: [] },
-            '0x01': { name: '0x01 Register Notification Listeners', payload: [{ id: 'feature', name: 'Feature ID', type: 'uint8', value: 0x11, readonly: true }] },
-            '0x5D': { name: '0x5D Factory Reset', payload: [] },
-            '0x21': { name: '0x21 Reset Usage Statistics', payload: [] },
-            '0x0A': { name: '0x0A Set LE Configurations', type: 'bitmask', payload: [
-                { id: 'google_fast_pair', name: 'Google Fast Pair', type: 'bool', bit: 0 },
-                { id: 'le_audio', name: 'LE Audio', type: 'bool', bit: 1 }
-            ]},
-            '0x16': { name: '0x16 Set Earbuds Color', payload: [{ id: 'color', name: 'Color', type: 'enum', values: { 'Color1': 0x00, 'Color2': 0x01, 'Color3': 0x02, 'Color4': 0x03 } }] },
-            '0x45': { name: '0x45 Set Equalizer Mode (v1)', payload: [{ id: 'eq_mode', name: 'Equalizer Mode', type: 'enum', values: { 'Off': 0x00, 'Rock': 0x01, 'Jazz': 0x02, 'Classical': 0x03, 'Pop': 0x04, 'User': 0x05, 'Bass Boost': 0x06, 'Smooth Treble': 0x07, 'Loudness': 0x08, 'Neutral': 0x09, 'Speech': 0x0A, 'Shooting': 0x0B, 'Battle Royal': 0x0C, 'Adventure': 0x0D, 'Racing': 0x0E, 'Strategy': 0x0F } }] },
-            '0x47': { name: '0x47 Set User Equalizer (v1, 5 bands)', payload: [
-                { id: 'band1', name: 'Band 1 Gain (-12 to 12)', type: 'sint8' },
-                { id: 'band2', name: 'Band 2 Gain (-12 to 12)', type: 'sint8' },
-                { id: 'band3', name: 'Band 3 Gain (-12 to 12)', type: 'sint8' },
-                { id: 'band4', name: 'Band 4 Gain (-12 to 12)', type: 'sint8' },
-                { id: 'band5', name: 'Band 5 Gain (-12 to 12)', type: 'sint8' }
-            ]},
-            '0x48': { name: '0x48 Trigger Media Button', payload: [{ id: 'media_button', name: 'Media Button', type: 'enum', values: { 'PLAY_PAUSE': 0x00, 'PREVIOUS_SONG': 0x01, 'NEXT_SONG': 0x02 } }] },
-            '0x4B': { name: '0x4B Set Device Name', payload: [{ id: 'device_name', name: 'Device Name (max 31 chars)', type: 'string', maxLength: 31 }] },
-            '0x4D': { name: '0x4D Set Auto Shutdown Time', payload: [{ id: 'shutdown_time', name: 'Shutdown Time (minutes, 0-360)', type: 'uint16' }] },
-            '0x4F': { name: '0x4F Set Selected Voice Assistant Mode', payload: [{ id: 'va_mode', name: 'Voice Assistant', type: 'enum', values: { 'DEFAULT': 0x00, 'NONE': 0x01 } }] },
-            '0x5A': { name: '0x5A Set Custom Keys (v1, Earbuds)', type: 'nibble_array', payload: [
-                { id: 'l_single', name: 'Left Single Tap', type: 'enum_nibble', values: { 'PLAY_PAUSE': 0x0, 'NONE': 0x1 } },
-                { id: 'l_long', name: 'Left Long Press', type: 'enum_nibble', values: { 'VOICE_ASSISTANT': 0x0, 'NONE': 0x1, 'VOLUME_UP': 0x2, 'VOLUME_DOWN': 0x3 } },
-                { id: 'l_double', name: 'Left Double Tap', type: 'enum_nibble', values: { 'NEXT_SONG': 0x0, 'PLAY_PAUSE': 0x1, 'PREVIOUS_SONG': 0x2, 'NONE': 0x3, 'VOICE_ASSISTANT': 0x4, 'SWITCH_ANC_MODE': 0x5 } },
-                { id: 'l_triple', name: 'Left Triple Tap', type: 'enum_nibble', values: { 'PREVIOUS_SONG': 0x0, 'PLAY_PAUSE': 0x1, 'NEXT_SONG': 0x2, 'NONE': 0x3, 'VOICE_ASSISTANT': 0x4, 'SWITCH_ANC_MODE': 0x5 } },
-                { id: 'r_single', name: 'Right Single Tap', type: 'enum_nibble', values: { 'PLAY_PAUSE': 0x0, 'NONE': 0x1 } },
-                { id: 'r_long', name: 'Right Long Press', type: 'enum_nibble', values: { 'VOICE_ASSISTANT': 0x0, 'NONE': 0x1, 'VOLUME_UP': 0x2, 'VOLUME_DOWN': 0x3 } },
-                { id: 'r_double', name: 'Right Double Tap', type: 'enum_nibble', values: { 'NEXT_SONG': 0x0, 'PLAY_PAUSE': 0x1, 'PREVIOUS_SONG': 0x2, 'NONE': 0x3, 'VOICE_ASSISTANT': 0x4, 'SWITCH_ANC_MODE': 0x5 } },
-                { id: 'r_triple', name: 'Right Triple Tap', type: 'enum_nibble', values: { 'PREVIOUS_SONG': 0x0, 'PLAY_PAUSE': 0x1, 'NEXT_SONG': 0x2, 'NONE': 0x3, 'VOICE_ASSISTANT': 0x4, 'SWITCH_ANC_MODE': 0x5 } }
-            ]},
-            '0x5C': { name: '0x5C Set Prompt Language', payload: [{ id: 'prompt_lang', name: 'Prompt Language', type: 'enum', values: { 'CHINESE': 0x01, 'ENGLISH': 0x02, 'GERMAN': 0x03 } }] },
-            '0x5F': { name: '0x5F Set Prompt Sound State', payload: [{ id: 'prompt_state', name: 'Prompt Sound', type: 'enum', values: { 'ON': 0x00, 'OFF': 0x01 } }] },
-            '0x67': { name: '0x67 Set Enabled Voice Prompts (v1, single)', type: 'bitfield_prompt', payload: [
-                { id: 'prompt_id', name: 'Prompt Type', type: 'enum', values: { 'POWER_OFF':0,'POWER_ON':1,'BATTERY_LOW':2,'ANC_ON':3,'PASS_THROUGH':4,'ANC_OFF':5,'PAIRING':6,'CONNECTED':7,'VOLUME_UP_MAX':8,'VOLUME_DOWN_MIN':9,'RINGTONE':10,'SINGLE_TAP':11,'DOUBLE_TAP':12,'TRIPLE_TAP':13,'EAR_CONNECTED':14,'DOUBLE_PRESS_AND_HOLD':15,'EAR_DISCONNECTED':16,'FOUR_TAP':17 } },
-                { id: 'prompt_status', name: 'Status', type: 'enum', values: { 'ON': 0, 'OFF': 1 } }
-            ]},
-            '0x58': { name: '0x58 Set Voice Prompts Volume Level (Headset)', payload: [{ id: 'volume', name: 'Volume Level', type: 'uint8' }] },
-            '0x61': { name: '0x61 Set ANC Mode', payload: [{ id: 'anc_mode', name: 'ANC Mode', type: 'enum', values: { 'OFF': 0x00, 'TRANSPARENCY': 0x01, 'ON': 0x02 } }] },
-            '0x31': { name: '0x31 Set Non-Adaptive ANC Level', payload: [{ id: 'anc_level', name: 'ANC Level', type: 'uint8' }] },
-            '0x33': { name: '0x33 Set ANC Transparency Gain', payload: [{ id: 'anc_gain', name: 'Transparency Gain', type: 'uint8' }] },
-            '0x35': { name: '0x35 Set ANC Wind Noise Detection Mode', payload: [{ id: 'wind_mode', name: 'Wind Noise Detection', type: 'enum', values: { 'OFF': 0, 'ON': 1 } }] },
-            '0x38': { name: '0x38 Set ANC On Mode', payload: [{ id: 'anc_on_mode', name: 'ANC On Mode', type: 'enum', values: { 'MODE_1': 0, 'MODE_2': 1 } }] },
-            '0x63': { name: '0x63 Set Low Latency Mode', payload: [{ id: 'll_mode', name: 'Low Latency Mode', type: 'enum', values: { 'OFF': 0, 'ON': 1 } }] },
-            '0x65': { name: '0x65 Set Wearing Detection Configuration', payload: [{ id: 'wear_detect', name: 'Wearing Detection', type: 'enum', values: { 'OFF': 0, 'ON': 1 } }] },
-            '0x69': { name: '0x69 Set LED Brightness', payload: [{ id: 'brightness', name: 'LED Brightness', type: 'uint8' }] },
-            '0x71': { name: '0x71 Set Sidetone Mode', payload: [{ id: 'sidetone_mode', name: 'Sidetone Mode', type: 'enum', values: { 'OFF': 0, 'ON': 1 } }] },
-            '0x73': { name: '0x73 Set Sidetone Gain', payload: [{ id: 'sidetone_gain', name: 'Sidetone Gain', type: 'uint8' }] },
-            '0x7D': { name: '0x7D Set Dolby Atmos Config', payload: [{ id: 'dolby_config', name: 'Dolby Atmos', type: 'enum', values: { 'OFF': 0, 'ON': 1 } }] },
-            '0x7F': { name: '0x7F Set Audio Codecs Configurations', type: 'bitmask', payload: [
-                { id: 'sbc', name: 'SBC', type: 'bool', bit: 0},
-                { id: 'aac', name: 'AAC', type: 'bool', bit: 1},
-                { id: 'aptx', name: 'aptX', type: 'bool', bit: 2},
-                { id: 'aptx_hd', name: 'aptX HD', type: 'bool', bit: 3}
-            ]},
-        };
-
-        const protocolSelect = document.getElementById('protocol-select');
-        const commandSelect = document.getElementById('command-select');
-        const payloadColumnsContainer = document.getElementById('payload-columns-container');
-        const outputColumnsContainer = document.getElementById('output-columns-container');
-        
-        let currentCommandKey = ''; // This will store the hex key, e.g., "0x00"
-
-        function toHexString(byteArray) {
-            return Array.from(byteArray, byte => ('0' + (byte & 0xFF).toString(16)).slice(-2)).join(' ').toUpperCase();
-        }
-
-        // Fetches commands from the API and populates the dropdown with categories
-        async function populateCommandsFromAPI() {
+        const populateCommands = async () => {
             try {
                 const response = await fetch('/api/commands');
                 if (!response.ok) throw new Error('Failed to fetch commands');
-                
                 const commandsByCat = await response.json();
                 
-                commandSelect.innerHTML = '<option value="">--请选择一个命令--</option>'; // Clear existing options
-
+                commandSelect.innerHTML = '<option value="">-- 请选择一个命令 --</option>';
                 for (const category in commandsByCat) {
                     const optgroup = document.createElement('optgroup');
                     optgroup.label = category;
-                    
                     commandsByCat[category].forEach(command => {
                         const option = document.createElement('option');
-                        option.value = command.id; // Use database ID as the value
-                        option.textContent = command.name; // Full name, e.g., "0x00 Get Device Type"
+                        option.value = command.id;
+                        option.textContent = command.name;
                         optgroup.appendChild(option);
                     });
-                    
                     commandSelect.appendChild(optgroup);
                 }
             } catch (error) {
-                console.error("Error populating commands from API:", error);
-                // Fallback to a simple message if API fails
-                commandSelect.innerHTML = '<option value="">--无法加载命令--</option>';
+                console.error(error);
+                commandSelect.innerHTML = '<option value="">-- 加载失败 --</option>';
             }
-        }
+        };
 
-        function generatePayloadColumnsUI(commandId) {
-            payloadColumnsContainer.innerHTML = '';
-            
-            if (!commandId) return;
-            
-            const commandDef = commandDefs[commandId];
-            if (!commandDef) return;
-            
-            const supportedPacketTypes = commandPacketTypes[commandId] || [];
-            
-            if (supportedPacketTypes.length === 0) {
-                payloadColumnsContainer.innerHTML = '<p style="text-align: center; color: #6c757d;">此命令没有定义包类型</p>';
-                return;
-            }
-            
-            // Create rows container instead of columns
-            const rowsDiv = document.createElement('div');
-            rowsDiv.className = 'payload-rows';
-            
-            supportedPacketTypes.forEach(packetTypeName => {
-                const row = document.createElement('div');
-                row.className = 'payload-row';
-                row.id = `payload-row-${packetTypeName.toLowerCase()}`;
-                
-                const title = document.createElement('h3');
-                title.textContent = `${packetTypeName} Payload`;
-                row.appendChild(title);
-                
-                let payloadDef;
-                if (commandDef.payloads) {
-                    payloadDef = commandDef.payloads[packetTypeName.toUpperCase()];
-                    
-                    // Handle aliases
-                    if (payloadDef === 'same_as_response') {
-                        payloadDef = commandDef.payloads['RESPONSE'];
-                    } else if (payloadDef === 'same_as_command') {
-                        payloadDef = commandDef.payloads['COMMAND'];
-                    }
-                } else if (packetTypeName.toUpperCase() === 'COMMAND' && commandDef.payload) {
-                    payloadDef = commandDef.payload;
-                }
-                
-                if (!payloadDef || payloadDef.length === 0) {
-                    // Do nothing, leave the section empty
-                } else {
-                    if (commandDef.type === 'bitmask' && packetTypeName.toUpperCase() === 'COMMAND') {
-                        payloadDef.forEach(field => {
-                            const fieldGroup = document.createElement('div');
-                            fieldGroup.className = 'form-group-checkbox';
-                            const checkbox = document.createElement('input');
-                            checkbox.type = 'checkbox';
-                            checkbox.id = `${packetTypeName.toLowerCase()}_${field.id}`;
-                            checkbox.dataset.bit = field.bit;
-                            checkbox.addEventListener('change', generateCommand); // Add listener
-                            const label = document.createElement('label');
-                            label.htmlFor = checkbox.id;
-                            label.textContent = field.name;
-                            fieldGroup.appendChild(checkbox);
-                            fieldGroup.appendChild(label);
-                            row.appendChild(fieldGroup);
-                        });
-                    } else {
-                        payloadDef.forEach(field => {
-                            const fieldId = `${packetTypeName.toLowerCase()}_${field.id}`;
-                            const fieldGroup = createFieldUI(field, fieldId);
-                            row.appendChild(fieldGroup);
-                        });
-                    }
-                }
-                
-                rowsDiv.appendChild(row);
-            });
-            
-            payloadColumnsContainer.appendChild(rowsDiv);
-            generateCommand(); // Initial generation for the new command
-        }
-
-        function createFieldUI(field, fieldId) {
-            const fieldGroup = document.createElement('div');
-            fieldGroup.className = 'form-group';
-
-            const label = document.createElement('label');
-            label.htmlFor = fieldId;
-            label.textContent = field.name;
-            fieldGroup.appendChild(label);
-
-            let inputElement;
-
-            if (field.type === 'enum' || field.type === 'enum_nibble') {
-                inputElement = document.createElement('select');
-                Object.keys(field.values).forEach(name => {
-                    const option = document.createElement('option');
-                    option.value = field.values[name];
-                    option.textContent = name;
-                    inputElement.appendChild(option);
-                });
-            } else if (field.type === 'string') {
-                inputElement = document.createElement('input');
-                inputElement.type = 'text';
-                if (field.maxLength) inputElement.maxLength = field.maxLength;
-            } else if (field.type.includes('int')) {
-                inputElement = document.createElement('input');
-                inputElement.type = 'number';
-                if (field.type === 'sint8') {
-                    inputElement.min = -128;
-                    inputElement.max = 127;
-                } else {
-                    inputElement.min = 0;
-                }
-                if (field.defaultValue !== undefined) {
-                    inputElement.value = field.defaultValue;
-                }
-                if (field.readonly) {
-                    inputElement.value = field.value;
-                    inputElement.readOnly = true;
-                }
-            }
-            
-            if (inputElement) {
-                inputElement.id = fieldId;
-                inputElement.addEventListener('change', generateCommand);
-                fieldGroup.appendChild(inputElement);
-            }
-            
-            return fieldGroup;
-        }
-        
-        function generateCommand() {
-            const protocol = protocolSelect.value;
-            
-            // Clear previous outputs from all rows
-            document.querySelectorAll('.generated-command').forEach(el => el.remove());
-
-            if (!currentCommandKey) {
-                alert('错误: 请选择一个有效的命令。');
-                return;
-            }
-            
-            const commandId = parseInt(currentCommandKey, 16);
-            if (isNaN(commandId)) {
-                alert('错误: 无效的命令ID。');
-                return;
-            }
-
-            const commandDef = commandDefs[currentCommandKey];
-            if (!commandDef) {
-                alert(`错误: 未找到命令定义 (${currentCommandKey})。`);
-                return;
-            }
-            
-            const supportedPacketTypes = commandPacketTypes[currentCommandKey];
-            if (!supportedPacketTypes) {
-                alert(`错误: 命令 ${currentCommandKey} 未定义支持的包类型。`);
-                return;
-            }
-
-            const vendorId = 0x2E50;
-            const featureId = 0x11;
-            
-            supportedPacketTypes.forEach(packetTypeName => {
-                const outputContainer = document.getElementById(`payload-row-${packetTypeName.toLowerCase()}`);
-                if (!outputContainer) return;
-
-                const pre = document.createElement('pre');
-                pre.className = 'generated-command'; // Add class for easy removal later
-                pre.style.backgroundColor = '#e9ecef';
-                pre.style.padding = '0.5rem';
-                pre.style.marginTop = '1rem';
-                pre.style.borderRadius = '4px';
-                pre.style.whiteSpace = 'pre-wrap';
-                pre.style.wordWrap = 'break-word';
-
-                try {
-                    const packetType = packetTypeValues[packetTypeName];
-                    let payloadBytes = [];
-                    
-                    let payloadDef;
-                    if (commandDef.payloads) {
-                        const def = commandDef.payloads[packetTypeName.toUpperCase()];
-                        if (def === 'same_as_response') {
-                            payloadDef = commandDef.payloads['RESPONSE'];
-                        } else if (def === 'same_as_command') {
-                            payloadDef = commandDef.payloads['COMMAND'];
-                        } else {
-                            payloadDef = def;
-                        }
-                    } else if (packetTypeName.toUpperCase() === 'COMMAND' && commandDef.payload) {
-                        payloadDef = commandDef.payload;
-                    }
-
-                    if (payloadDef) {
-                        if (commandDef.type === 'bitmask' && packetTypeName.toUpperCase() === 'COMMAND') {
-                            let byteValue = 0;
-                            payloadDef.forEach(field => {
-                                const el = document.getElementById(`${packetTypeName.toLowerCase()}_${field.id}`);
-                                if (el && el.checked) {
-                                    byteValue |= (1 << field.bit);
-                                }
-                            });
-                            payloadBytes.push(byteValue);
-                        } else {
-                            payloadDef.forEach(field => {
-                                const fieldId = `${packetTypeName.toLowerCase()}_${field.id}`;
-                                const el = document.getElementById(fieldId);
-                                if (!el) return;
-
-                                if (field.type === 'enum' || field.type.includes('int')) {
-                                    const value = parseInt(el.value, 10);
-                                    if (isNaN(value)) throw new Error(`Invalid number for ${field.name}`);
-                                    
-                                    if (field.type === 'uint16') {
-                                        payloadBytes.push((value >> 8) & 0xFF, value & 0xFF);
-                                    } else {
-                                        payloadBytes.push(value & 0xFF);
-                                    }
-                                } else if (field.type === 'string') {
-                                    const textEncoder = new TextEncoder();
-                                    const strBytes = textEncoder.encode(el.value);
-                                    payloadBytes.push(...strBytes);
-                                }
-                            });
-                        }
-                    }
-                    
-                    const feat_pkt_cmd = ((featureId & 0x7F) << 9) | ((packetType & 0x03) << 7) | (commandId & 0x7F);
-                    let headerBytes = [];
-
-                    if (protocol === 'gatt') {
-                        headerBytes.push((vendorId >> 8) & 0xFF, vendorId & 0xFF);
-                        headerBytes.push((feat_pkt_cmd >> 8) & 0xFF, feat_pkt_cmd & 0xFF);
-                    } else { // rfcomm
-                        const sof = 0xFF;
-                        const version = 4;
-                        const payloadLength = payloadBytes.length;
-                        const useLengthExtension = payloadLength > 255;
-                        const flags = useLengthExtension ? 0b00000010 : 0b00000000;
-
-                        headerBytes.push(sof, version, flags);
-                        if (useLengthExtension) {
-                            headerBytes.push((payloadLength >> 8) & 0xFF, payloadLength & 0xFF);
-                        } else {
-                            headerBytes.push(payloadLength & 0xFF);
-                        }
-                        headerBytes.push((vendorId >> 8) & 0xFF, vendorId & 0xFF);
-                        headerBytes.push((feat_pkt_cmd >> 8) & 0xFF, feat_pkt_cmd & 0xFF);
-                    }
-
-                    const finalCommand = new Uint8Array([...headerBytes, ...payloadBytes]);
-                    pre.textContent = toHexString(finalCommand);
-                    
-                } catch (e) {
-                    pre.textContent = `错误: 生成载荷失败\n${e.message}`;
-                    pre.style.color = '#dc3545';
-                }
-                
-                outputContainer.appendChild(pre);
-            });
-        }
-
-        // Event Listeners
-        commandSelect.addEventListener('change', (e) => {
-            const selectedOption = e.target.options[e.target.selectedIndex];
-            const commandId = selectedOption.value; // This is the database ID
-            
+        const fetchCommandDetails = async (commandId) => {
             if (!commandId) {
-                currentCommandKey = '';
-                generatePayloadColumnsUI(null);
-                fetchCommandDocumentation(null);
+                docContainer.innerHTML = '<p class="doc-placeholder">请在左侧选择一个命令以查看其说明。</p>';
+                currentCommand = null;
                 return;
             }
+            try {
+                const response = await fetch(`/api/commands/${commandId}`);
+                if (!response.ok) throw new Error('Failed to fetch command details');
+                currentCommand = await response.json();
+                renderDocumentation();
+            } catch (error) {
+                console.error(error);
+                docContainer.innerHTML = '<p class="doc-placeholder" style="color: red;">无法加载命令详情。</p>';
+            }
+        };
 
-            // Extract hex key from the text content (e.g., "0x00 Get Device Type" -> "0x00")
-            const commandName = selectedOption.textContent;
-            const hexMatch = commandName.match(/^0x[0-9a-fA-F]+/);
-            currentCommandKey = hexMatch ? hexMatch[0] : '';
+        const renderDocumentation = () => {
+            if (!currentCommand) return;
 
-            generatePayloadColumnsUI(currentCommandKey);
-            fetchCommandDocumentation(commandId); // Use DB ID for fetching docs
-        });
+            let headerControls = '';
+            if (currentUser?.role === 'admin') {
+                if (editMode) {
+                    headerControls = `
+                        <button id="save-btn" class="button">保存</button>
+                        <button id="cancel-btn" class="button">取消</button>
+                    `;
+                } else {
+                    headerControls = `<button id="edit-btn" class="button">编辑</button>`;
+                }
+            }
+
+            let body = '';
+            if (editMode) {
+                body = `
+                    <h3>编辑英文文档</h3>
+                    <div id="desc-en-editor" class="editable-desc" contenteditable="true">${currentCommand.description_en || ''}</div>
+                    <hr style="margin: 2rem 0;">
+                    <h3>编辑中文文档</h3>
+                    <div id="desc-zh-editor" class="editable-desc" contenteditable="true">${currentCommand.description_zh || ''}</div>
+                `;
+            } else {
+                const desc = (currentLanguage === 'zh') 
+                    ? (currentCommand.description_zh || '暂无中文说明。') 
+                    : (currentCommand.description_en || 'No English description available.');
+                body = marked.parse(desc);
+            }
+
+            const langSwitch = `<button id="lang-switch-btn" class="button lang-switcher">${currentLanguage === 'zh' ? 'Switch to English' : '切换到中文'}</button>`;
+            const title = (currentLanguage === 'zh') ? currentCommand.name_zh : currentCommand.name_en;
+
+            docContainer.innerHTML = `
+                <div style="overflow: auto;">
+                    ${editMode ? '' : langSwitch}
+                    ${headerControls}
+                </div>
+                <h2 style="clear: both;">${title}</h2>
+                <div>${body}</div>
+            `;
+        };
         
-        protocolSelect.addEventListener('change', generateCommand);
+        const updateDescription = async (lang, description) => {
+            // Placeholder for the actual update logic
+            console.log(`Saving ${lang} description for command ${currentCommand.id}: ${description}`);
+            // In a real scenario, you would have a fetch call here:
+            // await fetch(`/api/commands/${currentCommand.id}/description`, { ... });
+        };
 
-        // Initial population
-        async function initializePage() {
+        // --- EVENT LISTENERS ---
+        commandSelect.addEventListener('change', (e) => fetchCommandDetails(e.target.value));
+
+        docContainer.addEventListener('click', async (e) => {
+            if (e.target.id === 'edit-btn') {
+                editMode = true;
+                renderDocumentation();
+            }
+            if (e.target.id === 'cancel-btn') {
+                editMode = false;
+                renderDocumentation();
+            }
+            if (e.target.id === 'lang-switch-btn') {
+                currentLanguage = (currentLanguage === 'zh') ? 'en' : 'zh';
+                renderDocumentation();
+            }
+            if (e.target.id === 'save-btn') {
+                const descEn = document.getElementById('desc-en-editor').innerHTML;
+                const descZh = document.getElementById('desc-zh-editor').innerHTML;
+                
+                // Here you would call the API to save the data
+                await updateDescription('en', descEn);
+                await updateDescription('zh', descZh);
+
+                alert('保存成功！（占位符）');
+                
+                // Refresh local data and exit edit mode
+                currentCommand.description_en = descEn;
+                currentCommand.description_zh = descZh;
+                editMode = false;
+                renderDocumentation();
+            }
+        });
+
+        // --- INITIALIZATION ---
+        const init = async () => {
             await checkSession();
-            await populateCommandsFromAPI();
-        }
+            // Only populate commands if the user is logged in (which checkSession ensures)
+            populateCommands();
+        };
 
-        initializePage();
-
-    </script>
-
+        init();
+    });
+  </script>
 </body>
 </html>
