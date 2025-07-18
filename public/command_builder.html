@@ -74,7 +74,6 @@
         // --- STATE ---
         let currentUser = null;
         let currentCommand = null;
-        let currentCommandDefinition = null;
         let allCommands = {};
 
         // --- UI ELEMENTS ---
@@ -88,7 +87,141 @@
         const docContainer = document.getElementById('command-display-container');
         const protocolExampleEl = document.getElementById('protocol-example');
 
-        // --- CORE FUNCTIONS ---
+        // --- REFACTORED: Custom Command Handlers ---
+        const customCommandHandlers = {
+            '0x00': {
+                render: function() {
+                    let html = `
+                        <div class="form-group">
+                            <label for="field-packet-type">数据包类型:</label>
+                            <select id="field-packet-type" class="payload-input">
+                                <option value="0">COMMAND (get)</option>
+                                <option value="2" selected>RESPONSE (device reply)</option>
+                            </select>
+                        </div>
+                        <div id="response-options-0x00">
+                            <div class="form-group">
+                                <label for="field-device-type">设备型号:</label>
+                                <select id="field-device-type" class="payload-input">
+                                    <option value="0x00">VERIO_100</option>
+                                    <option value="0x01">VERIO_200</option>
+                                    <option value="0x02">VERIO_300</option>
+                                    <option value="0x03">AVENTHO_300</option>
+                                </select>
+                            </div>
+                        </div>
+                    `;
+                    payloadBuilderContainer.innerHTML = html;
+                    this.attachListeners();
+                },
+                attachListeners: function() {
+                    document.getElementById('field-packet-type').addEventListener('change', (e) => {
+                        const showResponseOptions = e.target.value === '2';
+                        document.getElementById('response-options-0x00').style.display = showResponseOptions ? 'block' : 'none';
+                        generateOutput();
+                    });
+                },
+                getPayload: function() {
+                    const packetType = this.getPacketType();
+                    if (packetType === 0) { // COMMAND
+                        return [];
+                    } else { // RESPONSE
+                        const deviceType = parseInt(document.getElementById('field-device-type').value, 16);
+                        return [deviceType];
+                    }
+                },
+                getPacketType: function() {
+                    return parseInt(document.getElementById('field-packet-type').value, 10);
+                }
+            },
+            '0x41': {
+                render: function() {
+                    let html = `
+                        <div class="form-group">
+                            <label>数据包类型: RESPONSE</label>
+                        </div>
+                        <div class="form-group">
+                            <label for="field-product-type">产品类型:</label>
+                            <select id="field-product-type" class="payload-input">
+                                <option value="earbuds">Earbuds</option>
+                                <option value="headset">Headset</option>
+                            </select>
+                        </div>
+                        <div id="earbuds-options">
+                            <fieldset>
+                                <legend>Left Earbud</legend>
+                                <input type="checkbox" id="left-offline"> <label for="left-offline">Offline (0xFF)</label><br>
+                                <label for="left-hours">Hours:</label>
+                                <input type="number" id="left-hours" min="0" max="254" value="7" style="width: 60px;">
+                                <label for="left-minutes">Minutes:</label>
+                                <input type="number" id="left-minutes" min="0" max="59" value="30" style="width: 60px;">
+                            </fieldset>
+                            <fieldset>
+                                <legend>Right Earbud</legend>
+                                <input type="checkbox" id="right-offline"> <label for="right-offline">Offline (0xFF)</label><br>
+                                <label for="right-hours">Hours:</label>
+                                <input type="number" id="right-hours" min="0" max="254" value="7" style="width: 60px;">
+                                <label for="right-minutes">Minutes:</label>
+                                <input type="number" id="right-minutes" min="0" max="59" value="0" style="width: 60px;">
+                            </fieldset>
+                        </div>
+                        <div id="headset-options" style="display:none;">
+                            <fieldset>
+                                <legend>Headset</legend>
+                                <label for="headset-hours">Hours:</label>
+                                <input type="number" id="headset-hours" min="0" max="254" value="10" style="width: 60px;">
+                                <label for="headset-minutes">Minutes:</label>
+                                <input type="number" id="headset-minutes" min="0" max="59" value="0" style="width: 60px;">
+                            </fieldset>
+                        </div>
+                    `;
+                    payloadBuilderContainer.innerHTML = html;
+                    this.attachListeners();
+                },
+                attachListeners: function() {
+                    document.getElementById('field-product-type').addEventListener('change', (e) => {
+                        document.getElementById('earbuds-options').style.display = e.target.value === 'earbuds' ? 'block' : 'none';
+                        document.getElementById('headset-options').style.display = e.target.value === 'headset' ? 'block' : 'none';
+                        generateOutput();
+                    });
+                    ['left', 'right'].forEach(side => {
+                        const offlineCheckbox = document.getElementById(`${side}-offline`);
+                        const hoursInput = document.getElementById(`${side}-hours`);
+                        const minutesInput = document.getElementById(`${side}-minutes`);
+                        offlineCheckbox.addEventListener('change', (e) => {
+                            hoursInput.disabled = e.target.checked;
+                            minutesInput.disabled = e.target.checked;
+                            generateOutput();
+                        });
+                    });
+                },
+                getPayload: function() {
+                    const payload = [];
+                    const productType = document.getElementById('field-product-type').value;
+                    if (productType === 'earbuds') {
+                        ['left', 'right'].forEach(side => {
+                            if (document.getElementById(`${side}-offline`).checked) {
+                                payload.push(0xFF, 0xFF);
+                            } else {
+                                const hours = parseInt(document.getElementById(`${side}-hours`).value) || 0;
+                                const minutes = parseInt(document.getElementById(`${side}-minutes`).value) || 0;
+                                payload.push(hours, minutes);
+                            }
+                        });
+                    } else { // headset
+                        const hours = parseInt(document.getElementById('headset-hours').value) || 0;
+                        const minutes = parseInt(document.getElementById('headset-minutes').value) || 0;
+                        payload.push(hours, minutes);
+                    }
+                    return payload;
+                },
+                getPacketType: function() {
+                    return 2; // This command is always a RESPONSE
+                }
+            }
+        };
+
+        // --- CORE FUNCTIONS (Now Refactored) ---
 
         const checkSession = async () => {
             try {
@@ -127,9 +260,8 @@
         const fetchCommandDetails = async (commandId) => {
             payloadBuilderContainer.innerHTML = '';
             outputContainer.style.display = 'none';
-            docContainer.innerHTML = '<p>���载中...</p>';
+            docContainer.innerHTML = '<p>加载中...</p>';
             currentCommand = null;
-            currentCommandDefinition = null;
 
             if (!commandId) {
                 docContainer.innerHTML = '<p>请从左侧选择一个命令以查看其文档。</p>';
@@ -144,23 +276,11 @@
                 
                 docContainer.innerHTML = marked.parse(currentCommand.description_en || '暂无说明。');
 
-                // This is the new special handling section
-                if (currentCommand.hex_id === '0x41') {
-                    renderPayloadBuilderFor0x41();
+                const handler = customCommandHandlers[currentCommand.hex_id];
+                if (handler) {
+                    handler.render();
                 } else {
-                    // Fallback to existing logic for other commands
-                    const hexId = currentCommand.hex_id;
-                    if (hexId && hexId !== 'null') {
-                        const defResponse = await fetch(`/api/command-definitions/${hexId}`);
-                        if (defResponse.ok) {
-                            currentCommandDefinition = await defResponse.json();
-                            renderPayloadBuilderGeneric();
-                        } else {
-                            payloadBuilderContainer.innerHTML = `<p>无法加载此命令的构造蓝图 (API 错误: ${defResponse.status})。</p>`;
-                        }
-                    } else {
-                        payloadBuilderContainer.innerHTML = '<p>此条目仅为文档，无需构建命令。</p>';
-                    }
+                    payloadBuilderContainer.innerHTML = '<p>此命令暂无自定义构建器。</p>';
                 }
             } catch (error) {
                 console.error(error);
@@ -179,8 +299,6 @@
             }
         };
 
-        // --- UI RENDERING ---
-
         const renderCommandSelect = () => {
             commandSelect.innerHTML = '<option value="">-- 请选择一个命令 --</option>';
             for (const category in allCommands) {
@@ -196,88 +314,6 @@
             }
         };
 
-        const renderPayloadBuilderFor0x41 = () => {
-            let html = `
-                <div class="form-group">
-                    <label for="field-product-type">产品类型:</label>
-                    <select id="field-product-type" class="payload-input">
-                        <option value="earbuds">Earbuds</option>
-                        <option value="headset">Headset</option>
-                    </select>
-                </div>
-                <div id="earbuds-options">
-                    <fieldset>
-                        <legend>Left Earbud</legend>
-                        <input type="checkbox" id="left-offline"> <label for="left-offline">Offline (0xFF)</label><br>
-                        <label for="left-hours">Hours:</label>
-                        <input type="number" id="left-hours" min="0" max="254" value="7" style="width: 60px;">
-                        <label for="left-minutes">Minutes:</label>
-                        <input type="number" id="left-minutes" min="0" max="59" value="30" style="width: 60px;">
-                    </fieldset>
-                    <fieldset>
-                        <legend>Right Earbud</legend>
-                        <input type="checkbox" id="right-offline"> <label for="right-offline">Offline (0xFF)</label><br>
-                        <label for="right-hours">Hours:</label>
-                        <input type="number" id="right-hours" min="0" max="254" value="7" style="width: 60px;">
-                        <label for="right-minutes">Minutes:</label>
-                        <input type="number" id="right-minutes" min="0" max="59" value="0" style="width: 60px;">
-                    </fieldset>
-                </div>
-                <div id="headset-options" style="display:none;">
-                    <fieldset>
-                        <legend>Headset</legend>
-                        <label for="headset-hours">Hours:</label>
-                        <input type="number" id="headset-hours" min="0" max="254" value="10" style="width: 60px;">
-                        <label for="headset-minutes">Minutes:</label>
-                        <input type="number" id="headset-minutes" min="0" max="59" value="0" style="width: 60px;">
-                    </fieldset>
-                </div>
-            `;
-            payloadBuilderContainer.innerHTML = html;
-
-            // Add event listeners for interactivity
-            document.getElementById('field-product-type').addEventListener('change', (e) => {
-                document.getElementById('earbuds-options').style.display = e.target.value === 'earbuds' ? 'block' : 'none';
-                document.getElementById('headset-options').style.display = e.target.value === 'headset' ? 'block' : 'none';
-                generateOutput();
-            });
-            ['left', 'right'].forEach(side => {
-                const offlineCheckbox = document.getElementById(`${side}-offline`);
-                const hoursInput = document.getElementById(`${side}-hours`);
-                const minutesInput = document.getElementById(`${side}-minutes`);
-                offlineCheckbox.addEventListener('change', (e) => {
-                    hoursInput.disabled = e.target.checked;
-                    minutesInput.disabled = e.target.checked;
-                    generateOutput();
-                });
-            });
-        };
-
-        const renderPayloadBuilderGeneric = () => {
-            if (!currentCommandDefinition || !currentCommandDefinition.payloads || !currentCommandDefinition.payloads.COMMAND) {
-                payloadBuilderContainer.innerHTML = '<p>此命令无需构建 (无 Payload 定义)。</p>';
-                return;
-            }
-            const commandFields = currentCommandDefinition.payloads.COMMAND;
-            let html = '';
-            commandFields.forEach(field => {
-                html += '<div class="form-group">';
-                html += `<label for="field-${field.id}">${field.name}</label>`;
-                switch(field.type) {
-                    case 'enum':
-                        html += `<select id="field-${field.id}" class="payload-input" data-field-type="enum">`;
-                        for (const key in field.values) { html += `<option value="${field.values[key]}">${key}</option>`; }
-                        html += '</select>';
-                        break;
-                    // ... other generic types
-                    default:
-                         payloadBuilderContainer.innerHTML = '<p>此命令无需构建 (数据结构不匹配)。</p>';
-                }
-                html += '</div>';
-            });
-            payloadBuilderContainer.innerHTML = html;
-        };
-
         const generateOutput = () => {
             if (!currentCommand || !currentCommand.hex_id) {
                 outputEl.textContent = "请先选择一个有效命令。";
@@ -288,38 +324,23 @@
             const protocol = protocolSelect.value;
             const commandId = parseInt(currentCommand.hex_id, 16);
             let payload = [];
+            let packetType = 0; // Default to COMMAND
 
-            // --- Payload Generation ---
-            if (currentCommand.hex_id === '0x41') {
-                const productType = document.getElementById('field-product-type').value;
-                if (productType === 'earbuds') {
-                    ['left', 'right'].forEach(side => {
-                        if (document.getElementById(`${side}-offline`).checked) {
-                            payload.push(0xFF, 0xFF);
-                        } else {
-                            const hours = parseInt(document.getElementById(`${side}-hours`).value) || 0;
-                            const minutes = parseInt(document.getElementById(`${side}-minutes`).value) || 0;
-                            payload.push(hours, minutes);
-                        }
-                    });
-                } else { // headset
-                    const hours = parseInt(document.getElementById('headset-hours').value) || 0;
-                    const minutes = parseInt(document.getElementById('headset-minutes').value) || 0;
-                    payload.push(hours, minutes);
+            const handler = customCommandHandlers[currentCommand.hex_id];
+            if (handler) {
+                payload = handler.getPayload();
+                if (typeof handler.getPacketType === 'function') {
+                    packetType = handler.getPacketType();
                 }
             }
-            // Future 'else if' blocks for other custom commands can go here.
 
-            // --- Header and Final Assembly ---
             let commandBytes = [];
             if (protocol === 'gatt') {
                 const VENDOR_ID = 0x2E50;
                 const FEATURE_ID = 0x11;
-                // NOTE: We are building a RESPONSE/NOTIFICATION payload as per the user request context
-                const PACKET_TYPE = 0x02; // 0x02 for RESPONSE
 
                 const featureIdPart = (FEATURE_ID & 0x7F) << 9;
-                const packetTypePart = (PACKET_TYPE & 0x03) << 7;
+                const packetTypePart = (packetType & 0x03) << 7;
                 const commandIdPart = commandId & 0x7F;
                 const combinedIds = featureIdPart | packetTypePart | commandIdPart;
 
@@ -332,14 +353,13 @@
             } else if (protocol === 'rfcomm') {
                 const SOF = 0xFF;
                 const VERSION = 0x04;
-                const FLAGS = 0x00; // No checksum, no length extension
-                const PAYLOAD_LENGTH = payload.length; // DYNAMICALLY SET
+                const FLAGS = 0x00;
+                const PAYLOAD_LENGTH = payload.length;
                 const VENDOR_ID = 0x2E50;
                 const FEATURE_ID = 0x11;
-                const PACKET_TYPE = 0x02; // 0x02 for RESPONSE
 
                 const featureIdPart = (FEATURE_ID & 0x7F) << 9;
-                const packetTypePart = (PACKET_TYPE & 0x03) << 7;
+                const packetTypePart = (packetType & 0x03) << 7;
                 const commandIdPart = commandId & 0x7F;
                 const combinedIds = featureIdPart | packetTypePart | commandIdPart;
                 
