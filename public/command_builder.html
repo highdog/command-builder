@@ -93,16 +93,16 @@
                 render: function() {
                     let html = `
                         <div class="form-group">
-                            <label for="field-packet-type">数据包类型:</label>
-                            <select id="field-packet-type" class="payload-input">
+                            <label for="field-packet-type-0x00">数据包类型:</label>
+                            <select id="field-packet-type-0x00" class="payload-input">
                                 <option value="0">COMMAND (get)</option>
                                 <option value="2" selected>RESPONSE (device reply)</option>
                             </select>
                         </div>
                         <div id="response-options-0x00">
                             <div class="form-group">
-                                <label for="field-device-type">设备型号:</label>
-                                <select id="field-device-type" class="payload-input">
+                                <label for="field-device-type-0x00">设备型号:</label>
+                                <select id="field-device-type-0x00" class="payload-input">
                                     <option value="0x00">VERIO_100</option>
                                     <option value="0x01">VERIO_200</option>
                                     <option value="0x02">VERIO_300</option>
@@ -115,23 +115,108 @@
                     this.attachListeners();
                 },
                 attachListeners: function() {
-                    document.getElementById('field-packet-type').addEventListener('change', (e) => {
+                    document.getElementById('field-packet-type-0x00').addEventListener('change', (e) => {
                         const showResponseOptions = e.target.value === '2';
                         document.getElementById('response-options-0x00').style.display = showResponseOptions ? 'block' : 'none';
                         generateOutput();
                     });
                 },
                 getPayload: function() {
-                    const packetType = this.getPacketType();
-                    if (packetType === 0) { // COMMAND
-                        return [];
-                    } else { // RESPONSE
-                        const deviceType = parseInt(document.getElementById('field-device-type').value, 16);
-                        return [deviceType];
-                    }
+                    if (this.getPacketType() === 0) return [];
+                    const deviceType = parseInt(document.getElementById('field-device-type-0x00').value, 16);
+                    return [deviceType];
                 },
                 getPacketType: function() {
-                    return parseInt(document.getElementById('field-packet-type').value, 10);
+                    return parseInt(document.getElementById('field-packet-type-0x00').value, 10);
+                }
+            },
+            '0x02': {
+                stringToPaddedBytes: function(str, length) {
+                    const encoder = new TextEncoder();
+                    const encoded = encoder.encode(str);
+                    const padded = new Uint8Array(length);
+                    padded.set(encoded.slice(0, length));
+                    return Array.from(padded);
+                },
+                render: function() {
+                    let html = `
+                        <div class="form-group">
+                            <label for="field-packet-type-0x02">数据包类型:</label>
+                            <select id="field-packet-type-0x02" class="payload-input">
+                                <option value="0">COMMAND (get)</option>
+                                <option value="2" selected>RESPONSE (device reply)</option>
+                            </select>
+                        </div>
+                        <div id="response-options-0x02">
+                            <div class="form-group">
+                                <label for="field-product-type-0x02">产品类型:</label>
+                                <select id="field-product-type-0x02" class="payload-input">
+                                    <option value="earbuds">Earbuds</option>
+                                    <option value="headset">Headset</option>
+                                </select>
+                            </div>
+                            <div id="earbuds-options-0x02">
+                                <fieldset>
+                                    <legend>Left Earbud</legend>
+                                    <input type="checkbox" id="left-sn-offline"> <label for="left-sn-offline">Offline (zeros)</label><br>
+                                    <label for="left-sn">Serial (max 16):</label>
+                                    <input type="text" id="left-sn" maxlength="16" value="L_SERIAL_12345" style="width: 90%;">
+                                </fieldset>
+                                <fieldset>
+                                    <legend>Right Earbud</legend>
+                                    <input type="checkbox" id="right-sn-offline"> <label for="right-sn-offline">Offline (zeros)</label><br>
+                                    <label for="right-sn">Serial (max 16):</label>
+                                    <input type="text" id="right-sn" maxlength="16" value="R_SERIAL_67890" style="width: 90%;">
+                                </fieldset>
+                            </div>
+                            <div id="headset-options-0x02" style="display:none;">
+                                <fieldset>
+                                    <legend>Headset</legend>
+                                    <label for="headset-sn">Serial (max 16):</label>
+                                    <input type="text" id="headset-sn" maxlength="16" value="H_SERIAL_ABCDE" style="width: 90%;">
+                                </fieldset>
+                            </div>
+                        </div>
+                    `;
+                    payloadBuilderContainer.innerHTML = html;
+                    this.attachListeners();
+                },
+                attachListeners: function() {
+                    document.getElementById('field-packet-type-0x02').addEventListener('change', (e) => {
+                        document.getElementById('response-options-0x02').style.display = e.target.value === '2' ? 'block' : 'none';
+                        generateOutput();
+                    });
+                    document.getElementById('field-product-type-0x02').addEventListener('change', (e) => {
+                        document.getElementById('earbuds-options-0x02').style.display = e.target.value === 'earbuds' ? 'block' : 'none';
+                        document.getElementById('headset-options-0x02').style.display = e.target.value === 'headset' ? 'block' : 'none';
+                        generateOutput();
+                    });
+                    ['left', 'right'].forEach(side => {
+                        const offlineCheckbox = document.getElementById(`${side}-sn-offline`);
+                        const snInput = document.getElementById(`${side}-sn`);
+                        offlineCheckbox.addEventListener('change', (e) => {
+                            snInput.disabled = e.target.checked;
+                            if (e.target.checked) snInput.value = '0'.repeat(16);
+                            generateOutput();
+                        });
+                    });
+                },
+                getPayload: function() {
+                    if (this.getPacketType() === 0) return [];
+                    const productType = document.getElementById('field-product-type-0x02').value;
+                    let payload = [];
+                    if (productType === 'earbuds') {
+                        const leftSn = document.getElementById('left-sn-offline').checked ? '' : document.getElementById('left-sn').value;
+                        const rightSn = document.getElementById('right-sn-offline').checked ? '' : document.getElementById('right-sn').value;
+                        payload = payload.concat(this.stringToPaddedBytes(leftSn, 16), this.stringToPaddedBytes(rightSn, 16));
+                    } else {
+                        const headsetSn = document.getElementById('headset-sn').value;
+                        payload = this.stringToPaddedBytes(headsetSn, 16);
+                    }
+                    return payload;
+                },
+                getPacketType: function() {
+                    return parseInt(document.getElementById('field-packet-type-0x02').value, 10);
                 }
             },
             '0x41': {
@@ -141,13 +226,13 @@
                             <label>数据包类型: RESPONSE</label>
                         </div>
                         <div class="form-group">
-                            <label for="field-product-type">产品类型:</label>
-                            <select id="field-product-type" class="payload-input">
+                            <label for="field-product-type-0x41">产品类型:</label>
+                            <select id="field-product-type-0x41" class="payload-input">
                                 <option value="earbuds">Earbuds</option>
                                 <option value="headset">Headset</option>
                             </select>
                         </div>
-                        <div id="earbuds-options">
+                        <div id="earbuds-options-0x41">
                             <fieldset>
                                 <legend>Left Earbud</legend>
                                 <input type="checkbox" id="left-offline"> <label for="left-offline">Offline (0xFF)</label><br>
@@ -165,7 +250,7 @@
                                 <input type="number" id="right-minutes" min="0" max="59" value="0" style="width: 60px;">
                             </fieldset>
                         </div>
-                        <div id="headset-options" style="display:none;">
+                        <div id="headset-options-0x41" style="display:none;">
                             <fieldset>
                                 <legend>Headset</legend>
                                 <label for="headset-hours">Hours:</label>
@@ -179,9 +264,9 @@
                     this.attachListeners();
                 },
                 attachListeners: function() {
-                    document.getElementById('field-product-type').addEventListener('change', (e) => {
-                        document.getElementById('earbuds-options').style.display = e.target.value === 'earbuds' ? 'block' : 'none';
-                        document.getElementById('headset-options').style.display = e.target.value === 'headset' ? 'block' : 'none';
+                    document.getElementById('field-product-type-0x41').addEventListener('change', (e) => {
+                        document.getElementById('earbuds-options-0x41').style.display = e.target.value === 'earbuds' ? 'block' : 'none';
+                        document.getElementById('headset-options-0x41').style.display = e.target.value === 'headset' ? 'block' : 'none';
                         generateOutput();
                     });
                     ['left', 'right'].forEach(side => {
@@ -197,7 +282,7 @@
                 },
                 getPayload: function() {
                     const payload = [];
-                    const productType = document.getElementById('field-product-type').value;
+                    const productType = document.getElementById('field-product-type-0x41').value;
                     if (productType === 'earbuds') {
                         ['left', 'right'].forEach(side => {
                             if (document.getElementById(`${side}-offline`).checked) {
