@@ -220,6 +220,52 @@ const customCommandHandlers = {
             return parseInt(document.getElementById('field-packet-type-0x07').value, 10);
         }
     },
+    '0x09': {
+        render: function(container) {
+            let html = `
+                <div class="form-group">
+                    <label for="field-packet-type-0x09">数据包类型:</label>
+                    <select id="field-packet-type-0x09" class="payload-input">
+                        <option value="0">COMMAND (get)</option>
+                        <option value="2" selected>RESPONSE</option>
+                    </select>
+                </div>
+                <div id="response-options-0x09">
+                    <fieldset>
+                        <legend>LE Configurations (0=ON, 1=OFF)</legend>
+                        <div><input type="checkbox" id="gfp-on" checked> <label for="gfp-on">Google Fast Pair (ON)</label></div>
+                        <div><input type="checkbox" id="lea-on"> <label for="lea-on">LE Audio (ON)</label></div>
+                    </fieldset>
+                </div>
+            `;
+            container.innerHTML = html;
+            this.attachListeners();
+        },
+        attachListeners: function() {
+            document.getElementById('field-packet-type-0x09').addEventListener('change', (e) => {
+                document.getElementById('response-options-0x09').style.display = e.target.value !== '0' ? 'block' : 'none';
+                generateOutput();
+            });
+        },
+        getPayload: function() {
+            if (this.getPacketType() === 0) return [];
+            
+            let payloadByte = 0b00000000;
+            
+            // Inverted logic: checked (ON) means bit is 0, unchecked (OFF) means bit is 1.
+            if (!document.getElementById('gfp-on').checked) {
+                payloadByte |= (1 << 0); // Set bit 0 for GOOGLE_FAST_PAIR OFF
+            }
+            if (!document.getElementById('lea-on').checked) {
+                payloadByte |= (1 << 1); // Set bit 1 for LE_AUDIO OFF
+            }
+            
+            return [payloadByte];
+        },
+        getPacketType: function() {
+            return parseInt(document.getElementById('field-packet-type-0x09').value, 10);
+        }
+    },
     '0x41': {
         render: function(container) {
             let html = `
@@ -280,7 +326,7 @@ const customCommandHandlers = {
                 </div>
                 <div id="response-options-0x59">
                     <div class="form-group">
-                        <label for="field-product-type-0x59">产品类型:</label>
+                        <label for="field-product-type-0x59">���品类型:</label>
                         <select id="field-product-type-0x59" class="payload-input"><option value="earbuds">Earbuds</option><option value="headset">Headset</option></select>
                     </div>
                     <div id="mappings-container-0x59"></div>
