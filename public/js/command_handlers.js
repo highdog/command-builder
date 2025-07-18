@@ -401,12 +401,128 @@ const customCommandHandlers = {
             return parseInt(document.getElementById('field-packet-type-0x15').value, 10);
         }
     },
+    '0x16': {
+        render: function(container) {
+            let html = `
+                <div class="form-group">
+                    <label for="field-packet-type-0x16">数据包类型:</label>
+                    <select id="field-packet-type-0x16" class="payload-input">
+                        <option value="0" selected>COMMAND (set color)</option>
+                        <option value="2">RESPONSE (result status)</option>
+                    </select>
+                </div>
+                <div id="command-options-0x16">
+                    <div class="form-group">
+                        <label for="field-color-0x16">Earbuds Color:</label>
+                        <select id="field-color-0x16" class="payload-input">
+                            <option value="0x00">Color1</option>
+                            <option value="0x01">Color2</option>
+                            <option value="0x02">Color3</option>
+                            <option value="0x03">Color4</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="response-options-0x16" style="display:none;">
+                    <div class="form-group">
+                        <label for="field-status-0x16">Result Status:</label>
+                        <select id="field-status-0x16" class="payload-input">
+                            <option value="0x00">FAILED</option>
+                            <option value="0x01">LEFT successful</option>
+                            <option value="0x02">RIGHT successful</option>
+                            <option value="0x03">BOTH successful</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+            this.attachListeners();
+        },
+        attachListeners: function() {
+            document.getElementById('field-packet-type-0x16').addEventListener('change', (e) => {
+                const isCommand = e.target.value === '0';
+                document.getElementById('command-options-0x16').style.display = isCommand ? 'block' : 'none';
+                document.getElementById('response-options-0x16').style.display = isCommand ? 'none' : 'block';
+                generateOutput();
+            });
+        },
+        getPayload: function() {
+            const packetType = this.getPacketType();
+            if (packetType === 0) { // COMMAND
+                const color = parseInt(document.getElementById('field-color-0x16').value, 16);
+                return [color];
+            } else { // RESPONSE
+                const status = parseInt(document.getElementById('field-status-0x16').value, 16);
+                return [status];
+            }
+        },
+        getPacketType: function() {
+            return parseInt(document.getElementById('field-packet-type-0x16').value, 10);
+        }
+    },
+    '0x17': {
+        types: { 'DONGLE': 0 },
+        states: { 'DISCONNECTED': 0, 'CONNECTED': 1 },
+        createSelect: function(options, selectedValue) {
+            return Object.entries(options).map(([name, value]) => `<option value="${value}" ${value === selectedValue ? 'selected' : ''}>${name}</option>`).join('');
+        },
+        render: function(container) {
+            let html = `
+                <div class="form-group">
+                    <label for="field-packet-type-0x17">数据包类型:</label>
+                    <select id="field-packet-type-0x17" class="payload-input"><option value="0">COMMAND (get)</option><option value="2" selected>RESPONSE</option><option value="1">NOTIFICATION</option></select>
+                </div>
+                <div id="response-options-0x17">
+                    <div id="peripheral-container-0x17"></div>
+                    <button type="button" id="add-peripheral-btn-0x17" class="button" style="width: 100%; margin-top: 1rem;">+ 添加外设状态</button>
+                </div>
+            `;
+            container.innerHTML = html;
+            this.attachListeners();
+            this.addPeripheralRow();
+        },
+        addPeripheralRow: function(type = 0, state = 1) {
+            const container = document.getElementById('peripheral-container-0x17');
+            const fieldset = document.createElement('fieldset');
+            fieldset.className = 'peripheral-row';
+            fieldset.innerHTML = `
+                <legend>Peripheral #${container.children.length + 1}</legend>
+                <div class="form-group"><label>Type:</label><select class="peripheral-type">${this.createSelect(this.types, type)}</select></div>
+                <div class="form-group"><label>State:</label><select class="peripheral-state">${this.createSelect(this.states, state)}</select></div>
+                <button type="button" class="remove-peripheral-btn button-danger">移除</button>
+            `;
+            container.appendChild(fieldset);
+            generateOutput();
+        },
+        attachListeners: function() {
+            document.getElementById('field-packet-type-0x17').addEventListener('change', (e) => { document.getElementById('response-options-0x17').style.display = e.target.value !== '0' ? 'block' : 'none'; generateOutput(); });
+            document.getElementById('add-peripheral-btn-0x17').addEventListener('click', () => this.addPeripheralRow());
+            document.getElementById('peripheral-container-0x17').addEventListener('click', (e) => {
+                if (e.target && e.target.classList.contains('remove-peripheral-btn')) {
+                    e.target.closest('.peripheral-row').remove();
+                    generateOutput();
+                }
+            });
+        },
+        getPayload: function() {
+            if (this.getPacketType() === 0) return [];
+            const payload = [];
+            document.querySelectorAll('#peripheral-container-0x17 .peripheral-row').forEach(row => {
+                const type = parseInt(row.querySelector('.peripheral-type').value, 10);
+                const state = parseInt(row.querySelector('.peripheral-state').value, 10);
+                // Bits 0-5 for type, Bits 6-7 for state
+                const combined = (type & 0x3F) | ((state & 0x03) << 6);
+                payload.push(combined);
+            });
+            return payload;
+        },
+        getPacketType: function() { return parseInt(document.getElementById('field-packet-type-0x17').value, 10); }
+    },
     '0x41': {
         render: function(container) {
             let html = `
                 <div class="form-group"><label>数据包类型: RESPONSE</label></div>
                 <div class="form-group">
-                    <label for="field-product-type-0x41">产品类��:</label>
+                    <label for="field-product-type-0x41">产品类型:</label>
                     <select id="field-product-type-0x41" class="payload-input"><option value="earbuds">Earbuds</option><option value="headset">Headset</option></select>
                 </div>
                 <div id="earbuds-options-0x41">
