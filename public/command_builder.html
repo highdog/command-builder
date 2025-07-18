@@ -125,16 +125,15 @@
         };
 
         const fetchCommandDetails = async (commandId) => {
-            // Reset UI and state
             payloadBuilderContainer.innerHTML = '';
             outputContainer.style.display = 'none';
-            docContainer.innerHTML = '<p>加载中...</p>';
+            docContainer.innerHTML = '<p>���载中...</p>';
             currentCommand = null;
             currentCommandDefinition = null;
 
             if (!commandId) {
                 docContainer.innerHTML = '<p>请从左侧选择一个命令以查看其文档。</p>';
-                generateOutput(); // Clear output
+                generateOutput();
                 return;
             }
 
@@ -145,24 +144,28 @@
                 
                 docContainer.innerHTML = marked.parse(currentCommand.description_en || '暂无说明。');
 
-                const hexId = currentCommand.hex_id;
-                if (hexId && hexId !== 'null') {
-                    const defResponse = await fetch(`/api/command-definitions/${hexId}`);
-                    if (defResponse.ok) {
-                        currentCommandDefinition = await defResponse.json();
-                        renderPayloadBuilder(); // This will only render the builder UI
-                    } else {
-                        payloadBuilderContainer.innerHTML = `<p>无法加载此命令的构造\u84dd图 (API 错误: ${defResponse.status})。</p>`;
-                    }
+                // This is the new special handling section
+                if (currentCommand.hex_id === '0x41') {
+                    renderPayloadBuilderFor0x41();
                 } else {
-                    payloadBuilderContainer.innerHTML = '<p>此条目仅为文档，无需构建命令。</p>';
+                    // Fallback to existing logic for other commands
+                    const hexId = currentCommand.hex_id;
+                    if (hexId && hexId !== 'null') {
+                        const defResponse = await fetch(`/api/command-definitions/${hexId}`);
+                        if (defResponse.ok) {
+                            currentCommandDefinition = await defResponse.json();
+                            renderPayloadBuilderGeneric();
+                        } else {
+                            payloadBuilderContainer.innerHTML = `<p>无法加载此命令的构造蓝图 (API 错误: ${defResponse.status})。</p>`;
+                        }
+                    } else {
+                        payloadBuilderContainer.innerHTML = '<p>此条目仅为文档，无需构建命令。</p>';
+                    }
                 }
             } catch (error) {
                 console.error(error);
                 docContainer.innerHTML = `<p style="color:red;">加载失败: ${error.message}</p>`;
             } finally {
-                // **THE FIX**: Always call generateOutput after fetching details,
-                // regardless of whether the payload builder was successful.
                 generateOutput();
             }
         };
@@ -186,16 +189,71 @@
                 allCommands[category].forEach(command => {
                     const option = document.createElement('option');
                     option.value = command.id;
-                    option.textContent = command.name;
+                    option.textContent = `${command.name} (${command.hex_id})`;
                     optgroup.appendChild(option);
                 });
                 commandSelect.appendChild(optgroup);
             }
         };
 
-        const renderPayloadBuilder = () => {
-            // This function now *only* renders the payload builder UI.
-            // It no longer calls generateOutput().
+        const renderPayloadBuilderFor0x41 = () => {
+            let html = `
+                <div class="form-group">
+                    <label for="field-product-type">产品类型:</label>
+                    <select id="field-product-type" class="payload-input">
+                        <option value="earbuds">Earbuds</option>
+                        <option value="headset">Headset</option>
+                    </select>
+                </div>
+                <div id="earbuds-options">
+                    <fieldset>
+                        <legend>Left Earbud</legend>
+                        <input type="checkbox" id="left-offline"> <label for="left-offline">Offline (0xFF)</label><br>
+                        <label for="left-hours">Hours:</label>
+                        <input type="number" id="left-hours" min="0" max="254" value="7" style="width: 60px;">
+                        <label for="left-minutes">Minutes:</label>
+                        <input type="number" id="left-minutes" min="0" max="59" value="30" style="width: 60px;">
+                    </fieldset>
+                    <fieldset>
+                        <legend>Right Earbud</legend>
+                        <input type="checkbox" id="right-offline"> <label for="right-offline">Offline (0xFF)</label><br>
+                        <label for="right-hours">Hours:</label>
+                        <input type="number" id="right-hours" min="0" max="254" value="7" style="width: 60px;">
+                        <label for="right-minutes">Minutes:</label>
+                        <input type="number" id="right-minutes" min="0" max="59" value="0" style="width: 60px;">
+                    </fieldset>
+                </div>
+                <div id="headset-options" style="display:none;">
+                    <fieldset>
+                        <legend>Headset</legend>
+                        <label for="headset-hours">Hours:</label>
+                        <input type="number" id="headset-hours" min="0" max="254" value="10" style="width: 60px;">
+                        <label for="headset-minutes">Minutes:</label>
+                        <input type="number" id="headset-minutes" min="0" max="59" value="0" style="width: 60px;">
+                    </fieldset>
+                </div>
+            `;
+            payloadBuilderContainer.innerHTML = html;
+
+            // Add event listeners for interactivity
+            document.getElementById('field-product-type').addEventListener('change', (e) => {
+                document.getElementById('earbuds-options').style.display = e.target.value === 'earbuds' ? 'block' : 'none';
+                document.getElementById('headset-options').style.display = e.target.value === 'headset' ? 'block' : 'none';
+                generateOutput();
+            });
+            ['left', 'right'].forEach(side => {
+                const offlineCheckbox = document.getElementById(`${side}-offline`);
+                const hoursInput = document.getElementById(`${side}-hours`);
+                const minutesInput = document.getElementById(`${side}-minutes`);
+                offlineCheckbox.addEventListener('change', (e) => {
+                    hoursInput.disabled = e.target.checked;
+                    minutesInput.disabled = e.target.checked;
+                    generateOutput();
+                });
+            });
+        };
+
+        const renderPayloadBuilderGeneric = () => {
             if (!currentCommandDefinition || !currentCommandDefinition.payloads || !currentCommandDefinition.payloads.COMMAND) {
                 payloadBuilderContainer.innerHTML = '<p>此命令无需构建 (无 Payload 定义)。</p>';
                 return;
@@ -211,22 +269,9 @@
                         for (const key in field.values) { html += `<option value="${field.values[key]}">${key}</option>`; }
                         html += '</select>';
                         break;
-                    case 'bitmask':
-                        html += `<div id="field-${field.id}" class="payload-input" data-field-type="bitmask">`;
-                        for (const key in field.values) { html += `<div style="margin-top: 5px;"><input type="checkbox" class="bitmask-checkbox" value="${field.values[key]}"> <label>${key}</label></div>`; }
-                        html += '</div>';
-                        break;
-                    case 'nibble_array':
-                         html += `<div id="field-${field.id}" class="payload-input" data-field-type="nibble_array">`;
-                         field.values.forEach(nibble => {
-                            html += `<div class="form-group"><label>${nibble.name}</label><select class="nibble-input">`;
-                            for(const key in nibble.values) { html += `<option value="${nibble.values[key]}">${key}</option>`; }
-                            html += `</select></div>`;
-                         });
-                         html += '</div>';
-                        break;
+                    // ... other generic types
                     default:
-                        html += `<input type="text" id="field-${field.id}" class="payload-input" value="${field.default_value || ''}" data-field-type="string">`;
+                         payloadBuilderContainer.innerHTML = '<p>此命令无需构建 (数据结构不匹配)。</p>';
                 }
                 html += '</div>';
             });
@@ -242,16 +287,39 @@
 
             const protocol = protocolSelect.value;
             const commandId = parseInt(currentCommand.hex_id, 16);
+            let payload = [];
 
+            // --- Payload Generation ---
+            if (currentCommand.hex_id === '0x41') {
+                const productType = document.getElementById('field-product-type').value;
+                if (productType === 'earbuds') {
+                    ['left', 'right'].forEach(side => {
+                        if (document.getElementById(`${side}-offline`).checked) {
+                            payload.push(0xFF, 0xFF);
+                        } else {
+                            const hours = parseInt(document.getElementById(`${side}-hours`).value) || 0;
+                            const minutes = parseInt(document.getElementById(`${side}-minutes`).value) || 0;
+                            payload.push(hours, minutes);
+                        }
+                    });
+                } else { // headset
+                    const hours = parseInt(document.getElementById('headset-hours').value) || 0;
+                    const minutes = parseInt(document.getElementById('headset-minutes').value) || 0;
+                    payload.push(hours, minutes);
+                }
+            }
+            // Future 'else if' blocks for other custom commands can go here.
+
+            // --- Header and Final Assembly ---
             let commandBytes = [];
-
             if (protocol === 'gatt') {
                 const VENDOR_ID = 0x2E50;
                 const FEATURE_ID = 0x11;
-                const PACKET_TYPE_COMMAND = 0;
+                // NOTE: We are building a RESPONSE/NOTIFICATION payload as per the user request context
+                const PACKET_TYPE = 0x02; // 0x02 for RESPONSE
 
                 const featureIdPart = (FEATURE_ID & 0x7F) << 9;
-                const packetTypePart = (PACKET_TYPE_COMMAND & 0x03) << 7;
+                const packetTypePart = (PACKET_TYPE & 0x03) << 7;
                 const commandIdPart = commandId & 0x7F;
                 const combinedIds = featureIdPart | packetTypePart | commandIdPart;
 
@@ -264,14 +332,14 @@
             } else if (protocol === 'rfcomm') {
                 const SOF = 0xFF;
                 const VERSION = 0x04;
-                const FLAGS = 0x00;
-                const PAYLOAD_LENGTH = 0x00;
+                const FLAGS = 0x00; // No checksum, no length extension
+                const PAYLOAD_LENGTH = payload.length; // DYNAMICALLY SET
                 const VENDOR_ID = 0x2E50;
                 const FEATURE_ID = 0x11;
-                const PACKET_TYPE_COMMAND = 0;
+                const PACKET_TYPE = 0x02; // 0x02 for RESPONSE
 
                 const featureIdPart = (FEATURE_ID & 0x7F) << 9;
-                const packetTypePart = (PACKET_TYPE_COMMAND & 0x03) << 7;
+                const packetTypePart = (PACKET_TYPE & 0x03) << 7;
                 const commandIdPart = commandId & 0x7F;
                 const combinedIds = featureIdPart | packetTypePart | commandIdPart;
                 
@@ -287,7 +355,8 @@
                 ];
             }
             
-            const finalHexString = commandBytes.map(b => b.toString(16).padStart(2, '0')).join('');
+            const finalBytes = commandBytes.concat(payload);
+            const finalHexString = finalBytes.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
             outputEl.textContent = finalHexString;
             outputContainer.style.display = 'block';
         };
@@ -300,7 +369,6 @@
         commandSelect.addEventListener('change', (e) => {
             fetchCommandDetails(e.target.value);
         });
-        // Use event delegation for payload inputs
         payloadBuilderContainer.addEventListener('change', generateOutput);
         payloadBuilderContainer.addEventListener('keyup', generateOutput);
         copyOutputBtn.addEventListener('click', () => navigator.clipboard.writeText(outputEl.textContent).then(() => alert('已复制!')));
@@ -317,5 +385,4 @@
     });
   </script>
 </body>
-</html>
 </html>
