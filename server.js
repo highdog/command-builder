@@ -77,6 +77,12 @@ function isAdmin(req, res, next) {
 
 // --- API ROUTES ---
 
+// Middleware to disable caching for all API routes
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-cache');
+  next();
+});
+
 // --- Session and Auth ---
 app.get('/api/session', (req, res) => {
   if (req.session.user) {
@@ -153,12 +159,16 @@ app.get('/api/commands/:id', isAuthenticated, (req, res) => {
 });
 
 app.get('/api/command-definitions/:hex_id', isAuthenticated, async (req, res) => {
-    const { hex_id } = req.params;
+    // Sanitize the hex_id by removing the '0x' prefix if it exists
+    const sanitizedHexId = req.params.hex_id.startsWith('0x') 
+        ? req.params.hex_id.substring(2) 
+        : req.params.hex_id;
+
     try {
-        // 1. Get command_id from hex_id
-        const command = await dbGet('SELECT id, name_en as name, type FROM commands WHERE hex_id = ?', [hex_id]);
+        // 1. Get command_id from the sanitized hex_id
+        const command = await dbGet('SELECT id, name_en as name, type FROM commands WHERE hex_id = ?', [sanitizedHexId]);
         if (!command) {
-            return res.status(404).json({ message: 'Command definition not found.' });
+            return res.status(404).json({ message: `Command definition not found for hex_id: ${sanitizedHexId}` });
         }
         const commandId = command.id;
 
@@ -194,7 +204,7 @@ app.get('/api/command-definitions/:hex_id', isAuthenticated, async (req, res) =>
         res.json(definition);
 
     } catch (error) {
-        console.error(`Failed to get command definition for ${hex_id}:`, error);
+        console.error(`Failed to get command definition for ${req.params.hex_id}:`, error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });

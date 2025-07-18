@@ -157,26 +157,36 @@ async function migrate() {
             const packetTypeId = packetTypeResult.lastID;
 
             let payloadDef;
+            const upperPacketTypeName = packetTypeName.toUpperCase();
+
             if (commandDef.payloads) {
-                const def = commandDef.payloads[packetTypeName.toUpperCase()];
-                if (def === 'same_as_response') payloadDef = commandDef.payloads['RESPONSE'];
-                else if (def === 'same_as_command') payloadDef = commandDef.payloads['COMMAND'];
-                else payloadDef = def;
-            } else if (packetTypeName.toUpperCase() === 'COMMAND' && commandDef.payload) {
+                const def = commandDef.payloads[upperPacketTypeName];
+                if (def === 'same_as_response') {
+                    payloadDef = commandDef.payloads['RESPONSE'];
+                } else if (def === 'same_as_command') {
+                    payloadDef = commandDef.payloads['COMMAND'];
+                } else {
+                    payloadDef = def;
+                }
+            } else if (upperPacketTypeName === 'COMMAND' && commandDef.payload) {
+                // Fallback for the old structure
                 payloadDef = commandDef.payload;
-            } else if (packetTypeName.toUpperCase() === 'ERROR' && !commandDef.payloads) {
+            } else if (upperPacketTypeName === 'ERROR') {
                  payloadDef = errorPayloadDef;
             }
 
             if (!payloadDef || payloadDef.length === 0) continue;
 
             for (const [index, field] of payloadDef.entries()) {
+                // Determine field type, giving precedence to the command's overall type if specified
+                const fieldType = commandDef.type || field.type;
+                
                 const fieldResult = await dbRun(`INSERT INTO payload_fields (packet_type_id, field_name, display_name, type, default_value, is_readonly, bit_position, max_length, display_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [packetTypeId, field.id, field.name, commandDef.type || field.type, field.defaultValue, field.readonly ? 1 : 0, field.bit, field.maxLength, index]
+                    [packetTypeId, field.id, field.name, fieldType, field.defaultValue, field.readonly ? 1 : 0, field.bit, field.maxLength, index]
                 );
                 const fieldId = fieldResult.lastID;
 
-                if ((field.type === 'enum' || field.type === 'enum_nibble') && field.values) {
+                if ((fieldType === 'enum' || fieldType === 'enum_nibble') && field.values) {
                     for (const [enumIndex, [enumName, enumValue]] of Object.entries(field.values).entries()) {
                         await dbRun(`INSERT INTO enum_values (field_id, name, value, display_order) VALUES (?, ?, ?, ?)`, [fieldId, enumName, enumValue, enumIndex]);
                     }

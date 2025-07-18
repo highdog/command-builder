@@ -38,6 +38,8 @@ db.serialize(() => {
   // Create the commands table if it doesn't exist
   db.run(`CREATE TABLE IF NOT EXISTS commands (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    hex_id TEXT,
+    type TEXT,
     category_en TEXT,
     name_en TEXT,
     description_en TEXT,

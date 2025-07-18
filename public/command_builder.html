@@ -6,18 +6,6 @@
     <title>蓝牙命令构建器</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <style>
-        /* Using styles from the main style.css, but adding specific layout rules */
-        .main-layout { display: flex; gap: 2rem; align-items: flex-start; padding: 2rem; }
-        .left-panel { flex: 1; background-color: #f8f9fa; padding: 1.5rem; border-radius: 8px; border: 1px solid #e9ecef; }
-        .right-panel { flex: 2; position: sticky; top: 2rem; }
-        .doc-content { background-color: #fff; padding: 1.5rem; border-radius: 8px; border: 1px solid #e9ecef; max-height: 85vh; overflow-y: auto; }
-        .doc-placeholder { color: #6c757d; text-align: center; padding: 3rem 0; }
-        .editable-desc { border: 1px dashed #007bff; padding: 10px; min-height: 150px; margin-top: 10px; background-color: #f8f9fa; }
-        .doc-action-btn { margin-left: 10px; }
-        .lang-switcher { float: right; }
-        #payload-columns-container { margin-top: 2rem; }
-    </style>
 </head>
 <body>
 
@@ -34,33 +22,50 @@
     </div>
   </header>
 
-  <div class="main-layout">
-    <!-- Left Panel: Builder -->
-    <div class="left-panel">
-        <h2>命令构建</h2>
-        <div class="form-group">
-            <label for="protocol-select">选择协议:</label>
-            <select id="protocol-select">
-                <option value="gatt">GATT over BLE</option>
-                <option value="rfcomm">RFCOMM</option>
-            </select>
+  <div class="app-container" style="padding: 1rem;">
+    <div class="sidebar" style="height: auto; min-width: 350px;">
+        <div class="sidebar-section">
+            <div class="sidebar-section-header active">
+                <h2>命令构建</h2>
+            </div>
+            <div class="sidebar-section-content">
+                <div class="form-group">
+                    <label for="protocol-select">蓝牙协议:</label>
+                    <select id="protocol-select" style="width: 100%; padding: 0.5rem; font-size: 1rem;">
+                        <option value="gatt">GATT over BLE</option>
+                        <option value="rfcomm">RFCOMM</option>
+                    </select>
+                </div>
+                <div id="protocol-example-container" style="margin-top: 1rem;">
+                    <h4>协议示例 (以 GetBatteryLevel 为例):</h4>
+                    <pre id="protocol-example" style="background-color: #2d333b; color: #cdd9e5; padding: 1rem; border-radius: 6px; white-space: pre-wrap; word-wrap: break-word; font-family: monospace;"></pre>
+                </div>
+                <div class="form-group">
+                    <label for="command-select">选择命令:</label>
+                    <select id="command-select" style="width: 100%; padding: 0.5rem; font-size: 1rem;">
+                        <option value="">-- 请稍候 --</option>
+                    </select>
+                </div>
+                <div id="payload-builder-container">
+                    <!-- Payload fields will be generated here -->
+                </div>
+                <div id="output-container" style="margin-top: 1.5rem; display: none;">
+                    <h4>生成结果:</h4>
+                    <pre id="output" style="background-color: #282c34; color: #abb2bf; padding: 1rem; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word;"></pre>
+                    <button id="copy-output-btn" class="button" style="width: 100%; margin-top: 1rem;">复制</button>
+                </div>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="command-select">选择命令:</label>
-            <select id="command-select">
-                <option value="">-- 请先登录 --</option>
-            </select>
-        </div>
-        <div id="payload-columns-container">
-            <!-- Payload fields will be generated here -->
+         <div class="sidebar-footer">
+            <form action="/logout" method="POST">
+              <button type="submit">Logout</button>
+            </form>
         </div>
     </div>
-
-    <!-- Right Panel: Documentation -->
-    <div class="right-panel">
-        <div id="command-display-container" class="doc-content">
-            <p class="doc-placeholder">请在左侧选择一个命令以查看其说明。</p>
-        </div>
+    <div class="main-content">
+      <div id="command-display-container">
+        <p>请从左侧选择一个命令以查看其文档。</p>
+      </div>
     </div>
   </div>
 
@@ -69,54 +74,50 @@
         // --- STATE ---
         let currentUser = null;
         let currentCommand = null;
-        let editMode = false;
-        let currentLanguage = 'zh';
+        let currentCommandDefinition = null;
+        let allCommands = {};
 
         // --- UI ELEMENTS ---
         const adminLink = document.getElementById('ui-admin-link');
+        const protocolSelect = document.getElementById('protocol-select');
         const commandSelect = document.getElementById('command-select');
+        const payloadBuilderContainer = document.getElementById('payload-builder-container');
+        const outputContainer = document.getElementById('output-container');
+        const outputEl = document.getElementById('output');
+        const copyOutputBtn = document.getElementById('copy-output-btn');
         const docContainer = document.getElementById('command-display-container');
+        const protocolExampleEl = document.getElementById('protocol-example');
 
-        // --- FUNCTIONS ---
+        // --- CORE FUNCTIONS ---
 
         const checkSession = async () => {
             try {
                 const response = await fetch('/api/session');
+                if (!response.ok) throw new Error('Session check failed');
                 const data = await response.json();
                 if (data.loggedIn) {
                     currentUser = data.user;
                     if (currentUser.role === 'admin') {
                         adminLink.style.display = 'inline-block';
                     }
+                    return true;
                 } else {
-                    // If not logged in, redirect to login page
                     window.location.href = '/login';
+                    return false;
                 }
             } catch (error) {
-                console.error('Session check failed:', error);
-                // Also redirect if the API call fails
+                console.error(error);
                 window.location.href = '/login';
+                return false;
             }
         };
 
-        const populateCommands = async () => {
+        const fetchCommands = async () => {
             try {
                 const response = await fetch('/api/commands');
                 if (!response.ok) throw new Error('Failed to fetch commands');
-                const commandsByCat = await response.json();
-                
-                commandSelect.innerHTML = '<option value="">-- 请选择一个命令 --</option>';
-                for (const category in commandsByCat) {
-                    const optgroup = document.createElement('optgroup');
-                    optgroup.label = category;
-                    commandsByCat[category].forEach(command => {
-                        const option = document.createElement('option');
-                        option.value = command.id;
-                        option.textContent = command.name;
-                        optgroup.appendChild(option);
-                    });
-                    commandSelect.appendChild(optgroup);
-                }
+                allCommands = await response.json();
+                renderCommandSelect();
             } catch (error) {
                 console.error(error);
                 commandSelect.innerHTML = '<option value="">-- 加载失败 --</option>';
@@ -124,116 +125,197 @@
         };
 
         const fetchCommandDetails = async (commandId) => {
+            // Reset UI and state
+            payloadBuilderContainer.innerHTML = '';
+            outputContainer.style.display = 'none';
+            docContainer.innerHTML = '<p>加载中...</p>';
+            currentCommand = null;
+            currentCommandDefinition = null;
+
             if (!commandId) {
-                docContainer.innerHTML = '<p class="doc-placeholder">请在左侧选择一个命令以查看其说明。</p>';
-                currentCommand = null;
+                docContainer.innerHTML = '<p>请从左侧选择一个命令以查看其文档。</p>';
+                generateOutput(); // Clear output
                 return;
             }
+
             try {
                 const response = await fetch(`/api/commands/${commandId}`);
                 if (!response.ok) throw new Error('Failed to fetch command details');
                 currentCommand = await response.json();
-                renderDocumentation();
+                
+                docContainer.innerHTML = marked.parse(currentCommand.description_en || '暂无说明。');
+
+                const hexId = currentCommand.hex_id;
+                if (hexId && hexId !== 'null') {
+                    const defResponse = await fetch(`/api/command-definitions/${hexId}`);
+                    if (defResponse.ok) {
+                        currentCommandDefinition = await defResponse.json();
+                        renderPayloadBuilder(); // This will only render the builder UI
+                    } else {
+                        payloadBuilderContainer.innerHTML = `<p>无法加载此命令的构造\u84dd图 (API 错误: ${defResponse.status})。</p>`;
+                    }
+                } else {
+                    payloadBuilderContainer.innerHTML = '<p>此条目仅为文档，无需构建命令。</p>';
+                }
             } catch (error) {
                 console.error(error);
-                docContainer.innerHTML = '<p class="doc-placeholder" style="color: red;">无法加载命令详情。</p>';
+                docContainer.innerHTML = `<p style="color:red;">加载失败: ${error.message}</p>`;
+            } finally {
+                // **THE FIX**: Always call generateOutput after fetching details,
+                // regardless of whether the payload builder was successful.
+                generateOutput();
             }
         };
 
-        const renderDocumentation = () => {
-            if (!currentCommand) return;
+        const updateProtocolExample = () => {
+            const protocol = protocolSelect.value;
+            if (protocol === 'gatt') {
+                protocolExampleEl.textContent = '2E502206\n\n[Vendor ID] [Feature+Pkt+Cmd]';
+            } else if (protocol === 'rfcomm') {
+                protocolExampleEl.textContent = 'FF0400002E502206\n\n[SOF][Ver][Flags][Len][Vendor ID][Feature+Pkt+Cmd]';
+            }
+        };
 
-            let headerControls = '';
-            if (currentUser?.role === 'admin') {
-                if (editMode) {
-                    headerControls = `
-                        <button id="save-btn" class="button">保存</button>
-                        <button id="cancel-btn" class="button">取消</button>
-                    `;
-                } else {
-                    headerControls = `<button id="edit-btn" class="button">编辑</button>`;
+        // --- UI RENDERING ---
+
+        const renderCommandSelect = () => {
+            commandSelect.innerHTML = '<option value="">-- 请选择一个命令 --</option>';
+            for (const category in allCommands) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = category;
+                allCommands[category].forEach(command => {
+                    const option = document.createElement('option');
+                    option.value = command.id;
+                    option.textContent = command.name;
+                    optgroup.appendChild(option);
+                });
+                commandSelect.appendChild(optgroup);
+            }
+        };
+
+        const renderPayloadBuilder = () => {
+            // This function now *only* renders the payload builder UI.
+            // It no longer calls generateOutput().
+            if (!currentCommandDefinition || !currentCommandDefinition.payloads || !currentCommandDefinition.payloads.COMMAND) {
+                payloadBuilderContainer.innerHTML = '<p>此命令无需构建 (无 Payload 定义)。</p>';
+                return;
+            }
+            const commandFields = currentCommandDefinition.payloads.COMMAND;
+            let html = '';
+            commandFields.forEach(field => {
+                html += '<div class="form-group">';
+                html += `<label for="field-${field.id}">${field.name}</label>`;
+                switch(field.type) {
+                    case 'enum':
+                        html += `<select id="field-${field.id}" class="payload-input" data-field-type="enum">`;
+                        for (const key in field.values) { html += `<option value="${field.values[key]}">${key}</option>`; }
+                        html += '</select>';
+                        break;
+                    case 'bitmask':
+                        html += `<div id="field-${field.id}" class="payload-input" data-field-type="bitmask">`;
+                        for (const key in field.values) { html += `<div style="margin-top: 5px;"><input type="checkbox" class="bitmask-checkbox" value="${field.values[key]}"> <label>${key}</label></div>`; }
+                        html += '</div>';
+                        break;
+                    case 'nibble_array':
+                         html += `<div id="field-${field.id}" class="payload-input" data-field-type="nibble_array">`;
+                         field.values.forEach(nibble => {
+                            html += `<div class="form-group"><label>${nibble.name}</label><select class="nibble-input">`;
+                            for(const key in nibble.values) { html += `<option value="${nibble.values[key]}">${key}</option>`; }
+                            html += `</select></div>`;
+                         });
+                         html += '</div>';
+                        break;
+                    default:
+                        html += `<input type="text" id="field-${field.id}" class="payload-input" value="${field.default_value || ''}" data-field-type="string">`;
                 }
-            }
-
-            let body = '';
-            if (editMode) {
-                body = `
-                    <h3>编辑英文文档</h3>
-                    <div id="desc-en-editor" class="editable-desc" contenteditable="true">${currentCommand.description_en || ''}</div>
-                    <hr style="margin: 2rem 0;">
-                    <h3>编辑中文文档</h3>
-                    <div id="desc-zh-editor" class="editable-desc" contenteditable="true">${currentCommand.description_zh || ''}</div>
-                `;
-            } else {
-                const desc = (currentLanguage === 'zh') 
-                    ? (currentCommand.description_zh || '暂无中文说明。') 
-                    : (currentCommand.description_en || 'No English description available.');
-                body = marked.parse(desc);
-            }
-
-            const langSwitch = `<button id="lang-switch-btn" class="button lang-switcher">${currentLanguage === 'zh' ? 'Switch to English' : '切换到中文'}</button>`;
-            const title = (currentLanguage === 'zh') ? currentCommand.name_zh : currentCommand.name_en;
-
-            docContainer.innerHTML = `
-                <div style="overflow: auto;">
-                    ${editMode ? '' : langSwitch}
-                    ${headerControls}
-                </div>
-                <h2 style="clear: both;">${title}</h2>
-                <div>${body}</div>
-            `;
+                html += '</div>';
+            });
+            payloadBuilderContainer.innerHTML = html;
         };
-        
-        const updateDescription = async (lang, description) => {
-            // Placeholder for the actual update logic
-            console.log(`Saving ${lang} description for command ${currentCommand.id}: ${description}`);
-            // In a real scenario, you would have a fetch call here:
-            // await fetch(`/api/commands/${currentCommand.id}/description`, { ... });
+
+        const generateOutput = () => {
+            if (!currentCommand || !currentCommand.hex_id) {
+                outputEl.textContent = "请先选择一个有效命令。";
+                outputContainer.style.display = 'none';
+                return;
+            }
+
+            const protocol = protocolSelect.value;
+            const commandId = parseInt(currentCommand.hex_id, 16);
+
+            let commandBytes = [];
+
+            if (protocol === 'gatt') {
+                const VENDOR_ID = 0x2E50;
+                const FEATURE_ID = 0x11;
+                const PACKET_TYPE_COMMAND = 0;
+
+                const featureIdPart = (FEATURE_ID & 0x7F) << 9;
+                const packetTypePart = (PACKET_TYPE_COMMAND & 0x03) << 7;
+                const commandIdPart = commandId & 0x7F;
+                const combinedIds = featureIdPart | packetTypePart | commandIdPart;
+
+                commandBytes = [
+                    (VENDOR_ID >> 8) & 0xFF,
+                    VENDOR_ID & 0xFF,
+                    (combinedIds >> 8) & 0xFF,
+                    combinedIds & 0xFF
+                ];
+            } else if (protocol === 'rfcomm') {
+                const SOF = 0xFF;
+                const VERSION = 0x04;
+                const FLAGS = 0x00;
+                const PAYLOAD_LENGTH = 0x00;
+                const VENDOR_ID = 0x2E50;
+                const FEATURE_ID = 0x11;
+                const PACKET_TYPE_COMMAND = 0;
+
+                const featureIdPart = (FEATURE_ID & 0x7F) << 9;
+                const packetTypePart = (PACKET_TYPE_COMMAND & 0x03) << 7;
+                const commandIdPart = commandId & 0x7F;
+                const combinedIds = featureIdPart | packetTypePart | commandIdPart;
+                
+                commandBytes = [
+                    SOF,
+                    VERSION,
+                    FLAGS,
+                    PAYLOAD_LENGTH,
+                    (VENDOR_ID >> 8) & 0xFF,
+                    VENDOR_ID & 0xFF,
+                    (combinedIds >> 8) & 0xFF,
+                    combinedIds & 0xFF
+                ];
+            }
+            
+            const finalHexString = commandBytes.map(b => b.toString(16).padStart(2, '0')).join('');
+            outputEl.textContent = finalHexString;
+            outputContainer.style.display = 'block';
         };
 
         // --- EVENT LISTENERS ---
-        commandSelect.addEventListener('change', (e) => fetchCommandDetails(e.target.value));
-
-        docContainer.addEventListener('click', async (e) => {
-            if (e.target.id === 'edit-btn') {
-                editMode = true;
-                renderDocumentation();
-            }
-            if (e.target.id === 'cancel-btn') {
-                editMode = false;
-                renderDocumentation();
-            }
-            if (e.target.id === 'lang-switch-btn') {
-                currentLanguage = (currentLanguage === 'zh') ? 'en' : 'zh';
-                renderDocumentation();
-            }
-            if (e.target.id === 'save-btn') {
-                const descEn = document.getElementById('desc-en-editor').innerHTML;
-                const descZh = document.getElementById('desc-zh-editor').innerHTML;
-                
-                // Here you would call the API to save the data
-                await updateDescription('en', descEn);
-                await updateDescription('zh', descZh);
-
-                alert('保存成功！（占位符）');
-                
-                // Refresh local data and exit edit mode
-                currentCommand.description_en = descEn;
-                currentCommand.description_zh = descZh;
-                editMode = false;
-                renderDocumentation();
-            }
+        protocolSelect.addEventListener('change', () => {
+            generateOutput();
+            updateProtocolExample();
         });
+        commandSelect.addEventListener('change', (e) => {
+            fetchCommandDetails(e.target.value);
+        });
+        // Use event delegation for payload inputs
+        payloadBuilderContainer.addEventListener('change', generateOutput);
+        payloadBuilderContainer.addEventListener('keyup', generateOutput);
+        copyOutputBtn.addEventListener('click', () => navigator.clipboard.writeText(outputEl.textContent).then(() => alert('已复制!')));
 
         // --- INITIALIZATION ---
         const init = async () => {
-            await checkSession();
-            // Only populate commands if the user is logged in (which checkSession ensures)
-            populateCommands();
+            if (await checkSession()) {
+                fetchCommands();
+                updateProtocolExample();
+            }
         };
 
         init();
     });
   </script>
 </body>
+</html>
 </html>

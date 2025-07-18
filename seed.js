@@ -31,8 +31,11 @@ function parseMarkdownAndSeedDatabase() {
         const description = blockLines.join('\n').trim();
 
         if (name && description) {
-          // For now, use English content as a placeholder for Chinese
+          const hexMatch = name.match(/^(0x[0-9a-fA-F]+)/);
+          const hex_id = hexMatch ? hexMatch[1].replace('0x', '') : null;
+
           commands.push({
+            hex_id: hex_id,
             category_en: category,
             name_en: name,
             description_en: description,
@@ -51,11 +54,11 @@ function parseMarkdownAndSeedDatabase() {
     }
 
     db.serialize(() => {
-      const stmt = db.prepare('INSERT INTO commands (category_en, name_en, description_en, category_zh, name_zh, description_zh) VALUES (?, ?, ?, ?, ?, ?)');
+      const stmt = db.prepare('INSERT INTO commands (hex_id, category_en, name_en, description_en, category_zh, name_zh, description_zh) VALUES (?, ?, ?, ?, ?, ?, ?)');
       let insertedCount = 0;
       db.run('BEGIN TRANSACTION');
       commands.forEach(cmd => {
-        stmt.run(cmd.category_en, cmd.name_en, cmd.description_en, cmd.category_zh, cmd.name_zh, cmd.description_zh, function(err) {
+        stmt.run(cmd.hex_id, cmd.category_en, cmd.name_en, cmd.description_en, cmd.category_zh, cmd.name_zh, cmd.description_zh, function(err) {
           if (err) {
             console.error(`Error inserting command "${cmd.name_en}":`, err.message);
           } else {
