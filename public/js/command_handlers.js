@@ -890,6 +890,311 @@ const customCommandHandlers = {
         getPacketType: function() {
             return parseInt(document.getElementById('field-packet-type-0x20').value, 10);
         }
+    },
+    '0x21': {
+        render: function(container) {
+            let html = `
+                <div class="form-group">
+                    <label>数据包类型: COMMAND</label>
+                    <p>重置设备使用统计数据（空载荷）</p>
+                </div>
+            `;
+            container.innerHTML = html;
+        },
+        getPayload: function() {
+            return [];
+        },
+        getPacketType: function() {
+            return 0; // COMMAND
+        }
+    },
+    '0x30': {
+        render: function(container) {
+            let html = `
+                <div class="form-group">
+                    <label for="field-packet-type-0x30">数据包类型:</label>
+                    <select id="field-packet-type-0x30" class="payload-input">
+                        <option value="0">COMMAND (get)</option>
+                        <option value="2" selected>RESPONSE</option>
+                    </select>
+                </div>
+                <div id="response-options-0x30">
+                    <div class="form-group">
+                        <label for="field-anc-level-0x30">ANC Level (0-255):</label>
+                        <input type="number" id="field-anc-level-0x30" min="0" max="255" value="128" style="width: 90%;">
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+            this.attachListeners();
+        },
+        attachListeners: function() {
+            document.getElementById('field-packet-type-0x30').addEventListener('change', (e) => {
+                document.getElementById('response-options-0x30').style.display = e.target.value === '2' ? 'block' : 'none';
+                generateOutput();
+            });
+        },
+        getPayload: function() {
+            if (this.getPacketType() === 0) return [];
+            return [parseInt(document.getElementById('field-anc-level-0x30').value) || 0];
+        },
+        getPacketType: function() {
+            return parseInt(document.getElementById('field-packet-type-0x30').value, 10);
+        }
+    },
+    '0x31': {
+        render: function(container) {
+            let html = `
+                <div class="form-group">
+                    <label for="field-packet-type-0x31">数据包类型:</label>
+                    <select id="field-packet-type-0x31" class="payload-input">
+                        <option value="0" selected>COMMAND (set)</option>
+                        <option value="2">RESPONSE</option>
+                    </select>
+                </div>
+                <div id="command-options-0x31">
+                    <div class="form-group">
+                        <label for="field-anc-level-0x31">ANC Level (0-255):</label>
+                        <input type="number" id="field-anc-level-0x31" min="0" max="255" value="128" style="width: 90%;">
+                    </div>
+                </div>
+                <div id="response-options-0x31" style="display:none;">
+                    <div class="form-group">
+                        <label for="field-anc-level-resp-0x31">Applied ANC Level (0-255):</label>
+                        <input type="number" id="field-anc-level-resp-0x31" min="0" max="255" value="128" style="width: 90%;">
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+            this.attachListeners();
+        },
+        attachListeners: function() {
+            document.getElementById('field-packet-type-0x31').addEventListener('change', (e) => {
+                const isCommand = e.target.value === '0';
+                document.getElementById('command-options-0x31').style.display = isCommand ? 'block' : 'none';
+                document.getElementById('response-options-0x31').style.display = isCommand ? 'none' : 'block';
+                generateOutput();
+            });
+        },
+        getPayload: function() {
+            const packetType = this.getPacketType();
+            if (packetType === 0) {
+                return [parseInt(document.getElementById('field-anc-level-0x31').value) || 0];
+            } else {
+                return [parseInt(document.getElementById('field-anc-level-resp-0x31').value) || 0];
+            }
+        },
+        getPacketType: function() {
+            return parseInt(document.getElementById('field-packet-type-0x31').value, 10);
+        }
+    },
+    '0x32': {
+        render: function(container) {
+            let html = `
+                <div class="form-group">
+                    <label for="field-packet-type-0x32">数据包类型:</label>
+                    <select id="field-packet-type-0x32" class="payload-input">
+                        <option value="0">COMMAND (get)</option>
+                        <option value="2" selected>RESPONSE</option>
+                    </select>
+                </div>
+                <div id="response-options-0x32">
+                    <div class="form-group">
+                        <label for="field-transparency-gain-0x32">Transparency Gain (0-255):</label>
+                        <input type="number" id="field-transparency-gain-0x32" min="0" max="255" value="128" style="width: 90%;">
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+            this.attachListeners();
+        },
+        attachListeners: function() {
+            document.getElementById('field-packet-type-0x32').addEventListener('change', (e) => {
+                document.getElementById('response-options-0x32').style.display = e.target.value === '2' ? 'block' : 'none';
+                generateOutput();
+            });
+        },
+        getPayload: function() {
+            if (this.getPacketType() === 0) return [];
+            return [parseInt(document.getElementById('field-transparency-gain-0x32').value) || 0];
+        },
+        getPacketType: function() {
+            return parseInt(document.getElementById('field-packet-type-0x32').value, 10);
+        }
+    },
+    '0x33': {
+        render: function(container) {
+            let html = `
+                <div class="form-group">
+                    <label for="field-packet-type-0x33">数据包类型:</label>
+                    <select id="field-packet-type-0x33" class="payload-input">
+                        <option value="0" selected>COMMAND (set)</option>
+                        <option value="2">RESPONSE</option>
+                    </select>
+                </div>
+                <div id="command-options-0x33">
+                    <div class="form-group">
+                        <label for="field-transparency-gain-0x33">Transparency Gain (0-255):</label>
+                        <input type="number" id="field-transparency-gain-0x33" min="0" max="255" value="128" style="width: 90%;">
+                    </div>
+                </div>
+                <div id="response-options-0x33" style="display:none;">
+                    <div class="form-group">
+                        <label for="field-transparency-gain-resp-0x33">Applied Transparency Gain (0-255):</label>
+                        <input type="number" id="field-transparency-gain-resp-0x33" min="0" max="255" value="128" style="width: 90%;">
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+            this.attachListeners();
+        },
+        attachListeners: function() {
+            document.getElementById('field-packet-type-0x33').addEventListener('change', (e) => {
+                const isCommand = e.target.value === '0';
+                document.getElementById('command-options-0x33').style.display = isCommand ? 'block' : 'none';
+                document.getElementById('response-options-0x33').style.display = isCommand ? 'none' : 'block';
+                generateOutput();
+            });
+        },
+        getPayload: function() {
+            const packetType = this.getPacketType();
+            if (packetType === 0) {
+                return [parseInt(document.getElementById('field-transparency-gain-0x33').value) || 0];
+            } else {
+                return [parseInt(document.getElementById('field-transparency-gain-resp-0x33').value) || 0];
+            }
+        },
+        getPacketType: function() {
+            return parseInt(document.getElementById('field-packet-type-0x33').value, 10);
+        }
+    },
+    '0x34': {
+        render: function(container) {
+            let html = `
+                <div class="form-group">
+                    <label for="field-packet-type-0x34">数据包类型:</label>
+                    <select id="field-packet-type-0x34" class="payload-input">
+                        <option value="0">COMMAND (get)</option>
+                        <option value="2" selected>RESPONSE</option>
+                    </select>
+                </div>
+                <div id="response-options-0x34">
+                    <div class="form-group">
+                        <label for="field-wind-detection-0x34">Wind Noise Detection:</label>
+                        <select id="field-wind-detection-0x34" class="payload-input">
+                            <option value="0x00">ON</option>
+                            <option value="0x01">OFF</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+            this.attachListeners();
+        },
+        attachListeners: function() {
+            document.getElementById('field-packet-type-0x34').addEventListener('change', (e) => {
+                document.getElementById('response-options-0x34').style.display = e.target.value === '2' ? 'block' : 'none';
+                generateOutput();
+            });
+        },
+        getPayload: function() {
+            if (this.getPacketType() === 0) return [];
+            return [parseInt(document.getElementById('field-wind-detection-0x34').value, 16)];
+        },
+        getPacketType: function() {
+            return parseInt(document.getElementById('field-packet-type-0x34').value, 10);
+        }
+    },
+    '0x35': {
+        render: function(container) {
+            let html = `
+                <div class="form-group">
+                    <label for="field-packet-type-0x35">数据包类型:</label>
+                    <select id="field-packet-type-0x35" class="payload-input">
+                        <option value="0" selected>COMMAND (set)</option>
+                        <option value="2">RESPONSE</option>
+                    </select>
+                </div>
+                <div id="command-options-0x35">
+                    <div class="form-group">
+                        <label for="field-wind-detection-0x35">Wind Noise Detection:</label>
+                        <select id="field-wind-detection-0x35" class="payload-input">
+                            <option value="0x00">ON</option>
+                            <option value="0x01">OFF</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="response-options-0x35" style="display:none;">
+                    <div class="form-group">
+                        <label for="field-wind-detection-resp-0x35">Applied Wind Detection:</label>
+                        <select id="field-wind-detection-resp-0x35" class="payload-input">
+                            <option value="0x00">ON</option>
+                            <option value="0x01">OFF</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+            this.attachListeners();
+        },
+        attachListeners: function() {
+            document.getElementById('field-packet-type-0x35').addEventListener('change', (e) => {
+                const isCommand = e.target.value === '0';
+                document.getElementById('command-options-0x35').style.display = isCommand ? 'block' : 'none';
+                document.getElementById('response-options-0x35').style.display = isCommand ? 'none' : 'block';
+                generateOutput();
+            });
+        },
+        getPayload: function() {
+            const packetType = this.getPacketType();
+            if (packetType === 0) {
+                return [parseInt(document.getElementById('field-wind-detection-0x35').value, 16)];
+            } else {
+                return [parseInt(document.getElementById('field-wind-detection-resp-0x35').value, 16)];
+            }
+        },
+        getPacketType: function() {
+            return parseInt(document.getElementById('field-packet-type-0x35').value, 10);
+        }
+    },
+    '0x36': {
+        render: function(container) {
+            let html = `
+                <div class="form-group">
+                    <label for="field-packet-type-0x36">数据包类型:</label>
+                    <select id="field-packet-type-0x36" class="payload-input">
+                        <option value="0">COMMAND (get)</option>
+                        <option value="2" selected>RESPONSE</option>
+                        <option value="1">NOTIFICATION</option>
+                    </select>
+                </div>
+                <div id="response-options-0x36">
+                    <div class="form-group">
+                        <label for="field-adaptive-anc-level-0x36">Adaptive ANC Level:</label>
+                        <select id="field-adaptive-anc-level-0x36" class="payload-input">
+                            <option value="0x00">HIGH</option>
+                            <option value="0x01" selected>MIDDLE</option>
+                            <option value="0x02">LOW</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+            this.attachListeners();
+        },
+        attachListeners: function() {
+            document.getElementById('field-packet-type-0x36').addEventListener('change', (e) => {
+                document.getElementById('response-options-0x36').style.display = e.target.value !== '0' ? 'block' : 'none';
+                generateOutput();
+            });
+        },
+        getPayload: function() {
+            if (this.getPacketType() === 0) return [];
+            return [parseInt(document.getElementById('field-adaptive-anc-level-0x36').value, 16)];
+        },
+        getPacketType: function() {
+            return parseInt(document.getElementById('field-packet-type-0x36').value, 10);
+        }
     }
 };
 // This is a global function that the handlers can call.
