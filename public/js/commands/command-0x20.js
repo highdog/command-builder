@@ -22,28 +22,31 @@ class Command20 extends BaseCommand {
     }
 
     render(container) {
-            let html = `
+        const currentLang = i18nManager.getCurrentLanguage();
+        const isZh = currentLang === 'zh';
+
+        let html = `
+            <div class="form-group">
+                <label for="field-packet-type-0x20">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
+                <select id="field-packet-type-0x20" class="payload-input">
+                    <option value="0">COMMAND (get)</option>
+                    <option value="2" selected>RESPONSE (device reply)</option>
+                </select>
+            </div>
+            <div id="command-options-0x20" style="display:none;">
                 <div class="form-group">
-                    <label for="field-packet-type-0x20">数据包类型:</label>
-                    <select id="field-packet-type-0x20" class="payload-input">
-                        <option value="0">COMMAND (get)</option>
-                        <option value="2" selected>RESPONSE (device reply)</option>
-                    </select>
+                    <label for="field-index-0x20">${isZh ? '索引 (0-255):' : 'Index (0-255):'}</label>
+                    <input type="number" id="field-index-0x20" min="0" max="255" value="0" style="width: 90%;">
                 </div>
-                <div id="command-options-0x20" style="display:none;">
-                    <div class="form-group">
-                        <label for="field-index-0x20">Index (0-255):</label>
-                        <input type="number" id="field-index-0x20" min="0" max="255" value="0" style="width: 90%;">
-                    </div>
+            </div>
+            <div id="response-options-0x20">
+                <div class="form-group">
+                    <label>${isZh ? '统计项目:' : 'Statistics Items:'}</label>
+                    <div id="statistics-container-0x20"></div>
+                    <button type="button" id="add-statistics-btn-0x20" class="button" style="width: 100%; margin-top: 1rem;">${isZh ? '+ 添加统计项' : '+ Add Statistics Item'}</button>
                 </div>
-                <div id="response-options-0x20">
-                    <div class="form-group">
-                        <label>Statistics Items:</label>
-                        <div id="statistics-container-0x20"></div>
-                        <button type="button" id="add-statistics-btn-0x20" class="button" style="width: 100%; margin-top: 1rem;">+ 添加统计项</button>
-                    </div>
-                </div>
-            `;
+            </div>
+        `;
             container.innerHTML = html;
             this.attachListeners();
             this.addStatisticsItem(); // Add one item by default
@@ -52,17 +55,20 @@ class Command20 extends BaseCommand {
     
 
         addStatisticsItem(type = '0x00', value = 0) {
+            const currentLang = i18nManager.getCurrentLanguage();
+            const isZh = currentLang === 'zh';
+
             const container = document.getElementById('statistics-container-0x20');
             const itemIndex = container.children.length;
-            
+
             const fieldset = document.createElement('fieldset');
             fieldset.className = 'statistics-item';
             fieldset.innerHTML = `
-                <legend>Statistics Item #${itemIndex + 1}</legend>
+                <legend>${isZh ? '统计项目' : 'Statistics Item'} #${itemIndex + 1}</legend>
                 <div class="form-group">
-                    <label>Type:</label>
+                    <label>${isZh ? '类型:' : 'Type:'}</label>
                     <select class="statistics-type">
-                        ${Object.entries(this.statisticsTypes).map(([value, name]) => 
+                        ${Object.entries(this.statisticsTypes).map(([value, name]) =>
                             `<option value="${value}" ${value === type ? 'selected' : ''}>${value} - ${name}</option>`
                         ).join('')}
                     </select>
@@ -70,7 +76,7 @@ class Command20 extends BaseCommand {
                 <div class="statistics-content">
                     ${this.renderStatisticsContent(type, value)}
                 </div>
-                <button type="button" class="remove-statistics-btn button-danger">移除</button>
+                <button type="button" class="remove-statistics-btn button-danger">${isZh ? '移除' : 'Remove'}</button>
             `;
             container.appendChild(fieldset);
             
@@ -87,24 +93,27 @@ class Command20 extends BaseCommand {
     
 
         renderStatisticsContent(type, value) {
+            const currentLang = i18nManager.getCurrentLanguage();
+            const isZh = currentLang === 'zh';
+
             switch(type) {
                 case '0x07': // Volume Level Lifetime Average (1 byte)
                     return `<div class="form-group">
-                        <label>Volume Level (0-32):</label>
+                        <label>${isZh ? '音量级别 (0-32):' : 'Volume Level (0-32):'}</label>
                         <input type="number" class="statistics-value" min="0" max="32" value="${value}" style="width: 90%;">
                     </div>`;
                 case '0x0B': // Error Information (variable length)
                     return `<div class="form-group">
-                        <label>Error Data (hex bytes, space separated):</label>
+                        <label>${isZh ? '错误数据 (十六进制字节，空格分隔):' : 'Error Data (hex bytes, space separated):'}</label>
                         <input type="text" class="statistics-value" placeholder="01 02 03 04" value="${value}" style="width: 90%;">
                     </div>`;
                 default: // Most statistics are 4-byte uint32 values
                     return `<div class="form-group">
-                        <label>Value (uint32):</label>
+                        <label>${isZh ? '数值 (uint32):' : 'Value (uint32):'}</label>
                         <input type="number" class="statistics-value" min="0" max="4294967295" value="${value}" style="width: 90%;">
                     </div>`;
             }
-    }
+        }
 
     
 

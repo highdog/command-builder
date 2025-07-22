@@ -8,10 +8,13 @@ class Command21 extends BaseCommand {
 
 
         render(container) {
+            const currentLang = i18nManager.getCurrentLanguage();
+            const isZh = currentLang === 'zh';
+
             let html = `
                 <div class="form-group">
-                    <label>数据包类型: COMMAND</label>
-                    <p>重置设备使用统计数据（空载荷）</p>
+                    <label>${isZh ? '数据包类型: COMMAND' : 'Packet Type: COMMAND'}</label>
+                    <p>${isZh ? '重置设备使用统计数据（空载荷）' : 'Reset device usage statistics (empty payload)'}</p>
                 </div>
             `;
             container.innerHTML = html;

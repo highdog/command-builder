@@ -8,9 +8,12 @@ class Command16 extends BaseCommand {
 
 
         render(container) {
+            const currentLang = i18nManager.getCurrentLanguage();
+            const isZh = currentLang === 'zh';
+
             let html = `
                 <div class="form-group">
-                    <label for="field-packet-type-0x16">数据包类型:</label>
+                    <label for="field-packet-type-0x16">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                     <select id="field-packet-type-0x16" class="payload-input">
                         <option value="0" selected>COMMAND (set color)</option>
                         <option value="2">RESPONSE (result status)</option>
@@ -18,23 +21,23 @@ class Command16 extends BaseCommand {
                 </div>
                 <div id="command-options-0x16">
                     <div class="form-group">
-                        <label for="field-color-0x16">Earbuds Color:</label>
+                        <label for="field-color-0x16">${isZh ? '耳机颜色:' : 'Earbuds Color:'}</label>
                         <select id="field-color-0x16" class="payload-input">
-                            <option value="0x00">Color1</option>
-                            <option value="0x01">Color2</option>
-                            <option value="0x02">Color3</option>
-                            <option value="0x03">Color4</option>
+                            <option value="0x00">${isZh ? '颜色1' : 'Color1'}</option>
+                            <option value="0x01">${isZh ? '颜色2' : 'Color2'}</option>
+                            <option value="0x02">${isZh ? '颜色3' : 'Color3'}</option>
+                            <option value="0x03">${isZh ? '颜色4' : 'Color4'}</option>
                         </select>
                     </div>
                 </div>
                 <div id="response-options-0x16" style="display:none;">
                     <div class="form-group">
-                        <label for="field-status-0x16">Result Status:</label>
+                        <label for="field-status-0x16">${isZh ? '结果状态:' : 'Result Status:'}</label>
                         <select id="field-status-0x16" class="payload-input">
-                            <option value="0x00">FAILED</option>
-                            <option value="0x01">LEFT successful</option>
-                            <option value="0x02">RIGHT successful</option>
-                            <option value="0x03">BOTH successful</option>
+                            <option value="0x00">${isZh ? '失败' : 'FAILED'}</option>
+                            <option value="0x01">${isZh ? '左耳机成功' : 'LEFT successful'}</option>
+                            <option value="0x02">${isZh ? '右耳机成功' : 'RIGHT successful'}</option>
+                            <option value="0x03">${isZh ? '两个耳机都成功' : 'BOTH successful'}</option>
                         </select>
                     </div>
                 </div>

@@ -8,9 +8,12 @@ class Command19 extends BaseCommand {
 
 
         render(container) {
+            const currentLang = i18nManager.getCurrentLanguage();
+            const isZh = currentLang === 'zh';
+
             let html = `
                 <div class="form-group">
-                    <label for="field-packet-type-0x19">数据包类型:</label>
+                    <label for="field-packet-type-0x19">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                     <select id="field-packet-type-0x19" class="payload-input">
                         <option value="0">COMMAND (get)</option>
                         <option value="2" selected>RESPONSE (device reply)</option>
@@ -18,28 +21,28 @@ class Command19 extends BaseCommand {
                 </div>
                 <div id="response-options-0x19">
                     <div class="form-group">
-                        <label for="field-product-type-0x19">产品类型:</label>
+                        <label for="field-product-type-0x19">${isZh ? '产品类型:' : 'Product Type:'}</label>
                         <select id="field-product-type-0x19" class="payload-input">
-                            <option value="earbuds">Earbuds</option>
-                            <option value="headset">Headset</option>
+                            <option value="earbuds">${isZh ? '耳机' : 'Earbuds'}</option>
+                            <option value="headset">${isZh ? '头戴式耳机' : 'Headset'}</option>
                         </select>
                     </div>
                     <div id="earbuds-options-0x19">
                         <fieldset>
-                            <legend>Left Earbud MAC</legend>
-                            <label for="left-mac-0x19">MAC Address:</label>
+                            <legend>${isZh ? '左耳机MAC地址' : 'Left Earbud MAC'}</legend>
+                            <label for="left-mac-0x19">${isZh ? 'MAC地址:' : 'MAC Address:'}</label>
                             <input type="text" id="left-mac-0x19" placeholder="AA:BB:CC:DD:EE:FF" pattern="[0-9A-Fa-f:]{17}" value="12:34:56:78:9A:BC" style="width: 90%;">
                         </fieldset>
                         <fieldset>
-                            <legend>Right Earbud MAC</legend>
-                            <label for="right-mac-0x19">MAC Address:</label>
+                            <legend>${isZh ? '右耳机MAC地址' : 'Right Earbud MAC'}</legend>
+                            <label for="right-mac-0x19">${isZh ? 'MAC地址:' : 'MAC Address:'}</label>
                             <input type="text" id="right-mac-0x19" placeholder="AA:BB:CC:DD:EE:FF" pattern="[0-9A-Fa-f:]{17}" value="12:34:56:78:9A:BD" style="width: 90%;">
                         </fieldset>
                     </div>
                     <div id="headset-options-0x19" style="display:none;">
                         <fieldset>
-                            <legend>Headset MAC</legend>
-                            <label for="headset-mac-0x19">MAC Address:</label>
+                            <legend>${isZh ? '头戴式耳机MAC地址' : 'Headset MAC'}</legend>
+                            <label for="headset-mac-0x19">${isZh ? 'MAC地址:' : 'MAC Address:'}</label>
                             <input type="text" id="headset-mac-0x19" placeholder="AA:BB:CC:DD:EE:FF" pattern="[0-9A-Fa-f:]{17}" value="12:34:56:78:9A:BE" style="width: 90%;">
                         </fieldset>
                     </div>
