@@ -69,12 +69,15 @@
     </div>
   </div>
 
-  <script src="/js/command_handlers.js"></script>
+  <!-- Load the new modular command system -->
+  <script src="/js/commands/base-command.js"></script>
+  <script src="/js/command-loader.js"></script>
   <script>
     // This variable needs to be accessible by the handlers
     let generateOutput;
+    let customCommandHandlers = {}; // Will be populated by the command loader
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
         // --- STATE ---
         let currentUser = null;
         let currentCommand = null;
@@ -264,9 +267,52 @@
         payloadBuilderContainer.addEventListener('keyup', generateOutput);
         copyOutputBtn.addEventListener('click', () => navigator.clipboard.writeText(outputEl.textContent).then(() => alert('已复制!')));
 
+        // --- COMMAND LOADER INITIALIZATION ---
+        const initializeCommands = async () => {
+            try {
+                console.log('Loading modular command handlers...');
+
+                // Load all available commands
+                const availableCommands = CommandLoader.AVAILABLE_COMMANDS;
+
+                for (const commandId of availableCommands) {
+                    try {
+                        await commandLoader.loadCommand(commandId);
+                        console.log(`Loaded command: ${commandId}`);
+                    } catch (error) {
+                        console.warn(`Failed to load command ${commandId}:`, error);
+                        // Continue loading other commands even if one fails
+                    }
+                }
+
+                // Create legacy handlers object for backward compatibility
+                customCommandHandlers = commandLoader.createLegacyHandlers();
+                console.log('Command handlers initialized:', Object.keys(customCommandHandlers));
+
+            } catch (error) {
+                console.error('Failed to initialize command handlers:', error);
+                // Fallback: try to load the old command_handlers.js
+                console.log('Falling back to old command_handlers.js...');
+                try {
+                    const script = document.createElement('script');
+                    script.src = '/js/command_handlers.js';
+                    script.onload = () => {
+                        if (window.customCommandHandlers) {
+                            customCommandHandlers = window.customCommandHandlers;
+                            console.log('Fallback command handlers loaded');
+                        }
+                    };
+                    document.head.appendChild(script);
+                } catch (fallbackError) {
+                    console.error('Fallback also failed:', fallbackError);
+                }
+            }
+        };
+
         // --- INITIALIZATION ---
         const init = async () => {
             if (await checkSession()) {
+                await initializeCommands();
                 fetchCommands();
                 updateProtocolExample();
             }
