@@ -306,8 +306,9 @@
         }
       };
 
-      const fetchCommands = () => {
-        fetch(`/api/commands`)
+      const fetchCommands = (lang = null) => {
+        const language = lang || i18nManager.getCurrentLanguage();
+        fetch(`/api/commands?lang=${language}`)
           .then(response => response.json())
           .then(data => {
             allCommands = data;
@@ -317,17 +318,34 @@
       };
 
       const searchCommands = (searchTerm) => {
-        const term = searchTerm.toLowerCase();
-        const filteredData = {};
-        for (const category in allCommands) {
-          const filteredCommands = allCommands[category].filter(command => 
-            command.name.toLowerCase().includes(term)
-          );
-          if (filteredCommands.length > 0) {
-            filteredData[category] = filteredCommands;
-          }
+        if (!searchTerm.trim()) {
+          // If search is empty, show all commands
+          renderCommandList(allCommands, docsListContainer);
+          return;
         }
-        renderCommandList(filteredData, docsListContainer);
+
+        // Use server-side search for better multilingual support
+        const language = i18nManager.getCurrentLanguage();
+        fetch(`/api/search?q=${encodeURIComponent(searchTerm)}&lang=${language}`)
+          .then(response => response.json())
+          .then(data => {
+            renderCommandList(data, docsListContainer);
+          })
+          .catch(error => {
+            console.error('Search error:', error);
+            // Fallback to client-side search
+            const term = searchTerm.toLowerCase();
+            const filteredData = {};
+            for (const category in allCommands) {
+              const filteredCommands = allCommands[category].filter(command =>
+                command.name.toLowerCase().includes(term)
+              );
+              if (filteredCommands.length > 0) {
+                filteredData[category] = filteredCommands;
+              }
+            }
+            renderCommandList(filteredData, docsListContainer);
+          });
       };
 
       const renderCommandList = (data, container) => {
@@ -539,6 +557,9 @@
           if (displayContainer && !currentCommandData) {
               displayContainer.innerHTML = `<p>${i18nManager.t('main.selectCommandDoc')}</p>`;
           }
+
+          // Re-fetch commands with new language
+          fetchCommands(lang);
 
           console.log(`Language applied: ${lang}`);
       }

@@ -380,6 +380,9 @@
                 docContainer.innerHTML = `<p>${i18nManager.t('main.selectCommandDoc')}</p>`;
             }
 
+            // Re-fetch commands with new language
+            fetchCommands(lang);
+
             console.log(`Language applied: ${lang}`);
         }
 
@@ -417,15 +420,17 @@
             }
         };
 
-        const fetchCommands = async () => {
+        const fetchCommands = async (lang = null) => {
             try {
-                const response = await fetch('/api/commands');
+                const language = lang || currentLanguage;
+                const response = await fetch(`/api/commands?lang=${language}`);
                 if (!response.ok) throw new Error('Failed to fetch commands');
                 allCommands = await response.json();
                 renderCommandSelect();
             } catch (error) {
                 console.error(error);
-                commandSelect.innerHTML = '<option value="">-- 加载失败 --</option>';
+                const errorMsg = language === 'zh' ? '-- 加载失败 --' : '-- Loading failed --';
+                commandSelect.innerHTML = `<option value="">${errorMsg}</option>`;
             }
         };
 

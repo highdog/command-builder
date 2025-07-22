@@ -117,7 +117,22 @@ app.post('/logout', (req, res) => {
 // --- Command Documentation API (English only) ---
 
 app.get('/api/commands', isAuthenticated, (req, res) => {
-  const query = `SELECT category_en as category, id, name_en as name, hex_id FROM commands ORDER BY category_en, name_en`;
+  const lang = req.query.lang || 'en'; // Default to English
+  const isZh = lang === 'zh';
+
+  const query = `
+    SELECT
+      ${isZh ? 'COALESCE(category_zh, category_en)' : 'category_en'} as category,
+      id,
+      ${isZh ? 'COALESCE(name_zh, name_en)' : 'name_en'} as name,
+      hex_id
+    FROM commands
+    ORDER BY
+      ${isZh ? 'COALESCE(category_zh, category_en)' : 'category_en'},
+      ${isZh ? 'COALESCE(name_zh, name_en)' : 'name_en'}`;
+
+  console.log(`DEBUG: Commands API called with lang=${lang}`);
+
   db.all(query, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     const groupedCommands = rows.reduce((acc, row) => {
@@ -126,18 +141,33 @@ app.get('/api/commands', isAuthenticated, (req, res) => {
       acc[category].push({ id: row.id, name: row.name, hex_id: row.hex_id });
       return acc;
     }, {});
+
+    console.log(`DEBUG: Returning ${Object.keys(groupedCommands).length} categories for lang=${lang}`);
     res.json(groupedCommands);
   });
 });
 
 app.get('/api/search', isAuthenticated, (req, res) => {
   const searchTerm = req.query.q || '';
+  const lang = req.query.lang || 'en';
+  const isZh = lang === 'zh';
+
   if (!searchTerm) return res.json({});
+
   const query = `
-    SELECT category_en as category, id, name_en as name 
-    FROM commands 
-    WHERE name_en LIKE ? OR description_en LIKE ?
-    ORDER BY category_en, name_en`;
+    SELECT
+      ${isZh ? 'COALESCE(category_zh, category_en)' : 'category_en'} as category,
+      id,
+      ${isZh ? 'COALESCE(name_zh, name_en)' : 'name_en'} as name
+    FROM commands
+    WHERE
+      ${isZh ? '(COALESCE(name_zh, name_en) LIKE ? OR COALESCE(description_zh, description_en) LIKE ?)' : '(name_en LIKE ? OR description_en LIKE ?)'}
+    ORDER BY
+      ${isZh ? 'COALESCE(category_zh, category_en)' : 'category_en'},
+      ${isZh ? 'COALESCE(name_zh, name_en)' : 'name_en'}`;
+
+  console.log(`DEBUG: Search API called with term="${searchTerm}", lang=${lang}`);
+
   db.all(query, [`%${searchTerm}%`, `%${searchTerm}%`], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     const groupedCommands = rows.reduce((acc, row) => {
