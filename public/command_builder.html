@@ -180,6 +180,10 @@
             background: #c82333;
         }
 
+        .logout-container a:hover {
+            background-color: #e9ecef !important;
+        }
+
         .content-container {
             flex: 1;
             display: flex;
@@ -210,9 +214,9 @@
         <h1 style="margin: 0; color: #333; font-size: 1.5rem;">蓝牙命令构建器</h1>
         <a href="/">Command Builder</a>
         <a href="/documentation">Documentation</a>
-        <a href="/admin" id="ui-admin-link" style="display: none;">Admin</a>
       </div>
       <div class="logout-container">
+        <a href="/admin" id="ui-admin-link" style="display: none; margin-right: 1rem; color: #007bff; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; transition: background-color 0.2s;">Admin</a>
         <form action="/logout" method="POST" style="margin: 0;">
           <button type="submit" class="logout-btn">Logout</button>
         </form>
