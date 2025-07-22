@@ -6,6 +6,7 @@
   <title>Command Documentation & Builder</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="i18n.js"></script>
   <style>
     /* Layout styles for fixed height and independent scrolling */
     html, body {
@@ -164,11 +165,11 @@
     <!-- Top Navigation Bar -->
     <div class="top-nav">
       <div class="nav-links">
-        <a href="/">Command Builder</a>
-        <a href="/documentation" class="active">Documentation</a>
+        <a href="/" data-i18n="nav.commandBuilder">Command Builder</a>
+        <a href="/documentation" class="active" data-i18n="nav.documentation">Documentation</a>
       </div>
       <div class="nav-search">
-        <input type="search" id="global-search-box" placeholder="Search all commands...">
+        <input type="search" id="global-search-box" placeholder="Search all commands..." data-i18n="sidebar.searchPlaceholder">
       </div>
       <div class="logout-container">
         <div class="language-toggle">
@@ -488,7 +489,7 @@
 
       // --- LANGUAGE TOGGLE ---
       const languageButtons = document.querySelectorAll('.language-btn');
-      let currentLanguage = localStorage.getItem('language') || 'zh';
+      let currentLanguage = i18nManager.getCurrentLanguage();
 
       // Set initial language state
       languageButtons.forEach(btn => {
@@ -519,39 +520,27 @@
       });
 
       function applyLanguage(lang) {
-          // Update UI text based on language
-          const translations = {
-              zh: {
-                  selectCommand: '选择一个命令',
-                  selectCommandPrompt: '从侧边栏选择一个命令以查看其文档。',
-                  searchPlaceholder: '搜索所有命令...'
-              },
-              en: {
-                  selectCommand: 'Select a command',
-                  selectCommandPrompt: 'Select a command from the sidebar to view its documentation.',
-                  searchPlaceholder: 'Search all commands...'
-              }
-          };
+          // Update the i18n manager language
+          i18nManager.setLanguage(lang);
 
-          const t = translations[lang];
+          // Update all elements with data-i18n attributes
+          i18nManager.updatePageTexts();
 
-          // Update command name header
+          // Update HTML lang attribute
+          i18nManager.updateHtmlLang();
+
+          // Update dynamic content
           const commandName = document.getElementById('command-name');
-          if (commandName && commandName.textContent === '选择一个命令' || commandName.textContent === 'Select a command') {
-              commandName.textContent = t.selectCommand;
+          if (commandName && !currentCommandData) {
+              commandName.textContent = i18nManager.t('sidebar.selectCommand');
           }
 
-          // Update search placeholder
-          const searchBox = document.getElementById('global-search-box');
-          if (searchBox) {
-              searchBox.placeholder = t.searchPlaceholder;
-          }
-
-          // Update initial prompt
           const displayContainer = document.getElementById('command-display-container');
-          if (displayContainer && (displayContainer.innerHTML.includes('从侧边栏选择') || displayContainer.innerHTML.includes('Select a command from the sidebar'))) {
-              displayContainer.innerHTML = `<p>${t.selectCommandPrompt}</p>`;
+          if (displayContainer && !currentCommandData) {
+              displayContainer.innerHTML = `<p>${i18nManager.t('main.selectCommandDoc')}</p>`;
           }
+
+          console.log(`Language applied: ${lang}`);
       }
 
       function displayCommandDocumentation(data, lang = currentLanguage) {

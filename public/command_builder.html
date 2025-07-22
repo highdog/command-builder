@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=help" />
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="i18n.js"></script>
     <style>
         /* Protocol help icon styles */
         .protocol-help-icon {
@@ -260,8 +261,8 @@
     <!-- Top Navigation Bar -->
     <div class="top-nav">
       <div class="nav-links">
-        <a href="/" class="active">Command Builder</a>
-        <a href="/documentation">Documentation</a>
+        <a href="/" class="active" data-i18n="nav.commandBuilder">Command Builder</a>
+        <a href="/documentation" data-i18n="nav.documentation">Documentation</a>
       </div>
       <div class="logout-container">
         <div class="language-toggle">
@@ -283,28 +284,28 @@
             <div class="sidebar-section-content">
                 <div class="form-group">
                     <label for="protocol-select">
-                        蓝牙协议:
+                        <span data-i18n="main.protocolLabel">蓝牙协议:</span>
                         <span class="material-symbols-outlined protocol-help-icon" title="点击查看协议示例">help</span>
                     </label>
                     <select id="protocol-select" style="width: 100%; padding: 0.5rem; font-size: 1rem;">
-                        <option value="gatt">GATT over BLE</option>
-                        <option value="rfcomm">RFCOMM</option>
+                        <option value="gatt" data-i18n="protocols.gatt">GATT over BLE</option>
+                        <option value="rfcomm" data-i18n="protocols.rfcomm">RFCOMM</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label for="command-select">选择命令:</label>
+                    <label for="command-select" data-i18n="main.commandLabel">选择命令:</label>
                     <select id="command-select" style="width: 100%; padding: 0.5rem; font-size: 1rem;">
-                        <option value="">-- 请稍候 --</option>
+                        <option value="" data-i18n="main.selectCommand">-- 请稍候 --</option>
                     </select>
                 </div>
                 <div id="payload-builder-container">
                     <!-- Payload fields will be generated here -->
                 </div>
                 <div id="output-container" style="margin-top: 1.5rem; display: none;">
-                    <h4>生成结果:</h4>
+                    <h4 data-i18n="main.resultLabel">生成结果:</h4>
                     <pre id="output" style="background-color: #282c34; color: #abb2bf; padding: 1rem; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word;"></pre>
-                    <button id="copy-output-btn" class="button" style="width: 100%; margin-top: 1rem;">复制</button>
+                    <button id="copy-output-btn" class="button" style="width: 100%; margin-top: 1rem;" data-i18n="main.copyButton">复制</button>
                 </div>
             </div>
         </div>
@@ -314,7 +315,7 @@
       <!-- Right Main Content -->
       <div class="main-content">
         <div id="command-display-container">
-          <p>请从左侧选择一个命令以查看其文档。</p>
+          <p data-i18n="main.selectCommandDoc">请从左侧选择一个命令以查看其文档。</p>
         </div>
       </div>
     </div>
@@ -333,7 +334,7 @@
         let currentUser = null;
         let currentCommand = null;
         let allCommands = {};
-        let currentLanguage = localStorage.getItem('language') || 'zh';
+        let currentLanguage = i18nManager.getCurrentLanguage();
 
         // --- LANGUAGE FUNCTIONS ---
         function displayCommandDocumentation(command, lang = currentLanguage) {
@@ -364,50 +365,22 @@
         }
 
         function applyLanguage(lang) {
-            // Update UI text based on language
-            const translations = {
-                zh: {
-                    protocolLabel: '蓝牙协议:',
-                    commandLabel: '选择命令:',
-                    resultLabel: '生成结果:',
-                    copyButton: '复制',
-                    selectCommand: '-- 请稍候 --',
-                    selectCommandDoc: '请从左侧选择一个命令以查看其文档。'
-                },
-                en: {
-                    protocolLabel: 'Bluetooth Protocol:',
-                    commandLabel: 'Select Command:',
-                    resultLabel: 'Generated Result:',
-                    copyButton: 'Copy',
-                    selectCommand: '-- Please wait --',
-                    selectCommandDoc: 'Please select a command from the left sidebar to view its documentation.'
-                }
-            };
+            // Update the i18n manager language
+            i18nManager.setLanguage(lang);
 
-            const t = translations[lang];
+            // Update all elements with data-i18n attributes
+            i18nManager.updatePageTexts();
 
-            // Update labels
-            const protocolLabel = document.querySelector('label[for="protocol-select"]');
-            if (protocolLabel) {
-                const helpIcon = protocolLabel.querySelector('.protocol-help-icon');
-                protocolLabel.innerHTML = `${t.protocolLabel} `;
-                if (helpIcon) protocolLabel.appendChild(helpIcon);
+            // Update HTML lang attribute
+            i18nManager.updateHtmlLang();
+
+            // Update any dynamic content that might not have data-i18n attributes
+            const docContainer = document.getElementById('command-display-container');
+            if (docContainer && !currentCommand) {
+                docContainer.innerHTML = `<p>${i18nManager.t('main.selectCommandDoc')}</p>`;
             }
 
-            const commandLabel = document.querySelector('label[for="command-select"]');
-            if (commandLabel) commandLabel.textContent = t.commandLabel;
-
-            const resultHeader = document.querySelector('#output-container h4');
-            if (resultHeader) resultHeader.textContent = t.resultLabel;
-
-            const copyButton = document.getElementById('copy-output-btn');
-            if (copyButton) copyButton.textContent = t.copyButton;
-
-            // Update command select default option
-            const commandSelect = document.getElementById('command-select');
-            if (commandSelect && commandSelect.children.length > 0) {
-                commandSelect.children[0].textContent = t.selectCommand;
-            }
+            console.log(`Language applied: ${lang}`);
         }
 
         // --- UI ELEMENTS ---
