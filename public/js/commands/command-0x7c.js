@@ -40,8 +40,7 @@ class Command7C extends BaseCommand {
 
     attachListeners() {
         this.addListener('field-packet-type-0x7c', 'change', (e) => {
-            document.getElementById('response-options-0x7c').style.display =
-                e.target.value === '2' ? 'block' : 'none';
+            document.getElementById('response-options-0x7c').style.display = e.target.value === '2' ? 'block' : 'none';
         });
     }
 

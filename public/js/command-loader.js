@@ -125,9 +125,9 @@ class CommandLoader {
      */
     createLegacyHandlers() {
         const legacyHandlers = {};
-        
+
         for (const [commandId, command] of Object.entries(this.commands)) {
-            legacyHandlers[commandId] = {
+            const handlerObject = {
                 render: (container) => command.render(container),
                 attachListeners: () => command.attachListeners(),
                 getPayload: () => command.getPayload(),
@@ -136,13 +136,17 @@ class CommandLoader {
 
             // Copy any additional methods/properties from the command instance
             for (const prop in command) {
-                if (typeof command[prop] === 'function' && 
+                if (typeof command[prop] === 'function' &&
                     !['render', 'attachListeners', 'getPayload', 'getPacketType', 'constructor'].includes(prop)) {
-                    legacyHandlers[commandId][prop] = command[prop].bind(command);
+                    handlerObject[prop] = command[prop].bind(command);
                 }
             }
+
+            // Add handler with both lowercase and uppercase keys for compatibility
+            legacyHandlers[commandId] = handlerObject;
+            legacyHandlers[commandId.toUpperCase()] = handlerObject;
         }
-        
+
         return legacyHandlers;
     }
 }

@@ -497,11 +497,33 @@
                 displayCommandDocumentation(currentCommand, currentLanguage);
 
                 const handler = customCommandHandlers[currentCommand.hex_id];
+                console.log('Looking for handler:');
+                console.log('  hexId:', currentCommand.hex_id);
+                console.log('  hexId type:', typeof currentCommand.hex_id);
+                console.log('  handlerExists:', !!handler);
+                console.log('  totalHandlers:', Object.keys(customCommandHandlers).length);
+                console.log('  handlers with 7:', Object.keys(customCommandHandlers).filter(k => k.includes('7')));
+                console.log('  exact matches:', Object.keys(customCommandHandlers).filter(k => k === currentCommand.hex_id));
+                console.log('  customCommandHandlers keys sample:', Object.keys(customCommandHandlers).slice(0, 10));
+
                 if (handler) {
+                    console.log('Handler found, rendering...');
                     // THE FIX: Pass the container to the render function
                     handler.render(payloadBuilderContainer);
                 } else {
-                    payloadBuilderContainer.innerHTML = '<p>此命令暂无自定义构建器。</p>';
+                    console.log('Handler not found for:', currentCommand.hex_id);
+                    console.log('Trying alternative lookups...');
+                    const altHandler1 = customCommandHandlers[currentCommand.hex_id.toLowerCase()];
+                    const altHandler2 = customCommandHandlers[currentCommand.hex_id.toUpperCase()];
+                    console.log('  lowercase lookup:', !!altHandler1);
+                    console.log('  uppercase lookup:', !!altHandler2);
+
+                    if (altHandler1 || altHandler2) {
+                        console.log('Alternative handler found, using it...');
+                        (altHandler1 || altHandler2).render(payloadBuilderContainer);
+                    } else {
+                        payloadBuilderContainer.innerHTML = '<p>此命令暂无自定义构建器。</p>';
+                    }
                 }
             } catch (error) {
                 console.error(error);

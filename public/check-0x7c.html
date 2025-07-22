@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>检查0x7C命令</title>
+    <script src="i18n.js"></script>
+    <script src="js/commands/base-command.js"></script>
+    <script src="js/commands/command-0x7c.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .result {
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+        }
+        
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0.25rem;
+        }
+        
+        .demo-container {
+            border: 1px solid #ccc;
+            padding: 1rem;
+            margin: 1rem 0;
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 检查0x7C命令</h1>
+        
+        <button onclick="checkCommand()">检查命令</button>
+        <button onclick="testRender()">测试渲染</button>
+        
+        <div id="results"></div>
+        <div id="demo-container" class="demo-container" style="display: none;">
+            <h3>命令渲染演示:</h3>
+            <div id="command-render"></div>
+        </div>
+    </div>
+
+    <script>
+        function checkCommand() {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            
+            try {
+                // Check if Command7C class exists
+                if (typeof Command7C === 'undefined') {
+                    throw new Error('Command7C 类未定义');
+                }
+                
+                // Check if it extends BaseCommand
+                if (!(Command7C.prototype instanceof BaseCommand)) {
+                    throw new Error('Command7C 不继承自 BaseCommand');
+                }
+                
+                // Create instance
+                const instance = new Command7C('0x7c');
+                
+                // Check methods
+                const methods = ['render', 'getPayload', 'getPacketType', 'attachListeners'];
+                const missingMethods = methods.filter(method => typeof instance[method] !== 'function');
+                
+                if (missingMethods.length > 0) {
+                    throw new Error(`缺少方法: ${missingMethods.join(', ')}`);
+                }
+                
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    <h3>✅ 0x7C 命令检查通过</h3>
+                    <p><strong>类名:</strong> ${instance.constructor.name}</p>
+                    <p><strong>方法:</strong> ${methods.join(', ')}</p>
+                    <p><strong>全局注册:</strong> ${typeof window.Command7C !== 'undefined' ? '✅' : '❌'}</p>
+                `;
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <h3>❌ 0x7C 命令检查失败</h3>
+                    <p><strong>错误:</strong> ${error.message}</p>
+                `;
+            }
+            
+            resultsDiv.appendChild(resultDiv);
+        }
+        
+        function testRender() {
+            const demoContainer = document.getElementById('demo-container');
+            const renderContainer = document.getElementById('command-render');
+            
+            try {
+                const instance = new Command7C('0x7c');
+                instance.render(renderContainer);
+                
+                // Test payload generation
+                const payload = instance.getPayload();
+                const packetType = instance.getPacketType();
+                
+                demoContainer.style.display = 'block';
+                
+                const infoDiv = document.createElement('div');
+                infoDiv.innerHTML = `
+                    <p><strong>载荷:</strong> [${payload.map(b => '0x' + b.toString(16).padStart(2, '0')).join(', ')}]</p>
+                    <p><strong>数据包类型:</strong> ${packetType}</p>
+                `;
+                renderContainer.appendChild(infoDiv);
+                
+            } catch (error) {
+                renderContainer.innerHTML = `<p style="color: red;">渲染失败: ${error.message}</p>`;
+                demoContainer.style.display = 'block';
+            }
+        }
+        
+        // Auto-check on load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkCommand();
+        });
+    </script>
+</body>
+</html>

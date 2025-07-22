@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最终修复验证</title>
+    <script src="i18n.js"></script>
+    <script src="js/commands/base-command.js"></script>
+    <script src="js/command-loader.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .status {
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+        }
+        
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0.5rem;
+            font-size: 1rem;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        .command-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .command-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1rem;
+            background: #f8f9fa;
+        }
+        
+        .command-card.success {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .command-card.error {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+        
+        .demo-area {
+            border: 1px solid #ccc;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            background: white;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 最终修复验证</h1>
+        
+        <div class="status info">
+            <h3>验证目标</h3>
+            <p>确认0x7C、0x7D、0x7E、0x7F这4个命令现在可以正常工作，并且能在Command Builder中使用</p>
+        </div>
+        
+        <button onclick="runFinalVerification()">🚀 开始最终验证</button>
+        <button onclick="simulateCommandBuilder()">🔧 模拟Command Builder流程</button>
+        <button onclick="clearResults()">🧹 清除结果</button>
+        
+        <div id="verification-results"></div>
+    </div>
+
+    <script>
+        const targetCommands = [
+            { id: '0x7c', name: 'Get Dolby Atmos Config', nameZh: '获取杜比全景声配置' },
+            { id: '0x7d', name: 'Set Dolby Atmos Config', nameZh: '设置杜比全景声配置' },
+            { id: '0x7e', name: 'Get Audio Codecs Configurations', nameZh: '获取音频编解码器配置' },
+            { id: '0x7f', name: 'Set Audio Codecs Configurations', nameZh: '设置音频编解码器配置' }
+        ];
+        
+        async function runFinalVerification() {
+            const resultsDiv = document.getElementById('verification-results');
+            resultsDiv.innerHTML = '<div class="status info">🔄 正在进行最终验证...</div>';
+            
+            const results = [];
+            
+            for (const cmd of targetCommands) {
+                const result = await verifyCommand(cmd);
+                results.push(result);
+            }
+            
+            const allPassed = results.every(r => r.success);
+            const passedCount = results.filter(r => r.success).length;
+            
+            let html = `
+                <div class="status ${allPassed ? 'success' : 'error'}">
+                    <h2>${allPassed ? '🎉' : '⚠️'} 最终验证结果</h2>
+                    <p><strong>通过率: ${passedCount}/${results.length} (${Math.round(passedCount/results.length*100)}%)</strong></p>
+                    ${allPassed ? 
+                        '<p>✅ 所有4个命令都已修复完成，现在应该可以在Command Builder中正常使用！</p>' : 
+                        '<p>❌ 还有命令需要进一步修复</p>'
+                    }
+                </div>
+                
+                <div class="command-grid">
+            `;
+            
+            results.forEach(result => {
+                html += `
+                    <div class="command-card ${result.success ? 'success' : 'error'}">
+                        <h4>${result.command.id.toUpperCase()}</h4>
+                        <p><strong>${result.command.nameZh}</strong></p>
+                        <p>状态: ${result.success ? '✅ 正常' : '❌ 失败'}</p>
+                        ${result.error ? `<p><small style="color: red;">${result.error}</small></p>` : ''}
+                        ${result.success ? `
+                            <p><small>载荷: ${result.payloadLength} 字节</small></p>
+                            <div class="demo-area">
+                                ${result.renderedHtml.substring(0, 200)}${result.renderedHtml.length > 200 ? '...' : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        async function verifyCommand(cmd) {
+            try {
+                // Step 1: Load command through CommandLoader
+                const commandLoader = new CommandLoader();
+                const commandInstance = await commandLoader.loadCommand(cmd.id);
+                
+                if (!commandInstance) {
+                    throw new Error('CommandLoader返回null');
+                }
+                
+                // Step 2: Create container and render
+                const container = document.createElement('div');
+                commandInstance.render(container);
+                
+                if (!container.innerHTML || container.innerHTML.length < 20) {
+                    throw new Error('render方法失败或内容过少');
+                }
+                
+                // Step 3: Test payload generation
+                const payload = commandInstance.getPayload();
+                const packetType = commandInstance.getPacketType();
+                
+                if (!Array.isArray(payload)) {
+                    throw new Error('载荷格式错误');
+                }
+                
+                if (typeof packetType !== 'number') {
+                    throw new Error('数据包类型格式错误');
+                }
+                
+                return {
+                    success: true,
+                    command: cmd,
+                    payloadLength: payload.length,
+                    packetType: packetType,
+                    renderedHtml: container.innerHTML
+                };
+                
+            } catch (error) {
+                return {
+                    success: false,
+                    command: cmd,
+                    error: error.message
+                };
+            }
+        }
+        
+        async function simulateCommandBuilder() {
+            const resultsDiv = document.getElementById('verification-results');
+            resultsDiv.innerHTML = '<div class="status info">🔄 模拟Command Builder流程...</div>';
+            
+            try {
+                // Step 1: Initialize CommandLoader (like Command Builder does)
+                const commandLoader = new CommandLoader();
+                
+                // Step 2: Load all available commands
+                const availableCommands = CommandLoader.AVAILABLE_COMMANDS;
+                const loadResults = [];
+                
+                for (const commandId of targetCommands.map(c => c.id)) {
+                    try {
+                        await commandLoader.loadCommand(commandId);
+                        loadResults.push({ commandId, success: true });
+                    } catch (error) {
+                        loadResults.push({ commandId, success: false, error: error.message });
+                    }
+                }
+                
+                // Step 3: Create legacy handlers (like Command Builder does)
+                const customCommandHandlers = commandLoader.createLegacyHandlers();
+                
+                // Step 4: Check if handlers exist for our target commands
+                const handlerResults = targetCommands.map(cmd => ({
+                    command: cmd,
+                    hasHandler: !!customCommandHandlers[cmd.id],
+                    handler: customCommandHandlers[cmd.id]
+                }));
+                
+                // Generate report
+                let html = `
+                    <div class="status info">
+                        <h3>🔧 Command Builder 流程模拟结果</h3>
+                        <p>模拟了Command Builder的完整初始化流程</p>
+                    </div>
+                    
+                    <div class="command-grid">
+                `;
+                
+                handlerResults.forEach(result => {
+                    html += `
+                        <div class="command-card ${result.hasHandler ? 'success' : 'error'}">
+                            <h4>${result.command.id.toUpperCase()}</h4>
+                            <p><strong>${result.command.nameZh}</strong></p>
+                            <p>Handler: ${result.hasHandler ? '✅ 存在' : '❌ 不存在'}</p>
+                            ${result.hasHandler ? `
+                                <p><small>方法: render, getPayload, getPacketType</small></p>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                
+                const allHaveHandlers = handlerResults.every(r => r.hasHandler);
+                html = `
+                    <div class="status ${allHaveHandlers ? 'success' : 'error'}">
+                        <h2>${allHaveHandlers ? '🎉' : '⚠️'} Command Builder 模拟结果</h2>
+                        <p><strong>${allHaveHandlers ? '所有命令都有处理器，应该可以在Command Builder中正常使用！' : '部分命令缺少处理器'}</strong></p>
+                    </div>
+                ` + html;
+                
+                resultsDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="status error">
+                        <h3>❌ Command Builder 模拟失败</h3>
+                        <p><strong>错误:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function clearResults() {
+            document.getElementById('verification-results').innerHTML = '';
+        }
+        
+        // Auto-start verification
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(runFinalVerification, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试Null安全性</title>
+    <script src="i18n.js"></script>
+    <script src="js/commands/base-command.js"></script>
+    <script src="js/command-loader.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .test-result {
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 4px;
+        }
+        
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0.25rem;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ 测试Null安全性</h1>
+        
+        <div class="info test-result">
+            <h3>测试说明</h3>
+            <p>这个测试会在DOM元素不存在的情况下调用getPayload()和getPacketType()方法，验证null安全性。</p>
+        </div>
+        
+        <button onclick="testNullSafety()">🧪 测试Null安全性</button>
+        <button onclick="testWithDOM()">🔧 测试DOM存在时</button>
+        <button onclick="clearResults()">🧹 清除结果</button>
+        
+        <div id="test-results"></div>
+    </div>
+
+    <script>
+        const targetCommands = ['0x7c', '0x7d', '0x7e', '0x7f'];
+        
+        async function testNullSafety() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '<div class="test-result info">🔄 测试Null安全性...</div>';
+            
+            const results = [];
+            
+            for (const commandId of targetCommands) {
+                const result = await testCommandNullSafety(commandId);
+                results.push(result);
+            }
+            
+            const allPassed = results.every(r => r.success);
+            let html = `
+                <div class="test-result ${allPassed ? 'success' : 'error'}">
+                    <h3>${allPassed ? '✅' : '❌'} Null安全性测试结果</h3>
+                    <p><strong>${allPassed ? '所有命令都通过了null安全性测试！' : '部分命令未通过null安全性测试'}</strong></p>
+                </div>
+            `;
+            
+            results.forEach(result => {
+                html += `
+                    <div class="test-result ${result.success ? 'success' : 'error'}">
+                        <h4>${result.commandId.toUpperCase()}</h4>
+                        <p><strong>状态:</strong> ${result.success ? '✅ 通过' : '❌ 失败'}</p>
+                        ${result.error ? `<p><strong>错误:</strong> ${result.error}</p>` : ''}
+                        ${result.success ? `
+                            <p><strong>getPayload():</strong> [${result.payload.map(b => '0x' + b.toString(16).padStart(2, '0')).join(', ')}]</p>
+                            <p><strong>getPacketType():</strong> ${result.packetType}</p>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        async function testCommandNullSafety(commandId) {
+            try {
+                // Step 1: Load command
+                const commandLoader = new CommandLoader();
+                const commandInstance = await commandLoader.loadCommand(commandId);
+                
+                if (!commandInstance) {
+                    throw new Error('命令加载失败');
+                }
+                
+                // Step 2: Test methods WITHOUT rendering (DOM elements don't exist)
+                const payload = commandInstance.getPayload();
+                const packetType = commandInstance.getPacketType();
+                
+                // If we get here without errors, null safety is working
+                return {
+                    success: true,
+                    commandId: commandId,
+                    payload: payload,
+                    packetType: packetType
+                };
+                
+            } catch (error) {
+                return {
+                    success: false,
+                    commandId: commandId,
+                    error: error.message
+                };
+            }
+        }
+        
+        async function testWithDOM() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '<div class="test-result info">🔄 测试DOM存在时...</div>';
+            
+            const results = [];
+            
+            for (const commandId of targetCommands) {
+                const result = await testCommandWithDOM(commandId);
+                results.push(result);
+            }
+            
+            const allPassed = results.every(r => r.success);
+            let html = `
+                <div class="test-result ${allPassed ? 'success' : 'error'}">
+                    <h3>${allPassed ? '✅' : '❌'} DOM存在时测试结果</h3>
+                    <p><strong>${allPassed ? '所有命令在DOM存在时都正常工作！' : '部分命令在DOM存在时有问题'}</strong></p>
+                </div>
+            `;
+            
+            results.forEach(result => {
+                html += `
+                    <div class="test-result ${result.success ? 'success' : 'error'}">
+                        <h4>${result.commandId.toUpperCase()}</h4>
+                        <p><strong>状态:</strong> ${result.success ? '✅ 通过' : '❌ 失败'}</p>
+                        ${result.error ? `<p><strong>错误:</strong> ${result.error}</p>` : ''}
+                        ${result.success ? `
+                            <p><strong>渲染内容长度:</strong> ${result.renderLength} 字符</p>
+                            <p><strong>getPayload():</strong> [${result.payload.map(b => '0x' + b.toString(16).padStart(2, '0')).join(', ')}]</p>
+                            <p><strong>getPacketType():</strong> ${result.packetType}</p>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        async function testCommandWithDOM(commandId) {
+            try {
+                // Step 1: Load command
+                const commandLoader = new CommandLoader();
+                const commandInstance = await commandLoader.loadCommand(commandId);
+                
+                if (!commandInstance) {
+                    throw new Error('命令加载失败');
+                }
+                
+                // Step 2: Render to create DOM elements
+                const container = document.createElement('div');
+                commandInstance.render(container);
+                
+                // Step 3: Test methods WITH DOM elements
+                const payload = commandInstance.getPayload();
+                const packetType = commandInstance.getPacketType();
+                
+                return {
+                    success: true,
+                    commandId: commandId,
+                    renderLength: container.innerHTML.length,
+                    payload: payload,
+                    packetType: packetType
+                };
+                
+            } catch (error) {
+                return {
+                    success: false,
+                    commandId: commandId,
+                    error: error.message
+                };
+            }
+        }
+        
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+        }
+        
+        // Auto-start null safety test
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(testNullSafety, 1000);
+        });
+    </script>
+</body>
+</html>
