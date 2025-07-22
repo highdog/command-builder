@@ -708,7 +708,7 @@
                     // Apply language changes
                     applyLanguage(newLang);
 
-                    // Refresh current command documentation if available
+                    // Refresh current command documentation and payload builder if available
                     if (currentCommand) {
                         console.log('Language switched to:', newLang, 'Refreshing command:', currentCommand.hex_id);
                         console.log('Current command data:', {
@@ -721,6 +721,16 @@
                             descEnLength: currentCommand.description_en ? currentCommand.description_en.length : 0
                         });
                         displayCommandDocumentation(currentCommand, newLang);
+
+                        // Re-render the payload builder with new language
+                        const payloadBuilderContainer = document.getElementById('payload-builder-container');
+                        if (payloadBuilderContainer && customCommandHandlers) {
+                            const handler = customCommandHandlers[currentCommand.hex_id];
+                            if (handler) {
+                                console.log('Re-rendering payload builder for language:', newLang);
+                                handler.render(payloadBuilderContainer);
+                            }
+                        }
                     } else {
                         console.log('Language switched to:', newLang, 'No current command to refresh');
                     }
