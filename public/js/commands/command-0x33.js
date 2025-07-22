@@ -8,9 +8,12 @@ class Command33 extends BaseCommand {
 
 
         render(container) {
+            const currentLang = i18nManager.getCurrentLanguage();
+            const isZh = currentLang === 'zh';
+
             let html = `
                 <div class="form-group">
-                    <label for="field-packet-type-0x33">数据包类型:</label>
+                    <label for="field-packet-type-0x33">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                     <select id="field-packet-type-0x33" class="payload-input">
                         <option value="0" selected>COMMAND (set)</option>
                         <option value="2">RESPONSE</option>
@@ -18,13 +21,13 @@ class Command33 extends BaseCommand {
                 </div>
                 <div id="command-options-0x33">
                     <div class="form-group">
-                        <label for="field-transparency-gain-0x33">Transparency Gain (0-255):</label>
+                        <label for="field-transparency-gain-0x33">${isZh ? '透明度增益 (0-255):' : 'Transparency Gain (0-255):'}</label>
                         <input type="number" id="field-transparency-gain-0x33" min="0" max="255" value="128" style="width: 90%;">
                     </div>
                 </div>
                 <div id="response-options-0x33" style="display:none;">
                     <div class="form-group">
-                        <label for="field-transparency-gain-resp-0x33">Applied Transparency Gain (0-255):</label>
+                        <label for="field-transparency-gain-resp-0x33">${isZh ? '应用的透明度增益 (0-255):' : 'Applied Transparency Gain (0-255):'}</label>
                         <input type="number" id="field-transparency-gain-resp-0x33" min="0" max="255" value="128" style="width: 90%;">
                     </div>
                 </div>

@@ -8,9 +8,12 @@ class Command35 extends BaseCommand {
 
 
         render(container) {
+            const currentLang = i18nManager.getCurrentLanguage();
+            const isZh = currentLang === 'zh';
+
             let html = `
                 <div class="form-group">
-                    <label for="field-packet-type-0x35">数据包类型:</label>
+                    <label for="field-packet-type-0x35">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                     <select id="field-packet-type-0x35" class="payload-input">
                         <option value="0" selected>COMMAND (set)</option>
                         <option value="2">RESPONSE</option>
@@ -18,19 +21,19 @@ class Command35 extends BaseCommand {
                 </div>
                 <div id="command-options-0x35">
                     <div class="form-group">
-                        <label for="field-wind-detection-0x35">Wind Noise Detection:</label>
+                        <label for="field-wind-detection-0x35">${isZh ? '风噪检测:' : 'Wind Noise Detection:'}</label>
                         <select id="field-wind-detection-0x35" class="payload-input">
-                            <option value="0x00">ON</option>
-                            <option value="0x01">OFF</option>
+                            <option value="0x00">${isZh ? '开启' : 'ON'}</option>
+                            <option value="0x01">${isZh ? '关闭' : 'OFF'}</option>
                         </select>
                     </div>
                 </div>
                 <div id="response-options-0x35" style="display:none;">
                     <div class="form-group">
-                        <label for="field-wind-detection-resp-0x35">Applied Wind Detection:</label>
+                        <label for="field-wind-detection-resp-0x35">${isZh ? '应用的风噪检测:' : 'Applied Wind Detection:'}</label>
                         <select id="field-wind-detection-resp-0x35" class="payload-input">
-                            <option value="0x00">ON</option>
-                            <option value="0x01">OFF</option>
+                            <option value="0x00">${isZh ? '开启' : 'ON'}</option>
+                            <option value="0x01">${isZh ? '关闭' : 'OFF'}</option>
                         </select>
                     </div>
                 </div>

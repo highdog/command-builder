@@ -8,9 +8,12 @@ class Command31 extends BaseCommand {
 
 
         render(container) {
+            const currentLang = i18nManager.getCurrentLanguage();
+            const isZh = currentLang === 'zh';
+
             let html = `
                 <div class="form-group">
-                    <label for="field-packet-type-0x31">数据包类型:</label>
+                    <label for="field-packet-type-0x31">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                     <select id="field-packet-type-0x31" class="payload-input">
                         <option value="0" selected>COMMAND (set)</option>
                         <option value="2">RESPONSE</option>
@@ -18,13 +21,13 @@ class Command31 extends BaseCommand {
                 </div>
                 <div id="command-options-0x31">
                     <div class="form-group">
-                        <label for="field-anc-level-0x31">ANC Level (0-255):</label>
+                        <label for="field-anc-level-0x31">${isZh ? 'ANC级别 (0-255):' : 'ANC Level (0-255):'}</label>
                         <input type="number" id="field-anc-level-0x31" min="0" max="255" value="128" style="width: 90%;">
                     </div>
                 </div>
                 <div id="response-options-0x31" style="display:none;">
                     <div class="form-group">
-                        <label for="field-anc-level-resp-0x31">Applied ANC Level (0-255):</label>
+                        <label for="field-anc-level-resp-0x31">${isZh ? '应用的ANC级别 (0-255):' : 'Applied ANC Level (0-255):'}</label>
                         <input type="number" id="field-anc-level-resp-0x31" min="0" max="255" value="128" style="width: 90%;">
                     </div>
                 </div>

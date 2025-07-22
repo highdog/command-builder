@@ -14,9 +14,12 @@ class Command37 extends BaseCommand {
     }
 
     render(container) {
+        const currentLang = i18nManager.getCurrentLanguage();
+        const isZh = currentLang === 'zh';
+
         const html = `
             <div class="form-group">
-                <label for="field-packet-type-0x37">数据包类型:</label>
+                <label for="field-packet-type-0x37">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                 <select id="field-packet-type-0x37" class="payload-input">
                     <option value="0">COMMAND (get)</option>
                     <option value="2" selected>RESPONSE (device reply)</option>
@@ -24,10 +27,10 @@ class Command37 extends BaseCommand {
             </div>
             <div id="response-options-0x37">
                 <div class="form-group">
-                    <label for="field-anc-mode-0x37">ANC开启模式:</label>
+                    <label for="field-anc-mode-0x37">${isZh ? 'ANC开启模式:' : 'ANC Mode:'}</label>
                     <select id="field-anc-mode-0x37" class="payload-input">
-                        <option value="0x00">ADAPTIVE (自适应)</option>
-                        <option value="0x01">NON_ADAPTIVE (非自适应)</option>
+                        <option value="0x00">${isZh ? 'ADAPTIVE (自适应)' : 'ADAPTIVE'}</option>
+                        <option value="0x01">${isZh ? 'NON_ADAPTIVE (非自适应)' : 'NON_ADAPTIVE'}</option>
                     </select>
                 </div>
             </div>

@@ -8,9 +8,12 @@ class Command34 extends BaseCommand {
 
 
         render(container) {
+            const currentLang = i18nManager.getCurrentLanguage();
+            const isZh = currentLang === 'zh';
+
             let html = `
                 <div class="form-group">
-                    <label for="field-packet-type-0x34">数据包类型:</label>
+                    <label for="field-packet-type-0x34">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                     <select id="field-packet-type-0x34" class="payload-input">
                         <option value="0">COMMAND (get)</option>
                         <option value="2" selected>RESPONSE</option>
@@ -18,10 +21,10 @@ class Command34 extends BaseCommand {
                 </div>
                 <div id="response-options-0x34">
                     <div class="form-group">
-                        <label for="field-wind-detection-0x34">Wind Noise Detection:</label>
+                        <label for="field-wind-detection-0x34">${isZh ? '风噪检测:' : 'Wind Noise Detection:'}</label>
                         <select id="field-wind-detection-0x34" class="payload-input">
-                            <option value="0x00">ON</option>
-                            <option value="0x01">OFF</option>
+                            <option value="0x00">${isZh ? '开启' : 'ON'}</option>
+                            <option value="0x01">${isZh ? '关闭' : 'OFF'}</option>
                         </select>
                     </div>
                 </div>
