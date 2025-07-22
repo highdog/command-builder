@@ -19,9 +19,12 @@ class Command4E extends BaseCommand {
     }
 
     render(container) {
+        const currentLang = i18nManager.getCurrentLanguage();
+        const isZh = currentLang === 'zh';
+
         const html = `
             <div class="form-group">
-                <label for="field-packet-type-0x4e">数据包类型:</label>
+                <label for="field-packet-type-0x4e">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                 <select id="field-packet-type-0x4e" class="payload-input">
                     <option value="0">COMMAND (get assistant)</option>
                     <option value="2" selected>RESPONSE (device reply)</option>
@@ -29,46 +32,46 @@ class Command4E extends BaseCommand {
             </div>
             <div id="response-options-0x4e">
                 <div class="form-group">
-                    <label for="field-assistant-type-0x4e">语音助手类型:</label>
+                    <label for="field-assistant-type-0x4e">${isZh ? '语音助手类型:' : 'Voice Assistant Type:'}</label>
                     <select id="field-assistant-type-0x4e" class="payload-input">
-                        <option value="0x00">DISABLED (禁用)</option>
-                        <option value="0x01">SIRI (苹果Siri)</option>
-                        <option value="0x02" selected>GOOGLE_ASSISTANT (谷歌助手)</option>
-                        <option value="0x03">ALEXA (亚马逊Alexa)</option>
-                        <option value="0x04">BIXBY (三星Bixby)</option>
-                        <option value="0x05">CORTANA (微软Cortana)</option>
-                        <option value="0xFF">CUSTOM (自定义)</option>
+                        <option value="0x00">${isZh ? 'DISABLED (禁用)' : 'DISABLED'}</option>
+                        <option value="0x01">${isZh ? 'SIRI (苹果Siri)' : 'SIRI'}</option>
+                        <option value="0x02" selected>${isZh ? 'GOOGLE_ASSISTANT (谷歌助手)' : 'GOOGLE_ASSISTANT'}</option>
+                        <option value="0x03">${isZh ? 'ALEXA (亚马逊Alexa)' : 'ALEXA'}</option>
+                        <option value="0x04">${isZh ? 'BIXBY (三星Bixby)' : 'BIXBY'}</option>
+                        <option value="0x05">${isZh ? 'CORTANA (微软Cortana)' : 'CORTANA'}</option>
+                        <option value="0xFF">${isZh ? 'CUSTOM (自定义)' : 'CUSTOM'}</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label>
                         <input type="checkbox" id="field-wake-word-enabled-0x4e" checked>
-                        唤醒词启用
+                        ${isZh ? '唤醒词启用' : 'Wake Word Enabled'}
                     </label>
                 </div>
                 <div class="form-group">
                     <label>
                         <input type="checkbox" id="field-push-to-talk-0x4e">
-                        按键通话模式
+                        ${isZh ? '按键通话模式' : 'Push to Talk Mode'}
                     </label>
                 </div>
                 <div class="form-group">
-                    <label for="field-sensitivity-0x4e">语音识别灵敏度 (1-10):</label>
+                    <label for="field-sensitivity-0x4e">${isZh ? '语音识别灵敏度 (1-10):' : 'Voice Recognition Sensitivity (1-10):'}</label>
                     <input type="number" id="field-sensitivity-0x4e" min="1" max="10" value="5" style="width: 80px;">
                 </div>
                 <div class="form-group">
-                    <label for="field-language-code-0x4e">语言代码:</label>
+                    <label for="field-language-code-0x4e">${isZh ? '语言代码:' : 'Language Code:'}</label>
                     <select id="field-language-code-0x4e" class="payload-input">
-                        <option value="0x00">English (US)</option>
-                        <option value="0x01">English (UK)</option>
-                        <option value="0x02">Chinese (Simplified)</option>
-                        <option value="0x03">Chinese (Traditional)</option>
-                        <option value="0x04">Japanese</option>
-                        <option value="0x05">Korean</option>
-                        <option value="0x06">German</option>
-                        <option value="0x07">French</option>
-                        <option value="0x08">Spanish</option>
-                        <option value="0x09">Italian</option>
+                        <option value="0x00">${isZh ? '英语 (美国)' : 'English (US)'}</option>
+                        <option value="0x01">${isZh ? '英语 (英国)' : 'English (UK)'}</option>
+                        <option value="0x02">${isZh ? '中文 (简体)' : 'Chinese (Simplified)'}</option>
+                        <option value="0x03">${isZh ? '中文 (繁体)' : 'Chinese (Traditional)'}</option>
+                        <option value="0x04">${isZh ? '日语' : 'Japanese'}</option>
+                        <option value="0x05">${isZh ? '韩语' : 'Korean'}</option>
+                        <option value="0x06">${isZh ? '德语' : 'German'}</option>
+                        <option value="0x07">${isZh ? '法语' : 'French'}</option>
+                        <option value="0x08">${isZh ? '西班牙语' : 'Spanish'}</option>
+                        <option value="0x09">${isZh ? '意大利语' : 'Italian'}</option>
                     </select>
                 </div>
             </div>

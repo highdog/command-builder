@@ -17,9 +17,12 @@ class Command4B extends BaseCommand {
     }
 
     render(container) {
+        const currentLang = i18nManager.getCurrentLanguage();
+        const isZh = currentLang === 'zh';
+
         const html = `
             <div class="form-group">
-                <label for="field-packet-type-0x4b">数据包类型:</label>
+                <label for="field-packet-type-0x4b">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                 <select id="field-packet-type-0x4b" class="payload-input">
                     <option value="0" selected>COMMAND (set name)</option>
                     <option value="2">RESPONSE (result status)</option>
@@ -27,12 +30,12 @@ class Command4B extends BaseCommand {
             </div>
             <div id="command-options-0x4b">
                 <div class="form-group">
-                    <label for="field-new-device-name-0x4b">新设备名称:</label>
+                    <label for="field-new-device-name-0x4b">${isZh ? '新设备名称:' : 'New Device Name:'}</label>
                     <input type="text" id="field-new-device-name-0x4b" maxlength="64" value="My AVENTHO 300" style="width: 90%;">
-                    <small>最大64字符</small>
+                    <small>${isZh ? '最大64字符' : 'Max 64 characters'}</small>
                 </div>
                 <div class="form-group">
-                    <label for="field-name-encoding-0x4b">编码格式:</label>
+                    <label for="field-name-encoding-0x4b">${isZh ? '编码格式:' : 'Encoding Format:'}</label>
                     <select id="field-name-encoding-0x4b" class="payload-input">
                         <option value="0">UTF-8</option>
                         <option value="1">ASCII</option>
@@ -42,13 +45,13 @@ class Command4B extends BaseCommand {
             </div>
             <div id="response-options-0x4b" style="display:none;">
                 <div class="form-group">
-                    <label for="field-status-0x4b">执行状态:</label>
+                    <label for="field-status-0x4b">${isZh ? '执行状态:' : 'Execution Status:'}</label>
                     <select id="field-status-0x4b" class="payload-input">
-                        <option value="0x00">SUCCESS (成功)</option>
-                        <option value="0x01">FAILED (失败)</option>
-                        <option value="0x02">NAME_TOO_LONG (名称过长)</option>
-                        <option value="0x03">INVALID_ENCODING (编码无效)</option>
-                        <option value="0x04">INVALID_CHARACTERS (字符无效)</option>
+                        <option value="0x00">${isZh ? 'SUCCESS (成功)' : 'SUCCESS'}</option>
+                        <option value="0x01">${isZh ? 'FAILED (失败)' : 'FAILED'}</option>
+                        <option value="0x02">${isZh ? 'NAME_TOO_LONG (名称过长)' : 'NAME_TOO_LONG'}</option>
+                        <option value="0x03">${isZh ? 'INVALID_ENCODING (编码无效)' : 'INVALID_ENCODING'}</option>
+                        <option value="0x04">${isZh ? 'INVALID_CHARACTERS (字符无效)' : 'INVALID_CHARACTERS'}</option>
                     </select>
                 </div>
             </div>

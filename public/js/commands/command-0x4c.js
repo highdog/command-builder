@@ -20,9 +20,12 @@ class Command4C extends BaseCommand {
     }
 
     render(container) {
+        const currentLang = i18nManager.getCurrentLanguage();
+        const isZh = currentLang === 'zh';
+
         const html = `
             <div class="form-group">
-                <label for="field-packet-type-0x4c">数据包类型:</label>
+                <label for="field-packet-type-0x4c">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                 <select id="field-packet-type-0x4c" class="payload-input">
                     <option value="0">COMMAND (get time)</option>
                     <option value="2" selected>RESPONSE (device reply)</option>
@@ -30,27 +33,27 @@ class Command4C extends BaseCommand {
             </div>
             <div id="response-options-0x4c">
                 <div class="form-group">
-                    <label for="field-shutdown-time-0x4c">自动关机时间:</label>
+                    <label for="field-shutdown-time-0x4c">${isZh ? '自动关机时间:' : 'Auto Shutdown Time:'}</label>
                     <select id="field-shutdown-time-0x4c" class="payload-input">
-                        <option value="0">DISABLED (禁用)</option>
-                        <option value="5">5分钟</option>
-                        <option value="10">10分钟</option>
-                        <option value="15" selected>15分钟</option>
-                        <option value="30">30分钟</option>
-                        <option value="60">1小时</option>
-                        <option value="120">2小时</option>
-                        <option value="180">3小时</option>
+                        <option value="0">${isZh ? 'DISABLED (禁用)' : 'DISABLED'}</option>
+                        <option value="5">${isZh ? '5分钟' : '5 minutes'}</option>
+                        <option value="10">${isZh ? '10分钟' : '10 minutes'}</option>
+                        <option value="15" selected>${isZh ? '15分钟' : '15 minutes'}</option>
+                        <option value="30">${isZh ? '30分钟' : '30 minutes'}</option>
+                        <option value="60">${isZh ? '1小时' : '1 hour'}</option>
+                        <option value="120">${isZh ? '2小时' : '2 hours'}</option>
+                        <option value="180">${isZh ? '3小时' : '3 hours'}</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="field-custom-time-0x4c">自定义时间 (分钟):</label>
+                    <label for="field-custom-time-0x4c">${isZh ? '自定义时间 (分钟):' : 'Custom Time (minutes):'}</label>
                     <input type="number" id="field-custom-time-0x4c" min="0" max="65535" value="15" style="width: 100px;">
-                    <small>0=禁用，1-65535分钟</small>
+                    <small>${isZh ? '0=禁用，1-65535分钟' : '0=disabled, 1-65535 minutes'}</small>
                 </div>
                 <div class="form-group">
                     <label>
                         <input type="checkbox" id="field-use-custom-0x4c">
-                        使用自定义时间
+                        ${isZh ? '使用自定义时间' : 'Use Custom Time'}
                     </label>
                 </div>
             </div>

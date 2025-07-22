@@ -29,9 +29,12 @@ class Command49 extends BaseCommand {
     }
 
     render(container) {
+        const currentLang = i18nManager.getCurrentLanguage();
+        const isZh = currentLang === 'zh';
+
         const html = `
             <div class="form-group">
-                <label for="field-packet-type-0x49">数据包类型:</label>
+                <label for="field-packet-type-0x49">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                 <select id="field-packet-type-0x49" class="payload-input">
                     <option value="0">COMMAND (get status)</option>
                     <option value="2" selected>RESPONSE (device reply)</option>
@@ -40,53 +43,53 @@ class Command49 extends BaseCommand {
             </div>
             <div id="response-options-0x49">
                 <div class="form-group">
-                    <label for="field-play-state-0x49">播放状态:</label>
+                    <label for="field-play-state-0x49">${isZh ? '播放状态:' : 'Play State:'}</label>
                     <select id="field-play-state-0x49" class="payload-input">
-                        <option value="0x00">STOPPED (停止)</option>
-                        <option value="0x01">PLAYING (播放中)</option>
-                        <option value="0x02">PAUSED (暂停)</option>
-                        <option value="0x03">FAST_FORWARD (快进)</option>
-                        <option value="0x04">REWIND (快退)</option>
-                        <option value="0xFF">UNKNOWN (未知)</option>
+                        <option value="0x00">${isZh ? 'STOPPED (停止)' : 'STOPPED'}</option>
+                        <option value="0x01">${isZh ? 'PLAYING (播放中)' : 'PLAYING'}</option>
+                        <option value="0x02">${isZh ? 'PAUSED (暂停)' : 'PAUSED'}</option>
+                        <option value="0x03">${isZh ? 'FAST_FORWARD (快进)' : 'FAST_FORWARD'}</option>
+                        <option value="0x04">${isZh ? 'REWIND (快退)' : 'REWIND'}</option>
+                        <option value="0xFF">${isZh ? 'UNKNOWN (未知)' : 'UNKNOWN'}</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="field-audio-source-0x49">音频源:</label>
+                    <label for="field-audio-source-0x49">${isZh ? '音频源:' : 'Audio Source:'}</label>
                     <select id="field-audio-source-0x49" class="payload-input">
-                        <option value="0x00">BLUETOOTH (蓝牙)</option>
-                        <option value="0x01">AUX (辅助输入)</option>
-                        <option value="0x02">USB (USB)</option>
-                        <option value="0x03">SD_CARD (SD卡)</option>
-                        <option value="0x04">FM_RADIO (FM收音机)</option>
-                        <option value="0x05">INTERNAL (内部存储)</option>
-                        <option value="0xFF">UNKNOWN (未知)</option>
+                        <option value="0x00">${isZh ? 'BLUETOOTH (蓝牙)' : 'BLUETOOTH'}</option>
+                        <option value="0x01">${isZh ? 'AUX (辅助输入)' : 'AUX'}</option>
+                        <option value="0x02">${isZh ? 'USB (USB)' : 'USB'}</option>
+                        <option value="0x03">${isZh ? 'SD_CARD (SD卡)' : 'SD_CARD'}</option>
+                        <option value="0x04">${isZh ? 'FM_RADIO (FM收音机)' : 'FM_RADIO'}</option>
+                        <option value="0x05">${isZh ? 'INTERNAL (内部存储)' : 'INTERNAL'}</option>
+                        <option value="0xFF">${isZh ? 'UNKNOWN (未知)' : 'UNKNOWN'}</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="field-volume-level-0x49">音量等级 (0-100):</label>
+                    <label for="field-volume-level-0x49">${isZh ? '音量等级 (0-100):' : 'Volume Level (0-100):'}</label>
                     <input type="number" id="field-volume-level-0x49" min="0" max="100" value="50" style="width: 80px;">
                     <span>%</span>
                 </div>
                 <div class="form-group">
-                    <label for="field-track-position-0x49">播放位置 (秒):</label>
+                    <label for="field-track-position-0x49">${isZh ? '播放位置 (秒):' : 'Track Position (seconds):'}</label>
                     <input type="number" id="field-track-position-0x49" min="0" max="65535" value="0" style="width: 100px;">
-                    <span>秒 (0-65535)</span>
+                    <span>${isZh ? '秒 (0-65535)' : 'seconds (0-65535)'}</span>
                 </div>
                 <div class="form-group">
-                    <label for="field-track-duration-0x49">曲目总长度 (秒):</label>
+                    <label for="field-track-duration-0x49">${isZh ? '曲目总长度 (秒):' : 'Track Duration (seconds):'}</label>
                     <input type="number" id="field-track-duration-0x49" min="0" max="65535" value="180" style="width: 100px;">
-                    <span>秒 (0-65535)</span>
+                    <span>${isZh ? '秒 (0-65535)' : 'seconds (0-65535)'}</span>
                 </div>
                 <div class="form-group">
                     <label>
                         <input type="checkbox" id="field-shuffle-enabled-0x49">
-                        随机播放
+                        ${isZh ? '随机播放' : 'Shuffle Enabled'}
                     </label>
                 </div>
                 <div class="form-group">
                     <label>
                         <input type="checkbox" id="field-repeat-enabled-0x49">
-                        重复播放
+                        ${isZh ? '重复播放' : 'Repeat Enabled'}
                     </label>
                 </div>
             </div>

@@ -8,9 +8,12 @@ class Command4A extends BaseCommand {
     }
 
     render(container) {
+        const currentLang = i18nManager.getCurrentLanguage();
+        const isZh = currentLang === 'zh';
+
         const html = `
             <div class="form-group">
-                <label for="field-packet-type-0x4a">数据包类型:</label>
+                <label for="field-packet-type-0x4a">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                 <select id="field-packet-type-0x4a" class="payload-input">
                     <option value="0">COMMAND (get name)</option>
                     <option value="2" selected>RESPONSE (device reply)</option>
@@ -18,12 +21,12 @@ class Command4A extends BaseCommand {
             </div>
             <div id="response-options-0x4a">
                 <div class="form-group">
-                    <label for="field-device-name-0x4a">设备名称:</label>
+                    <label for="field-device-name-0x4a">${isZh ? '设备名称:' : 'Device Name:'}</label>
                     <input type="text" id="field-device-name-0x4a" maxlength="64" value="AVENTHO 300" style="width: 90%;">
-                    <small>最大64字符</small>
+                    <small>${isZh ? '最大64字符' : 'Max 64 characters'}</small>
                 </div>
                 <div class="form-group">
-                    <label for="field-name-encoding-0x4a">编码格式:</label>
+                    <label for="field-name-encoding-0x4a">${isZh ? '编码格式:' : 'Encoding Format:'}</label>
                     <select id="field-name-encoding-0x4a" class="payload-input">
                         <option value="0">UTF-8</option>
                         <option value="1">ASCII</option>
