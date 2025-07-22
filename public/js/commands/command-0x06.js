@@ -7,31 +7,58 @@ class Command06 extends BaseCommand {
     }
 
     render(container) {
-            let html = `
+        const currentLang = i18nManager.getCurrentLanguage();
+        const isZh = currentLang === 'zh';
+
+        let html = `
+            <div class="form-group">
+                <label for="field-packet-type-0x06">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
+                <select id="field-packet-type-0x06" class="payload-input">
+                    <option value="0">COMMAND (get)</option>
+                    <option value="2" selected>RESPONSE</option>
+                    <option value="1">NOTIFICATION</option>
+                </select>
+            </div>
+            <div id="response-options-0x06">
                 <div class="form-group">
-                    <label for="field-packet-type-0x06">数据包类型:</label>
-                    <select id="field-packet-type-0x06" class="payload-input">
-                        <option value="0">COMMAND (get)</option>
-                        <option value="2" selected>RESPONSE</option>
-                        <option value="1">NOTIFICATION</option>
+                    <label for="field-product-type-0x06">${isZh ? '产品类型:' : 'Product Type:'}</label>
+                    <select id="field-product-type-0x06" class="payload-input">
+                        <option value="earbuds">${isZh ? '耳机' : 'Earbuds'}</option>
+                        <option value="headset">${isZh ? '头戴式耳机' : 'Headset'}</option>
                     </select>
                 </div>
-                <div id="response-options-0x06">
-                    <div class="form-group">
-                        <label for="field-product-type-0x06">产品类型:</label>
-                        <select id="field-product-type-0x06" class="payload-input">
-                            <option value="earbuds">Earbuds</option>
-                            <option value="headset">Headset</option>
-                        </select>
-                    </div>
-                    <div id="earbuds-options-0x06">
-                        <fieldset><legend>Left Earbud</legend><input type="checkbox" id="left-bat-offline"> <label for="left-bat-offline">Offline (0xFF)</label><br><label for="left-bat">Battery (0-100):</label><input type="number" id="left-bat" min="0" max="100" value="95" style="width: 90%;"></fieldset>
-                        <fieldset><legend>Right Earbud</legend><input type="checkbox" id="right-bat-offline"> <label for="right-bat-offline">Offline (0xFF)</label><br><label for="right-bat">Battery (0-100):</label><input type="number" id="right-bat" min="0" max="100" value="98" style="width: 90%;"></fieldset>
-                        <fieldset><legend>Charging Case</legend><input type="checkbox" id="case-bat-offline"> <label for="case-bat-offline">Offline (0xFF)</label><br><label for="case-bat">Battery (0-100):</label><input type="number" id="case-bat" min="0" max="100" value="80" style="width: 90%;"></fieldset>
-                    </div>
-                    <div id="headset-options-0x06" style="display:none;"><fieldset><legend>Headset</legend><label for="headset-bat">Battery (0-100):</label><input type="number" id="headset-bat" min="0" max="100" value="90" style="width: 90%;"></fieldset></div>
+                <div id="earbuds-options-0x06">
+                    <fieldset>
+                        <legend>${isZh ? '左耳机' : 'Left Earbud'}</legend>
+                        <input type="checkbox" id="left-bat-offline">
+                        <label for="left-bat-offline">${isZh ? '离线 (0xFF)' : 'Offline (0xFF)'}</label><br>
+                        <label for="left-bat">${isZh ? '电池 (0-100):' : 'Battery (0-100):'}</label>
+                        <input type="number" id="left-bat" min="0" max="100" value="95" style="width: 90%;">
+                    </fieldset>
+                    <fieldset>
+                        <legend>${isZh ? '右耳机' : 'Right Earbud'}</legend>
+                        <input type="checkbox" id="right-bat-offline">
+                        <label for="right-bat-offline">${isZh ? '离线 (0xFF)' : 'Offline (0xFF)'}</label><br>
+                        <label for="right-bat">${isZh ? '电池 (0-100):' : 'Battery (0-100):'}</label>
+                        <input type="number" id="right-bat" min="0" max="100" value="98" style="width: 90%;">
+                    </fieldset>
+                    <fieldset>
+                        <legend>${isZh ? '充电盒' : 'Charging Case'}</legend>
+                        <input type="checkbox" id="case-bat-offline">
+                        <label for="case-bat-offline">${isZh ? '离线 (0xFF)' : 'Offline (0xFF)'}</label><br>
+                        <label for="case-bat">${isZh ? '电池 (0-100):' : 'Battery (0-100):'}</label>
+                        <input type="number" id="case-bat" min="0" max="100" value="80" style="width: 90%;">
+                    </fieldset>
                 </div>
-            `;
+                <div id="headset-options-0x06" style="display:none;">
+                    <fieldset>
+                        <legend>${isZh ? '头戴式耳机' : 'Headset'}</legend>
+                        <label for="headset-bat">${isZh ? '电池 (0-100):' : 'Battery (0-100):'}</label>
+                        <input type="number" id="headset-bat" min="0" max="100" value="90" style="width: 90%;">
+                    </fieldset>
+                </div>
+            </div>
+        `;
             container.innerHTML = html;
             this.attachListeners();
     }

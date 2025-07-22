@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试国际化命令</title>
+    <script src="i18n.js"></script>
+    <script src="js/commands/base-command.js"></script>
+    <script src="js/command-loader.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .command-test {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1rem;
+            background: #f8f9fa;
+        }
+        
+        .command-test.success {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .command-test.error {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+        
+        .demo-container {
+            border: 1px solid #ccc;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            background: white;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0.25rem;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        .lang-switch {
+            background: #28a745;
+            margin: 0.25rem;
+        }
+        
+        .lang-switch:hover {
+            background: #1e7e34;
+        }
+        
+        .status {
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+        }
+        
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 测试国际化命令</h1>
+        
+        <div class="status info">
+            <h3>测试已修复的命令</h3>
+            <p>验证这些命令是否支持中英文切换</p>
+        </div>
+        
+        <div style="margin: 1rem 0;">
+            <button class="lang-switch" onclick="switchToLanguage('zh')">切换到中文</button>
+            <button class="lang-switch" onclick="switchToLanguage('en')">Switch to English</button>
+            <button onclick="testAllCommands()">🧪 测试所有命令</button>
+            <button onclick="clearResults()">🧹 清除结果</button>
+        </div>
+        
+        <div id="current-lang" class="status info">
+            <strong>当前语言:</strong> <span id="lang-display">加载中...</span>
+        </div>
+        
+        <div id="test-results"></div>
+    </div>
+
+    <script>
+        // Commands that have been fixed for i18n
+        const fixedCommands = [
+            { id: '0x00', name: 'Get Device Type' },
+            { id: '0x02', name: 'Get Device Serial Numbers' },
+            { id: '0x03', name: 'Get Feature Version' },
+            { id: '0x06', name: 'Get Battery Levels' },
+            { id: '0x07', name: 'Get Bluetooth LED Config' },
+            { id: '0x09', name: 'Get LE Configurations' },
+            { id: '0x14', name: 'Get Firmware Versions' },
+            { id: '0x15', name: 'Get Earbuds Status' },
+            { id: '0x7c', name: 'Get Dolby Atmos Config' },
+            { id: '0x7d', name: 'Set Dolby Atmos Config' },
+            { id: '0x7e', name: 'Get Audio Codecs Configurations' },
+            { id: '0x7f', name: 'Set Audio Codecs Configurations' }
+        ];
+        
+        let commandLoader;
+        let customCommandHandlers = {};
+        
+        async function initializeCommands() {
+            try {
+                commandLoader = new CommandLoader();
+                
+                // Load all commands
+                for (const cmd of fixedCommands) {
+                    await commandLoader.loadCommand(cmd.id);
+                }
+                
+                customCommandHandlers = commandLoader.createLegacyHandlers();
+                console.log('Commands loaded:', Object.keys(customCommandHandlers).length);
+                
+                updateLanguageDisplay();
+                
+            } catch (error) {
+                console.error('Failed to initialize commands:', error);
+            }
+        }
+        
+        function updateLanguageDisplay() {
+            const currentLang = i18nManager.getCurrentLanguage();
+            document.getElementById('lang-display').textContent = currentLang === 'zh' ? '中文' : 'English';
+        }
+        
+        function switchToLanguage(lang) {
+            i18nManager.setLanguage(lang);
+            updateLanguageDisplay();
+            
+            // Re-test all commands to show language change
+            if (Object.keys(customCommandHandlers).length > 0) {
+                testAllCommands();
+            }
+        }
+        
+        async function testAllCommands() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '<div class="status info">🔄 正在测试命令国际化...</div>';
+            
+            const results = [];
+            
+            for (const cmd of fixedCommands) {
+                const result = await testCommandI18n(cmd);
+                results.push(result);
+            }
+            
+            const allPassed = results.every(r => r.success);
+            const passedCount = results.filter(r => r.success).length;
+            
+            let html = `
+                <div class="status ${allPassed ? 'success' : 'error'}">
+                    <h3>${allPassed ? '✅' : '⚠️'} 国际化测试结果</h3>
+                    <p><strong>通过率: ${passedCount}/${results.length} (${Math.round(passedCount/results.length*100)}%)</strong></p>
+                    <p><strong>当前语言:</strong> ${i18nManager.getCurrentLanguage() === 'zh' ? '中文' : 'English'}</p>
+                </div>
+                
+                <div class="test-grid">
+            `;
+            
+            results.forEach(result => {
+                html += `
+                    <div class="command-test ${result.success ? 'success' : 'error'}">
+                        <h4>${result.command.id.toUpperCase()}</h4>
+                        <p><strong>${result.command.name}</strong></p>
+                        <p>状态: ${result.success ? '✅ 支持国际化' : '❌ 测试失败'}</p>
+                        ${result.error ? `<p><small style="color: red;">${result.error}</small></p>` : ''}
+                        ${result.success ? `
+                            <div class="demo-container">
+                                ${result.renderedHtml.substring(0, 300)}${result.renderedHtml.length > 300 ? '...' : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            resultsDiv.innerHTML = html;
+        }
+        
+        async function testCommandI18n(cmd) {
+            try {
+                const handler = customCommandHandlers[cmd.id] || customCommandHandlers[cmd.id.toUpperCase()];
+                if (!handler) {
+                    throw new Error('Handler not found');
+                }
+                
+                // Test render with current language
+                const container = document.createElement('div');
+                handler.render(container);
+                
+                if (!container.innerHTML || container.innerHTML.length < 20) {
+                    throw new Error('Render failed or content too short');
+                }
+                
+                // Check if content contains language-specific text
+                const currentLang = i18nManager.getCurrentLanguage();
+                const hasChineseText = /[\u4e00-\u9fff]/.test(container.innerHTML);
+                const hasEnglishLabels = /Packet Type|Device Type|Battery/.test(container.innerHTML);
+                
+                let languageCorrect = false;
+                if (currentLang === 'zh') {
+                    languageCorrect = hasChineseText; // Should have Chinese text
+                } else {
+                    languageCorrect = hasEnglishLabels && !hasChineseText; // Should have English, no Chinese
+                }
+                
+                if (!languageCorrect) {
+                    throw new Error(`Language mismatch: expected ${currentLang}, but content doesn't match`);
+                }
+                
+                return {
+                    success: true,
+                    command: cmd,
+                    renderedHtml: container.innerHTML
+                };
+                
+            } catch (error) {
+                return {
+                    success: false,
+                    command: cmd,
+                    error: error.message
+                };
+            }
+        }
+        
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeCommands();
+        });
+    </script>
+</body>
+</html>

@@ -8,9 +8,12 @@ class Command09 extends BaseCommand {
 
 
         render(container) {
+            const currentLang = i18nManager.getCurrentLanguage();
+            const isZh = currentLang === 'zh';
+
             let html = `
                 <div class="form-group">
-                    <label for="field-packet-type-0x09">数据包类型:</label>
+                    <label for="field-packet-type-0x09">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                     <select id="field-packet-type-0x09" class="payload-input">
                         <option value="0">COMMAND (get)</option>
                         <option value="2" selected>RESPONSE</option>
@@ -18,9 +21,9 @@ class Command09 extends BaseCommand {
                 </div>
                 <div id="response-options-0x09">
                     <fieldset>
-                        <legend>LE Configurations (0=ON, 1=OFF)</legend>
-                        <div><input type="checkbox" id="gfp-on" checked> <label for="gfp-on">Google Fast Pair (ON)</label></div>
-                        <div><input type="checkbox" id="lea-on"> <label for="lea-on">LE Audio (ON)</label></div>
+                        <legend>${isZh ? 'LE配置 (0=开启, 1=关闭)' : 'LE Configurations (0=ON, 1=OFF)'}</legend>
+                        <div><input type="checkbox" id="gfp-on" checked> <label for="gfp-on">${isZh ? 'Google快速配对 (开启)' : 'Google Fast Pair (ON)'}</label></div>
+                        <div><input type="checkbox" id="lea-on"> <label for="lea-on">${isZh ? 'LE音频 (开启)' : 'LE Audio (ON)'}</label></div>
                     </fieldset>
                 </div>
             `;

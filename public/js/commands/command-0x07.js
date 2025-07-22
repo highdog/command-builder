@@ -8,9 +8,12 @@ class Command07 extends BaseCommand {
 
 
         render(container) {
+            const currentLang = i18nManager.getCurrentLanguage();
+            const isZh = currentLang === 'zh';
+
             let html = `
                 <div class="form-group">
-                    <label for="field-packet-type-0x07">数据包类型:</label>
+                    <label for="field-packet-type-0x07">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                     <select id="field-packet-type-0x07" class="payload-input">
                         <option value="0">COMMAND (get)</option>
                         <option value="2" selected>RESPONSE</option>
@@ -19,10 +22,10 @@ class Command07 extends BaseCommand {
                 </div>
                 <div id="response-options-0x07">
                     <div class="form-group">
-                        <label for="field-bt-led-config-0x07">Bluetooth LED Config:</label>
+                        <label for="field-bt-led-config-0x07">${isZh ? '蓝牙LED配置:' : 'Bluetooth LED Config:'}</label>
                         <select id="field-bt-led-config-0x07" class="payload-input">
-                            <option value="0x00">On</option>
-                            <option value="0x01">Off</option>
+                            <option value="0x00">${isZh ? '开启' : 'On'}</option>
+                            <option value="0x01">${isZh ? '关闭' : 'Off'}</option>
                         </select>
                     </div>
                 </div>

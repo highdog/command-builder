@@ -8,9 +8,12 @@ class Command15 extends BaseCommand {
 
 
         render(container) {
+            const currentLang = i18nManager.getCurrentLanguage();
+            const isZh = currentLang === 'zh';
+
             let html = `
                 <div class="form-group">
-                    <label for="field-packet-type-0x15">数据包类型:</label>
+                    <label for="field-packet-type-0x15">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                     <select id="field-packet-type-0x15" class="payload-input">
                         <option value="0">COMMAND (get)</option>
                         <option value="2" selected>RESPONSE</option>
@@ -18,20 +21,20 @@ class Command15 extends BaseCommand {
                 </div>
                 <div id="response-options-0x15">
                     <div class="form-group">
-                        <label for="field-color-0x15">Earbuds Color:</label>
+                        <label for="field-color-0x15">${isZh ? '耳机颜色:' : 'Earbuds Color:'}</label>
                         <select id="field-color-0x15" class="payload-input">
-                            <option value="0x00">Color1</option>
-                            <option value="0x01">Color2</option>
-                            <option value="0x02">Color3</option>
-                            <option value="0x03">Color4</option>
+                            <option value="0x00">${isZh ? '颜色1' : 'Color1'}</option>
+                            <option value="0x01">${isZh ? '颜色2' : 'Color2'}</option>
+                            <option value="0x02">${isZh ? '颜色3' : 'Color3'}</option>
+                            <option value="0x03">${isZh ? '颜色4' : 'Color4'}</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="field-online-status-0x15">Online Status:</label>
+                        <label for="field-online-status-0x15">${isZh ? '在线状态:' : 'Online Status:'}</label>
                         <select id="field-online-status-0x15" class="payload-input">
-                            <option value="0x01">Left online, Right offline</option>
-                            <option value="0x02">Right online, Left offline</option>
-                            <option value="0x03" selected>Both earbuds online</option>
+                            <option value="0x01">${isZh ? '左耳机在线，右耳机离线' : 'Left online, Right offline'}</option>
+                            <option value="0x02">${isZh ? '右耳机在线，左耳机离线' : 'Right online, Left offline'}</option>
+                            <option value="0x03" selected>${isZh ? '两个耳机都在线' : 'Both earbuds online'}</option>
                         </select>
                     </div>
                 </div>

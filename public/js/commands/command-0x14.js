@@ -8,9 +8,12 @@ class Command14 extends BaseCommand {
 
 
         render(container) {
+            const currentLang = i18nManager.getCurrentLanguage();
+            const isZh = currentLang === 'zh';
+
             let html = `
                 <div class="form-group">
-                    <label for="field-packet-type-0x14">数据包类型:</label>
+                    <label for="field-packet-type-0x14">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                     <select id="field-packet-type-0x14" class="payload-input">
                         <option value="0">COMMAND (get)</option>
                         <option value="2" selected>RESPONSE</option>
@@ -18,32 +21,32 @@ class Command14 extends BaseCommand {
                 </div>
                 <div id="response-options-0x14">
                     <div class="form-group">
-                        <label for="field-product-type-0x14">产品类型:</label>
+                        <label for="field-product-type-0x14">${isZh ? '产品类型:' : 'Product Type:'}</label>
                         <select id="field-product-type-0x14" class="payload-input">
-                            <option value="earbuds">Earbuds</option>
-                            <option value="headset">Headset</option>
+                            <option value="earbuds">${isZh ? '耳机' : 'Earbuds'}</option>
+                            <option value="headset">${isZh ? '头戴式耳机' : 'Headset'}</option>
                         </select>
                     </div>
                     <div id="earbuds-options-0x14">
-                        ${this.createVersionFields('left', 'Left Earbud', '1.6.1')}
-                        ${this.createVersionFields('right', 'Right Earbud', '1.6.2')}
-                        ${this.createVersionFields('case', 'Charging Case', '1.0.0')}
+                        ${this.createVersionFields('left', isZh ? '左耳机' : 'Left Earbud', '1.6.1', isZh)}
+                        ${this.createVersionFields('right', isZh ? '右耳机' : 'Right Earbud', '1.6.2', isZh)}
+                        ${this.createVersionFields('case', isZh ? '充电盒' : 'Charging Case', '1.0.0', isZh)}
                     </div>
                     <div id="headset-options-0x14" style="display:none;">
-                        ${this.createVersionFields('headset', 'Headset', '2.0.0')}
+                        ${this.createVersionFields('headset', isZh ? '头戴式耳机' : 'Headset', '2.0.0', isZh)}
                     </div>
                 </div>
             `;
             container.innerHTML = html;
             this.attachListeners();
         }
-        createVersionFields(idPrefix, legend, defaultVersion) {
+        createVersionFields(idPrefix, legend, defaultVersion, isZh = false) {
             const [maj, min, pat] = defaultVersion.split('.');
             return `
                 <fieldset>
                     <legend>${legend}</legend>
-                    <input type="checkbox" id="${idPrefix}-fw-offline"> <label for="${idPrefix}-fw-offline">Offline (zeros)</label><br>
-                    <label>Ver:</label>
+                    <input type="checkbox" id="${idPrefix}-fw-offline"> <label for="${idPrefix}-fw-offline">${isZh ? '离线 (零值)' : 'Offline (zeros)'}</label><br>
+                    <label>${isZh ? '版本:' : 'Ver:'}</label>
                     <input type="number" id="${idPrefix}-fw-major" min="0" max="255" value="${maj}" style="width: 50px;">.
                     <input type="number" id="${idPrefix}-fw-minor" min="0" max="255" value="${min}" style="width: 50px;">.
                     <input type="number" id="${idPrefix}-fw-patch" min="0" max="255" value="${pat}" style="width: 50px;">
