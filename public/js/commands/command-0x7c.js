@@ -8,9 +8,12 @@ class Command7C extends BaseCommand {
     }
 
     render(container) {
+        const currentLang = i18nManager.getCurrentLanguage();
+        const isZh = currentLang === 'zh';
+
         const html = `
             <div class="form-group">
-                <label for="field-packet-type-0x7c">数据包类型:</label>
+                <label for="field-packet-type-0x7c">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                 <select id="field-packet-type-0x7c" class="payload-input">
                     <option value="0">COMMAND (get)</option>
                     <option value="2" selected>RESPONSE (device reply)</option>
@@ -18,18 +21,18 @@ class Command7C extends BaseCommand {
             </div>
             <div id="response-options-0x7c">
                 <div class="form-group">
-                    <label for="field-stereo-virtualizer-0x7c">立体声虚拟器:</label>
+                    <label for="field-stereo-virtualizer-0x7c">${isZh ? '立体声虚拟器:' : 'Stereo Virtualizer:'}</label>
                     <select id="field-stereo-virtualizer-0x7c" class="payload-input">
-                        <option value="0">关闭 (OFF)</option>
-                        <option value="1">开启 (ON - 非DAX)</option>
-                        <option value="2">仅房间模拟 (ON_DAX)</option>
+                        <option value="0">${isZh ? '关闭 (OFF)' : 'OFF'}</option>
+                        <option value="1">${isZh ? '开启 (ON - 非DAX)' : 'ON (non-DAX)'}</option>
+                        <option value="2">${isZh ? '仅房间模拟 (ON_DAX)' : 'ON_DAX (room simulation only)'}</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="field-head-tracker-0x7c">头部跟踪:</label>
+                    <label for="field-head-tracker-0x7c">${isZh ? '头部跟踪:' : 'Head Tracker:'}</label>
                     <select id="field-head-tracker-0x7c" class="payload-input">
-                        <option value="0">关闭 (OFF)</option>
-                        <option value="1">开启 (ON)</option>
+                        <option value="0">${isZh ? '关闭 (OFF)' : 'OFF'}</option>
+                        <option value="1">${isZh ? '开启 (ON)' : 'ON'}</option>
                     </select>
                 </div>
             </div>

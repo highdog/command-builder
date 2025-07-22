@@ -8,9 +8,12 @@ class Command00 extends BaseCommand {
     }
 
     render(container) {
+        const currentLang = i18nManager.getCurrentLanguage();
+        const isZh = currentLang === 'zh';
+
         const html = `
             <div class="form-group">
-                <label for="field-packet-type-0x00">数据包类型:</label>
+                <label for="field-packet-type-0x00">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                 <select id="field-packet-type-0x00" class="payload-input">
                     <option value="0">COMMAND (get)</option>
                     <option value="2" selected>RESPONSE (device reply)</option>
@@ -18,7 +21,7 @@ class Command00 extends BaseCommand {
             </div>
             <div id="response-options-0x00">
                 <div class="form-group">
-                    <label for="field-device-type-0x00">设备型号:</label>
+                    <label for="field-device-type-0x00">${isZh ? '设备型号:' : 'Device Type:'}</label>
                     <select id="field-device-type-0x00" class="payload-input">
                         <option value="0x00">VERIO_100</option>
                         <option value="0x01">VERIO_200</option>

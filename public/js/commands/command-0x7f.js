@@ -8,20 +8,24 @@ class Command7F extends BaseCommand {
     }
 
     render(container) {
+        const currentLang = i18nManager.getCurrentLanguage();
+        const isZh = currentLang === 'zh';
+
         const html = `
             <div class="form-group">
-                <label for="field-packet-type-0x7f">数据包类型:</label>
+                <label for="field-packet-type-0x7f">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                 <select id="field-packet-type-0x7f" class="payload-input">
                     <option value="0" selected>COMMAND (set)</option>
                     <option value="2">RESPONSE (device reply)</option>
                 </select>
             </div>
             <div class="form-group">
-                <label for="field-ldac-status-0x7f">LDAC状态:</label>
+                <label for="field-ldac-status-0x7f">${isZh ? 'LDAC状态:' : 'LDAC Status:'}</label>
                 <select id="field-ldac-status-0x7f" class="payload-input">
-                    <option value="0">开启 (ON)</option>
-                    <option value="1">关闭 (OFF)</option>
+                    <option value="0">${isZh ? '开启 (ON)' : 'ON'}</option>
+                    <option value="1">${isZh ? '关闭 (OFF)' : 'OFF'}</option>
                 </select>
+            </div>
         `;
         container.innerHTML = html;
         this.attachListeners();
