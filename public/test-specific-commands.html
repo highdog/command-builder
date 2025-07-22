@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试特定命令加载</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>测试特定命令加载</h1>
+    
+    <div id="test-results"></div>
+
+    <!-- Load the modular command system -->
+    <script src="js/commands/base-command.js"></script>
+    <script src="js/command-loader.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const results = document.getElementById('test-results');
+            
+            // Test specific problematic commands
+            const testCommands = ['0x4a', '0x4b', '0x4c', '0x4d', '0x4e', '0x4f'];
+            
+            results.innerHTML = '<div class="info">开始测试命令加载...</div>';
+            
+            for (const commandId of testCommands) {
+                try {
+                    console.log(`Testing command ${commandId}...`);
+                    
+                    // Test script loading
+                    const scriptPath = `js/commands/command-${commandId.toLowerCase()}.js`;
+                    console.log(`Loading script: ${scriptPath}`);
+                    
+                    await commandLoader.loadScript(scriptPath);
+                    console.log(`Script loaded successfully`);
+                    
+                    // Test class name generation
+                    const hexPart = commandId.replace('0x', '').padStart(2, '0').toUpperCase();
+                    const commandClassName = `Command${hexPart}`;
+                    console.log(`Looking for class: ${commandClassName}`);
+                    
+                    const CommandClass = window[commandClassName];
+                    console.log(`Class found:`, CommandClass);
+                    
+                    if (!CommandClass) {
+                        throw new Error(`Command class ${commandClassName} not found`);
+                    }
+                    
+                    // Test instantiation
+                    const commandInstance = new CommandClass(commandId);
+                    console.log(`Instance created:`, commandInstance);
+                    
+                    results.innerHTML += `<div class="success">✓ ${commandId} (${commandClassName}) 加载成功</div>`;
+                    
+                } catch (error) {
+                    console.error(`Failed to load command ${commandId}:`, error);
+                    results.innerHTML += `<div class="error">✗ ${commandId} 加载失败: ${error.message}</div>`;
+                }
+            }
+            
+            results.innerHTML += '<div class="info">测试完成</div>';
+        });
+    </script>
+</body>
+</html>

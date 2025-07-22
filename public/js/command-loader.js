@@ -39,8 +39,8 @@ class CommandLoader {
             await this.loadScript(scriptPath);
             
             // Get the command class from the global scope
-            // Convert 0x00 -> Command00, 0x59 -> Command59, etc.
-            const hexPart = commandId.replace('0x', '').padStart(2, '0');
+            // Convert 0x00 -> Command00, 0x4a -> Command4A, etc.
+            const hexPart = commandId.replace('0x', '').padStart(2, '0').toUpperCase();
             const commandClassName = `Command${hexPart}`;
             const CommandClass = window[commandClassName];
             

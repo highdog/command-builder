@@ -3,11 +3,9 @@
  */
 class Command20 extends BaseCommand {
     constructor(commandId) {
-        super(commandId);
-    }
+    super(commandId);
 
-
-        statisticsTypes: {
+        this.statisticsTypes = {
             '0x00': 'Total Runtime',
             '0x01': 'Power On Events', 
             '0x02': 'Music Playback Time',
@@ -20,9 +18,10 @@ class Command20 extends BaseCommand {
             '0x09': 'Time ANC Mode Used',
             '0x0A': 'Time Low Latency Mode Used',
             '0x0B': 'Error Information'
-        }
+        };
+    }
 
-        render(container) {
+    render(container) {
             let html = `
                 <div class="form-group">
                     <label for="field-packet-type-0x20">数据包类型:</label>
@@ -48,7 +47,9 @@ class Command20 extends BaseCommand {
             container.innerHTML = html;
             this.attachListeners();
             this.addStatisticsItem(); // Add one item by default
-        }
+    }
+
+    
 
         addStatisticsItem(type = '0x00', value = 0) {
             const container = document.getElementById('statistics-container-0x20');
@@ -81,7 +82,9 @@ class Command20 extends BaseCommand {
             });
             
             generateOutput();
-        }
+    }
+
+    
 
         renderStatisticsContent(type, value) {
             switch(type) {
@@ -101,7 +104,9 @@ class Command20 extends BaseCommand {
                         <input type="number" class="statistics-value" min="0" max="4294967295" value="${value}" style="width: 90%;">
                     </div>`;
             }
-        }
+    }
+
+    
 
         attachListeners() {
             document.getElementById('field-packet-type-0x20').addEventListener('change', (e) => {
@@ -118,7 +123,9 @@ class Command20 extends BaseCommand {
                     generateOutput();
                 }
             });
-        }
+    }
+
+    
 
         getPayload() {
             const packetType = this.getPacketType();
@@ -166,7 +173,9 @@ class Command20 extends BaseCommand {
                 
                 return payload;
             }
-        }
+    }
+
+    
 
         getPacketType() {
             return parseInt(document.getElementById('field-packet-type-0x20').value, 10);

@@ -4,15 +4,12 @@
 class Command17 extends BaseCommand {
     constructor(commandId) {
         super(commandId);
+
+        this.types = { 'DONGLE': 0 };
+        this.states = { 'DISCONNECTED': 0, 'CONNECTED': 1 };
     }
 
-
-        types: { 'DONGLE': 0 },
-        states: { 'DISCONNECTED': 0, 'CONNECTED': 1 }
-        createSelect(options, selectedValue) {
-            return Object.entries(options).map(([name, value]) => `<option value="${value}" ${value === selectedValue ? 'selected' : ''}>${name}</option>`).join('');
-        }
-        render(container) {
+    render(container) {
             let html = `
                 <div class="form-group">
                     <label for="field-packet-type-0x17">数据包类型:</label>
@@ -26,8 +23,9 @@ class Command17 extends BaseCommand {
             container.innerHTML = html;
             this.attachListeners();
             this.addPeripheralRow();
-        }
-        addPeripheralRow(type = 0, state = 1) {
+    }
+
+    addPeripheralRow(type = 0, state = 1) {
             const container = document.getElementById('peripheral-container-0x17');
             const fieldset = document.createElement('fieldset');
             fieldset.className = 'peripheral-row';
@@ -39,8 +37,9 @@ class Command17 extends BaseCommand {
             `;
             container.appendChild(fieldset);
             generateOutput();
-        }
-        attachListeners() {
+    }
+
+    attachListeners() {
             document.getElementById('field-packet-type-0x17').addEventListener('change', (e) => { document.getElementById('response-options-0x17').style.display = e.target.value !== '0' ? 'block' : 'none'; generateOutput(); });
             document.getElementById('add-peripheral-btn-0x17').addEventListener('click', () => this.addPeripheralRow());
             document.getElementById('peripheral-container-0x17').addEventListener('click', (e) => {
@@ -49,8 +48,9 @@ class Command17 extends BaseCommand {
                     generateOutput();
                 }
             });
-        }
-        getPayload() {
+    }
+
+    getPayload() {
             if (this.getPacketType() === 0) return [];
             const payload = [];
             document.querySelectorAll('#peripheral-container-0x17 .peripheral-row').forEach(row => {
@@ -61,9 +61,11 @@ class Command17 extends BaseCommand {
                 payload.push(combined);
             });
             return payload;
-        }
-        getPacketType() { return parseInt(document.getElementById('field-packet-type-0x17').value, 10); }
-    
+    }
+
+    getPacketType() {
+        return parseInt(document.getElementById('field-packet-type-0x17').value, 10);
+    }
 }
 
 // Register the command class globally
