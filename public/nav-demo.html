@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>导航栏样式演示</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        
+        .page-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        .top-nav {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1rem;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            height: 60px;
+        }
+        
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.6;
+        }
+        
+        .nav-links a:hover {
+            background-color: #e9ecef;
+            opacity: 1;
+        }
+        
+        .nav-links a.active {
+            opacity: 1;
+            color: #000;
+        }
+        
+        .logout-container {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        
+        .logout-btn:hover {
+            background: #c82333;
+        }
+        
+        .logout-container a:hover {
+            background-color: #e9ecef !important;
+        }
+        
+        .content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+        
+        .demo-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            background: white;
+        }
+        
+        .demo-section h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .nav-example {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1rem;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            height: 60px;
+            margin-bottom: 1rem;
+        }
+        
+        .toggle-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0.5rem;
+        }
+        
+        .toggle-btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <!-- Command Builder 导航栏 -->
+        <div class="top-nav" id="nav-command-builder">
+            <div class="nav-links">
+                <a href="/" class="active">Command Builder</a>
+                <a href="/documentation">Documentation</a>
+            </div>
+            <div class="logout-container">
+                <a href="/admin" style="margin-right: 1rem; color: #007bff; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; transition: background-color 0.2s;">Admin</a>
+                <button class="logout-btn">Logout</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="demo-section">
+                <h2>导航栏样式演示</h2>
+                <p>这里展示了新的导航栏设计，具有以下特点：</p>
+                <ul>
+                    <li><strong>去掉了页面标题</strong>：不再显示"蓝牙命令构建器"或"Documentation"文字</li>
+                    <li><strong>导航链接移到最左边</strong>：Command Builder 和 Documentation 链接位于导航栏最左侧</li>
+                    <li><strong>字体样式优化</strong>：16px 字体，600 字重，更加醒目</li>
+                    <li><strong>颜色状态区分</strong>：
+                        <ul>
+                            <li>选中状态：黑色 (#000)，完全不透明 (opacity: 1)</li>
+                            <li>未选中状态：深灰色 (#333)，60% 透明度 (opacity: 0.6)</li>
+                            <li>悬停状态：背景变浅，透明度变为 100%</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="demo-section">
+                <h2>不同页面的导航栏状态</h2>
+                
+                <h3>Command Builder 页面 (当前)</h3>
+                <div class="nav-example">
+                    <div class="nav-links">
+                        <a href="/" class="active" style="opacity: 1; color: #000;">Command Builder</a>
+                        <a href="/documentation" style="opacity: 0.6; color: #333;">Documentation</a>
+                    </div>
+                    <div class="logout-container">
+                        <a href="/admin" style="margin-right: 1rem; color: #007bff; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px;">Admin</a>
+                        <button class="logout-btn">Logout</button>
+                    </div>
+                </div>
+
+                <h3>Documentation 页面</h3>
+                <div class="nav-example">
+                    <div class="nav-links">
+                        <a href="/" style="opacity: 0.6; color: #333;">Command Builder</a>
+                        <a href="/documentation" class="active" style="opacity: 1; color: #000;">Documentation</a>
+                    </div>
+                    <div style="flex: 1; max-width: 400px; margin: 0 2rem;">
+                        <input type="search" placeholder="Search all commands..." style="width: 100%; padding: 0.5rem 1rem; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+                    </div>
+                    <div class="logout-container">
+                        <a href="/admin" style="margin-right: 1rem; color: #007bff; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px;">Admin</a>
+                        <button class="logout-btn">Logout</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="demo-section">
+                <h2>交互演示</h2>
+                <p>点击下面的按钮来切换导航栏状态：</p>
+                <button class="toggle-btn" onclick="toggleNav('command-builder')">切换到 Command Builder</button>
+                <button class="toggle-btn" onclick="toggleNav('documentation')">切换到 Documentation</button>
+            </div>
+
+            <div class="demo-section">
+                <h2>设计说明</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <h4>选中状态</h4>
+                        <div style="padding: 0.5rem 1rem; background: #f8f9fa; border-radius: 4px; margin-bottom: 0.5rem;">
+                            <span style="color: #000; font-weight: 600; opacity: 1;">Command Builder</span>
+                        </div>
+                        <ul style="font-size: 14px; color: #666;">
+                            <li>颜色: #000 (黑色)</li>
+                            <li>透明度: 1 (完全不透明)</li>
+                            <li>字重: 600 (半粗体)</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>未选中状态</h4>
+                        <div style="padding: 0.5rem 1rem; background: #f8f9fa; border-radius: 4px; margin-bottom: 0.5rem;">
+                            <span style="color: #333; font-weight: 600; opacity: 0.6;">Documentation</span>
+                        </div>
+                        <ul style="font-size: 14px; color: #666;">
+                            <li>颜色: #333 (深灰色)</li>
+                            <li>透明度: 0.6 (60% 透明)</li>
+                            <li>字重: 600 (半粗体)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleNav(page) {
+            const nav = document.getElementById('nav-command-builder');
+            const links = nav.querySelectorAll('.nav-links a');
+            
+            links.forEach(link => {
+                link.classList.remove('active');
+                link.style.opacity = '0.6';
+                link.style.color = '#333';
+            });
+            
+            if (page === 'command-builder') {
+                links[0].classList.add('active');
+                links[0].style.opacity = '1';
+                links[0].style.color = '#000';
+            } else if (page === 'documentation') {
+                links[1].classList.add('active');
+                links[1].style.opacity = '1';
+                links[1].style.color = '#000';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -150,14 +150,23 @@
 
         .nav-links a {
             text-decoration: none;
-            color: #007bff;
+            color: #333;
             padding: 0.5rem 1rem;
             border-radius: 4px;
-            transition: background-color 0.2s;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.6;
         }
 
         .nav-links a:hover {
             background-color: #e9ecef;
+            opacity: 1;
+        }
+
+        .nav-links a.active {
+            opacity: 1;
+            color: #000;
         }
 
         .logout-container {
@@ -211,8 +220,7 @@
     <!-- Top Navigation Bar -->
     <div class="top-nav">
       <div class="nav-links">
-        <h1 style="margin: 0; color: #333; font-size: 1.5rem;">蓝牙命令构建器</h1>
-        <a href="/">Command Builder</a>
+        <a href="/" class="active">Command Builder</a>
         <a href="/documentation">Documentation</a>
       </div>
       <div class="logout-container">
