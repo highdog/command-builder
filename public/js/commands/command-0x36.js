@@ -1,13 +1,13 @@
 /**
- * Command 0x36 - Auto-generated from command_handlers.js
+ * Command 0x36 - Adaptive ANC Level
+ * 自适应ANC等级控制
  */
 class Command36 extends BaseCommand {
     constructor(commandId) {
         super(commandId);
     }
 
-
-        render(container) {
+    render(container) {
             let html = `
                 <div class="form-group">
                     <label for="field-packet-type-0x36">数据包类型:</label>
@@ -30,21 +30,23 @@ class Command36 extends BaseCommand {
             `;
             container.innerHTML = html;
             this.attachListeners();
-        }
-        attachListeners() {
+    }
+
+    attachListeners() {
             document.getElementById('field-packet-type-0x36').addEventListener('change', (e) => {
                 document.getElementById('response-options-0x36').style.display = e.target.value !== '0' ? 'block' : 'none';
                 generateOutput();
             });
-        }
-        getPayload() {
+    }
+
+    getPayload() {
             if (this.getPacketType() === 0) return [];
             return [parseInt(document.getElementById('field-adaptive-anc-level-0x36').value, 16)];
-        }
-        getPacketType() {
+    }
+
+    getPacketType() {
             return parseInt(document.getElementById('field-packet-type-0x36').value, 10);
-        }
-    
+    }
 }
 
 // Register the command class globally
