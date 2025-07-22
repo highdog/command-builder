@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>语言切换测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .language-toggle {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+            gap: 1rem;
+        }
+        
+        .language-btn {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            color: #333;
+            padding: 0.5rem 1rem;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 4px;
+        }
+        
+        .language-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
+        .language-btn:hover:not(.active) {
+            background: #e9ecef;
+        }
+        
+        .test-section {
+            margin: 2rem 0;
+            padding: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+        
+        .mock-command {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+        }
+        
+        .debug-info {
+            background: #e7f3ff;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>语言切换功能测试</h1>
+        
+        <div class="language-toggle">
+            <span>选择语言:</span>
+            <button class="language-btn active" data-lang="zh">中文</button>
+            <button class="language-btn" data-lang="en">English</button>
+        </div>
+        
+        <div class="test-section">
+            <h2 id="current-lang-title">当前语言: 中文</h2>
+            <p id="current-lang-desc">这是一个测试页面，用于验证语言切换功能是否正常工作。</p>
+        </div>
+        
+        <div class="test-section">
+            <h3 id="mock-doc-title">模拟命令文档</h3>
+            <div class="mock-command">
+                <h4 id="command-name">获取设备类型</h4>
+                <div id="command-description">
+                    <p>这个命令用于获取蓝牙设备的类型信息。设备类型包括耳机、音箱等不同类别。</p>
+                    <ul>
+                        <li>命令ID: 0x00</li>
+                        <li>参数: 无</li>
+                        <li>返回值: 设备类型代码</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>调试信息</h3>
+            <div class="debug-info" id="debug-info">
+                当前语言: zh<br>
+                localStorage: zh<br>
+                函数调用: displayCommandDocumentation(mockCommand, 'zh')
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const languageButtons = document.querySelectorAll('.language-btn');
+            let currentLanguage = localStorage.getItem('language') || 'zh';
+            
+            // Mock command data
+            const mockCommand = {
+                name_zh: '获取设备类型',
+                name_en: 'Get Device Type',
+                description_zh: `
+                    <p>这个命令用于获取蓝牙设备的类型信息。设备类型包括耳机、音箱等不同类别。</p>
+                    <ul>
+                        <li>命令ID: 0x00</li>
+                        <li>参数: 无</li>
+                        <li>返回值: 设备类型代码</li>
+                    </ul>
+                `,
+                description_en: `
+                    <p>This command is used to get the type information of the Bluetooth device. Device types include different categories such as headphones, speakers, etc.</p>
+                    <ul>
+                        <li>Command ID: 0x00</li>
+                        <li>Parameters: None</li>
+                        <li>Return Value: Device type code</li>
+                    </ul>
+                `
+            };
+            
+            // Set initial language state
+            languageButtons.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === currentLanguage);
+            });
+            
+            // Apply initial language
+            applyLanguage(currentLanguage);
+            displayCommandDocumentation(mockCommand, currentLanguage);
+            
+            languageButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const newLang = btn.dataset.lang;
+                    if (newLang !== currentLanguage) {
+                        currentLanguage = newLang;
+                        localStorage.setItem('language', newLang);
+                        
+                        // Update button states
+                        languageButtons.forEach(b => {
+                            b.classList.toggle('active', b.dataset.lang === newLang);
+                        });
+                        
+                        // Apply language changes
+                        applyLanguage(newLang);
+                        displayCommandDocumentation(mockCommand, newLang);
+                        
+                        // Update debug info
+                        updateDebugInfo(newLang);
+                    }
+                });
+            });
+            
+            function applyLanguage(lang) {
+                const translations = {
+                    zh: {
+                        currentLangTitle: '当前语言: 中文',
+                        currentLangDesc: '这是一个测试页面，用于验证语言切换功能是否正常工作。',
+                        mockDocTitle: '模拟命令文档'
+                    },
+                    en: {
+                        currentLangTitle: 'Current Language: English',
+                        currentLangDesc: 'This is a test page to verify that the language switching function works properly.',
+                        mockDocTitle: 'Mock Command Documentation'
+                    }
+                };
+                
+                const t = translations[lang];
+                
+                document.getElementById('current-lang-title').textContent = t.currentLangTitle;
+                document.getElementById('current-lang-desc').textContent = t.currentLangDesc;
+                document.getElementById('mock-doc-title').textContent = t.mockDocTitle;
+            }
+            
+            function displayCommandDocumentation(command, lang = currentLanguage) {
+                console.log('displayCommandDocumentation called with:', { command: command.name_zh || command.name_en, lang });
+                
+                const nameElement = document.getElementById('command-name');
+                const descElement = document.getElementById('command-description');
+                
+                let name = '';
+                let description = '';
+                
+                if (lang === 'zh' && command.name_zh) {
+                    name = command.name_zh;
+                } else if (lang === 'en' && command.name_en) {
+                    name = command.name_en;
+                } else {
+                    name = command.name_zh || command.name_en || '未知命令';
+                }
+                
+                if (lang === 'zh' && command.description_zh) {
+                    description = command.description_zh;
+                } else if (lang === 'en' && command.description_en) {
+                    description = command.description_en;
+                } else {
+                    description = command.description_zh || command.description_en || '暂无说明。';
+                }
+                
+                nameElement.textContent = name;
+                descElement.innerHTML = description;
+                
+                console.log('Updated documentation:', { name, lang });
+            }
+            
+            function updateDebugInfo(lang) {
+                const debugInfo = document.getElementById('debug-info');
+                debugInfo.innerHTML = `
+                    当前语言: ${lang}<br>
+                    localStorage: ${localStorage.getItem('language')}<br>
+                    函数调用: displayCommandDocumentation(mockCommand, '${lang}')
+                `;
+            }
+            
+            // Initial debug info
+            updateDebugInfo(currentLanguage);
+        });
+    </script>
+</body>
+</html>
