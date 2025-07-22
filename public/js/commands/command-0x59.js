@@ -37,9 +37,12 @@ class Command59 extends BaseCommand {
     }
 
     render(container) {
+        const currentLang = i18nManager.getCurrentLanguage();
+        const isZh = currentLang === 'zh';
+
         const html = `
             <div class="form-group">
-                <label for="field-packet-type-0x59">数据包类型:</label>
+                <label for="field-packet-type-0x59">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                 <select id="field-packet-type-0x59" class="payload-input">
                     <option value="0">COMMAND (get)</option>
                     <option value="2" selected>RESPONSE</option>
@@ -47,14 +50,14 @@ class Command59 extends BaseCommand {
             </div>
             <div id="response-options-0x59">
                 <div class="form-group">
-                    <label for="field-product-type-0x59">产品类型:</label>
+                    <label for="field-product-type-0x59">${isZh ? '产品类型:' : 'Product Type:'}</label>
                     <select id="field-product-type-0x59" class="payload-input">
-                        <option value="earbuds">Earbuds</option>
-                        <option value="headset">Headset</option>
+                        <option value="earbuds">${isZh ? '耳机' : 'Earbuds'}</option>
+                        <option value="headset">${isZh ? '头戴式耳机' : 'Headset'}</option>
                     </select>
                 </div>
                 <div id="mappings-container-0x59"></div>
-                <button type="button" id="add-mapping-btn-0x59" class="button" style="width: 100%; margin-top: 1rem;">+ 添加按键映射</button>
+                <button type="button" id="add-mapping-btn-0x59" class="button" style="width: 100%; margin-top: 1rem;">${isZh ? '+ 添加按键映射' : '+ Add Button Mapping'}</button>
             </div>
         `;
         container.innerHTML = html;
@@ -63,27 +66,30 @@ class Command59 extends BaseCommand {
     }
 
     addMappingRow(location = 0, trigger = 0, action = 0) {
+        const currentLang = i18nManager.getCurrentLanguage();
+        const isZh = currentLang === 'zh';
+
         const container = document.getElementById('mappings-container-0x59');
         const productType = document.getElementById('field-product-type-0x59').value;
         const locationOptions = this.locations[productType];
-        
+
         const fieldset = document.createElement('fieldset');
         fieldset.className = 'mapping-row';
         fieldset.innerHTML = `
-            <legend>Mapping #${container.children.length + 1}</legend>
+            <legend>${isZh ? '映射' : 'Mapping'} #${container.children.length + 1}</legend>
             <div class="form-group">
-                <label>Location:</label>
+                <label>${isZh ? '位置:' : 'Location:'}</label>
                 <select class="mapping-location">${this.createSelect(locationOptions, location)}</select>
             </div>
             <div class="form-group">
-                <label>Trigger:</label>
+                <label>${isZh ? '触发方式:' : 'Trigger:'}</label>
                 <select class="mapping-trigger">${this.createSelect(this.triggers, trigger)}</select>
             </div>
             <div class="form-group">
-                <label>Action:</label>
+                <label>${isZh ? '动作:' : 'Action:'}</label>
                 <select class="mapping-action">${this.createSelect(this.actions, action)}</select>
             </div>
-            <button type="button" class="remove-mapping-btn button-danger">移除</button>
+            <button type="button" class="remove-mapping-btn button-danger">${isZh ? '移除' : 'Remove'}</button>
         `;
         container.appendChild(fieldset);
         if (typeof generateOutput === 'function') generateOutput();

@@ -16,9 +16,12 @@ class Command58 extends BaseCommand {
     }
 
     render(container) {
+        const currentLang = i18nManager.getCurrentLanguage();
+        const isZh = currentLang === 'zh';
+
         const html = `
             <div class="form-group">
-                <label for="field-packet-type-0x58">数据包类型:</label>
+                <label for="field-packet-type-0x58">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                 <select id="field-packet-type-0x58" class="payload-input">
                     <option value="0" selected>COMMAND (set volume)</option>
                     <option value="2">RESPONSE (result status)</option>
@@ -26,33 +29,33 @@ class Command58 extends BaseCommand {
             </div>
             <div id="command-options-0x58">
                 <div class="form-group">
-                    <label for="field-voice-volume-0x58">语音提示音量 (0-100):</label>
+                    <label for="field-voice-volume-0x58">${isZh ? '语音提示音量 (0-100):' : 'Voice Prompt Volume (0-100):'}</label>
                     <input type="number" id="field-voice-volume-0x58" min="0" max="100" value="70" style="width: 80px;">
                     <span>%</span>
                 </div>
                 <div class="form-group">
                     <label>
                         <input type="checkbox" id="field-voice-muted-0x58">
-                        语音提示静音
+                        ${isZh ? '语音提示静音' : 'Voice Prompt Muted'}
                     </label>
                 </div>
                 <div class="form-group">
-                    <label for="field-voice-volume-mode-0x58">音量模式:</label>
+                    <label for="field-voice-volume-mode-0x58">${isZh ? '音量模式:' : 'Volume Mode:'}</label>
                     <select id="field-voice-volume-mode-0x58" class="payload-input">
-                        <option value="0">ABSOLUTE (绝对音量)</option>
-                        <option value="1" selected>RELATIVE (相对音量)</option>
-                        <option value="2">ADAPTIVE (自适应音量)</option>
+                        <option value="0">${isZh ? 'ABSOLUTE (绝对音量)' : 'ABSOLUTE'}</option>
+                        <option value="1" selected>${isZh ? 'RELATIVE (相对音量)' : 'RELATIVE'}</option>
+                        <option value="2">${isZh ? 'ADAPTIVE (自适应音量)' : 'ADAPTIVE'}</option>
                     </select>
                 </div>
             </div>
             <div id="response-options-0x58" style="display:none;">
                 <div class="form-group">
-                    <label for="field-status-0x58">执行状态:</label>
+                    <label for="field-status-0x58">${isZh ? '执行状态:' : 'Execution Status:'}</label>
                     <select id="field-status-0x58" class="payload-input">
-                        <option value="0x00">SUCCESS (成功)</option>
-                        <option value="0x01">FAILED (失败)</option>
-                        <option value="0x02">INVALID_VOLUME (音量无效)</option>
-                        <option value="0x03">INVALID_MODE (模式无效)</option>
+                        <option value="0x00">${isZh ? 'SUCCESS (成功)' : 'SUCCESS'}</option>
+                        <option value="0x01">${isZh ? 'FAILED (失败)' : 'FAILED'}</option>
+                        <option value="0x02">${isZh ? 'INVALID_VOLUME (音量无效)' : 'INVALID_VOLUME'}</option>
+                        <option value="0x03">${isZh ? 'INVALID_MODE (模式无效)' : 'INVALID_MODE'}</option>
                     </select>
                 </div>
             </div>

@@ -8,9 +8,12 @@ class Command57 extends BaseCommand {
     }
 
     render(container) {
+        const currentLang = i18nManager.getCurrentLanguage();
+        const isZh = currentLang === 'zh';
+
         const html = `
             <div class="form-group">
-                <label for="field-packet-type-0x57">数据包类型:</label>
+                <label for="field-packet-type-0x57">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                 <select id="field-packet-type-0x57" class="payload-input">
                     <option value="0">COMMAND (get volume)</option>
                     <option value="2" selected>RESPONSE (device reply)</option>
@@ -18,22 +21,22 @@ class Command57 extends BaseCommand {
             </div>
             <div id="response-options-0x57">
                 <div class="form-group">
-                    <label for="field-voice-volume-0x57">语音提示音量 (0-100):</label>
+                    <label for="field-voice-volume-0x57">${isZh ? '语音提示音量 (0-100):' : 'Voice Prompt Volume (0-100):'}</label>
                     <input type="number" id="field-voice-volume-0x57" min="0" max="100" value="70" style="width: 80px;">
                     <span>%</span>
                 </div>
                 <div class="form-group">
                     <label>
                         <input type="checkbox" id="field-voice-muted-0x57">
-                        语音提示静音
+                        ${isZh ? '语音提示静音' : 'Voice Prompt Muted'}
                     </label>
                 </div>
                 <div class="form-group">
-                    <label for="field-voice-volume-mode-0x57">音量模式:</label>
+                    <label for="field-voice-volume-mode-0x57">${isZh ? '音量模式:' : 'Volume Mode:'}</label>
                     <select id="field-voice-volume-mode-0x57" class="payload-input">
-                        <option value="0">ABSOLUTE (绝对音量)</option>
-                        <option value="1" selected>RELATIVE (相对音量)</option>
-                        <option value="2">ADAPTIVE (自适应音量)</option>
+                        <option value="0">${isZh ? 'ABSOLUTE (绝对音量)' : 'ABSOLUTE'}</option>
+                        <option value="1" selected>${isZh ? 'RELATIVE (相对音量)' : 'RELATIVE'}</option>
+                        <option value="2">${isZh ? 'ADAPTIVE (自适应音量)' : 'ADAPTIVE'}</option>
                     </select>
                 </div>
             </div>
