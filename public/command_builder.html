@@ -380,10 +380,43 @@
                 docContainer.innerHTML = `<p>${i18nManager.t('main.selectCommandDoc')}</p>`;
             }
 
+            // Update dynamically generated form labels
+            updateDynamicLabels(lang);
+
             // Re-fetch commands with new language
             fetchCommands(lang);
 
             console.log(`Language applied: ${lang}`);
+        }
+
+        function updateDynamicLabels(lang) {
+            // Update "数据包类型" labels in dynamically generated forms
+            const packetTypeLabels = document.querySelectorAll('label[for*="field-packet-type"]');
+            packetTypeLabels.forEach(label => {
+                if (label.textContent.includes('数据包类型') || label.textContent.includes('Packet Type')) {
+                    label.textContent = i18nManager.t('command.packetType') + ':';
+                }
+            });
+
+            // Update other common dynamic labels
+            const deviceTypeLabels = document.querySelectorAll('label[for*="field-device-type"]');
+            deviceTypeLabels.forEach(label => {
+                if (label.textContent.includes('设备型号') || label.textContent.includes('Device Type')) {
+                    const deviceTypeText = lang === 'zh' ? '设备型号:' : 'Device Type:';
+                    label.textContent = deviceTypeText;
+                }
+            });
+
+            // Update any other common labels as needed
+            const allLabels = document.querySelectorAll('label');
+            allLabels.forEach(label => {
+                const text = label.textContent;
+                if (text.includes('数据包类型') && lang === 'en') {
+                    label.textContent = text.replace('数据包类型', 'Packet Type');
+                } else if (text.includes('Packet Type') && lang === 'zh') {
+                    label.textContent = text.replace('Packet Type', '数据包类型');
+                }
+            });
         }
 
         // --- UI ELEMENTS ---
@@ -441,7 +474,7 @@
             currentCommand = null;
 
             if (!commandId) {
-                docContainer.innerHTML = '<p>请从左侧选择一个命令以查看其文档。</p>';
+                docContainer.innerHTML = `<p>${i18nManager.t('main.selectCommandDoc')}</p>`;
                 generateOutput();
                 return;
             }
@@ -481,7 +514,8 @@
 
 
         const renderCommandSelect = () => {
-            commandSelect.innerHTML = '<option value="">-- 请选择一个命令 --</option>';
+            const defaultText = i18nManager.t('main.selectCommand');
+            commandSelect.innerHTML = `<option value="">${defaultText}</option>`;
             for (const category in allCommands) {
                 const optgroup = document.createElement('optgroup');
                 optgroup.label = category;
@@ -497,7 +531,7 @@
 
         generateOutput = () => {
             if (!currentCommand || !currentCommand.hex_id) {
-                outputEl.textContent = "请先选择一个有效命令。";
+                outputEl.textContent = i18nManager.t('main.noCommandSelected');
                 outputContainer.style.display = 'none';
                 return;
             }
