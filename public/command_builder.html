@@ -472,7 +472,17 @@
                 const response = await fetch(`/api/commands/${commandId}`);
                 if (!response.ok) throw new Error('Failed to fetch command details');
                 currentCommand = await response.json();
-                
+
+                console.log('Fetched command data:', {
+                    id: currentCommand.id,
+                    hex_id: currentCommand.hex_id,
+                    name_en: currentCommand.name_en,
+                    name_zh: currentCommand.name_zh,
+                    hasDescZh: !!currentCommand.description_zh,
+                    hasDescEn: !!currentCommand.description_en,
+                    currentLanguage: currentLanguage
+                });
+
                 displayCommandDocumentation(currentCommand, currentLanguage);
 
                 const handler = customCommandHandlers[currentCommand.hex_id];
@@ -667,6 +677,15 @@
                     // Refresh current command documentation if available
                     if (currentCommand) {
                         console.log('Language switched to:', newLang, 'Refreshing command:', currentCommand.hex_id);
+                        console.log('Current command data:', {
+                            hex_id: currentCommand.hex_id,
+                            name_en: currentCommand.name_en,
+                            name_zh: currentCommand.name_zh,
+                            hasDescZh: !!currentCommand.description_zh,
+                            hasDescEn: !!currentCommand.description_en,
+                            descZhLength: currentCommand.description_zh ? currentCommand.description_zh.length : 0,
+                            descEnLength: currentCommand.description_en ? currentCommand.description_en.length : 0
+                        });
                         displayCommandDocumentation(currentCommand, newLang);
                     } else {
                         console.log('Language switched to:', newLang, 'No current command to refresh');

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最终语言切换测试</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .login-section {
+            background: #fff3cd;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            align-items: center;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .language-toggle {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .language-btn {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            color: #333;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        .language-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
+        .status {
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+        }
+        
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        
+        .test-results {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .test-panel {
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 1rem;
+        }
+        
+        .doc-display {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 4px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0.25rem;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>最终语言切换测试</h1>
+        
+        <div class="login-section">
+            <strong>注意:</strong> 请确保已经登录系统 (用户名: admin, 密码: admin)
+            <button onclick="window.open('/login', '_blank')">打开登录页面</button>
+        </div>
+        
+        <div class="controls">
+            <div class="language-toggle">
+                <span>语言:</span>
+                <button class="language-btn active" data-lang="zh">中文</button>
+                <button class="language-btn" data-lang="en">English</button>
+            </div>
+            
+            <button onclick="runFullTest()">运行完整测试</button>
+            <button onclick="testSpecificCommand()">测试特定命令</button>
+            <button onclick="clearResults()">清除结果</button>
+        </div>
+        
+        <div id="status" class="status info">
+            准备开始测试...
+        </div>
+        
+        <div class="test-results">
+            <div class="test-panel">
+                <h3>中文文档</h3>
+                <div id="zh-doc" class="doc-display">等待测试...</div>
+            </div>
+            <div class="test-panel">
+                <h3>英文文档</h3>
+                <div id="en-doc" class="doc-display">等待测试...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentLanguage = localStorage.getItem('language') || 'zh';
+        let testCommand = null;
+        
+        const statusDiv = document.getElementById('status');
+        const zhDocDiv = document.getElementById('zh-doc');
+        const enDocDiv = document.getElementById('en-doc');
+        
+        function updateStatus(message, type = 'info') {
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+            console.log(message);
+        }
+        
+        function clearResults() {
+            zhDocDiv.innerHTML = '等待测试...';
+            enDocDiv.innerHTML = '等待测试...';
+            updateStatus('结果已清除', 'info');
+        }
+        
+        // Language toggle
+        document.querySelectorAll('.language-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.lang === currentLanguage);
+            
+            btn.addEventListener('click', () => {
+                const newLang = btn.dataset.lang;
+                if (newLang !== currentLanguage) {
+                    currentLanguage = newLang;
+                    localStorage.setItem('language', newLang);
+                    
+                    document.querySelectorAll('.language-btn').forEach(b => {
+                        b.classList.toggle('active', b.dataset.lang === newLang);
+                    });
+                    
+                    updateStatus(`语言切换到: ${newLang}`, 'info');
+                    
+                    if (testCommand) {
+                        displayCommandDocumentation(testCommand, newLang);
+                    }
+                }
+            });
+        });
+        
+        async function runFullTest() {
+            updateStatus('开始完整测试...', 'info');
+            
+            try {
+                // Step 1: Test API access
+                updateStatus('1. 测试API访问...', 'info');
+                const response = await fetch('/api/commands');
+                if (!response.ok) {
+                    throw new Error(`API访问失败: ${response.status} ${response.statusText}`);
+                }
+                
+                const allCommands = await response.json();
+                const totalCommands = Object.values(allCommands).reduce((sum, cmds) => sum + cmds.length, 0);
+                updateStatus(`✓ API访问成功，找到 ${totalCommands} 个命令`, 'success');
+                
+                // Step 2: Get a test command
+                updateStatus('2. 获取测试命令...', 'info');
+                const firstCategory = Object.keys(allCommands)[0];
+                const firstCommand = allCommands[firstCategory][0];
+                
+                const cmdResponse = await fetch(`/api/commands/${firstCommand.id}`);
+                if (!cmdResponse.ok) {
+                    throw new Error(`命令详情获取失败: ${cmdResponse.status}`);
+                }
+                
+                testCommand = await cmdResponse.json();
+                updateStatus(`✓ 获取测试命令: ${testCommand.name_en} (${testCommand.hex_id})`, 'success');
+                
+                // Step 3: Test Chinese data
+                updateStatus('3. 检查中文数据...', 'info');
+                const hasZhName = !!testCommand.name_zh;
+                const hasZhDesc = !!testCommand.description_zh;
+                
+                if (hasZhName && hasZhDesc) {
+                    updateStatus(`✓ 中文数据完整: 名称="${testCommand.name_zh}", 描述长度=${testCommand.description_zh.length}`, 'success');
+                } else {
+                    updateStatus(`⚠️ 中文数据不完整: 名称=${hasZhName ? '✓' : '✗'}, 描述=${hasZhDesc ? '✓' : '✗'}`, 'error');
+                }
+                
+                // Step 4: Test both language displays
+                updateStatus('4. 测试双语显示...', 'info');
+                displayBothLanguages(testCommand);
+                updateStatus('✓ 测试完成！请查看左右两栏的文档显示', 'success');
+                
+            } catch (error) {
+                updateStatus(`测试失败: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testSpecificCommand() {
+            const commandId = prompt('请输入命令ID (1-85):', '1');
+            if (!commandId) return;
+            
+            try {
+                updateStatus(`测试命令 ID ${commandId}...`, 'info');
+                const response = await fetch(`/api/commands/${commandId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                testCommand = await response.json();
+                updateStatus(`✓ 命令加载成功: ${testCommand.name_en}`, 'success');
+                displayBothLanguages(testCommand);
+                
+            } catch (error) {
+                updateStatus(`命令测试失败: ${error.message}`, 'error');
+            }
+        }
+        
+        function displayBothLanguages(command) {
+            // Display Chinese version
+            let zhDescription = '';
+            if (command.description_zh) {
+                zhDescription = command.description_zh;
+            } else {
+                zhDescription = '# 中文文档不可用\n\n该命令暂无中文文档。';
+            }
+            zhDocDiv.innerHTML = marked.parse(zhDescription);
+            
+            // Display English version
+            let enDescription = '';
+            if (command.description_en) {
+                enDescription = command.description_en;
+            } else {
+                enDescription = '# English Documentation Not Available\n\nNo English documentation for this command.';
+            }
+            enDocDiv.innerHTML = marked.parse(enDescription);
+        }
+        
+        function displayCommandDocumentation(command, lang = currentLanguage) {
+            let description = '';
+            if (lang === 'zh' && command.description_zh) {
+                description = command.description_zh;
+            } else if (lang === 'en' && command.description_en) {
+                description = command.description_en;
+            } else {
+                description = command.description_zh || command.description_en || '暂无说明。';
+            }
+            
+            // Update the appropriate panel based on current language
+            if (lang === 'zh') {
+                zhDocDiv.innerHTML = marked.parse(description);
+            } else {
+                enDocDiv.innerHTML = marked.parse(description);
+            }
+        }
+        
+        // Auto-run test on load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateStatus('页面加载完成，点击"运行完整测试"开始', 'info');
+        });
+    </script>
+</body>
+</html>

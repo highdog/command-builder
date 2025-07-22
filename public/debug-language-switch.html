@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调试语言切换</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            align-items: center;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .language-toggle {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .language-btn {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            color: #333;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        .language-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
+        .command-select {
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        
+        .debug-panel {
+            background: #e7f3ff;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .doc-container {
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 1rem;
+            min-height: 300px;
+            background: #fafafa;
+        }
+        
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>调试语言切换功能</h1>
+        
+        <div class="controls">
+            <div class="language-toggle">
+                <span>语言:</span>
+                <button class="language-btn active" data-lang="zh">中文</button>
+                <button class="language-btn" data-lang="en">English</button>
+            </div>
+            
+            <select class="command-select" id="command-select">
+                <option value="">-- 选择命令 --</option>
+            </select>
+            
+            <button onclick="testCurrentCommand()">测试当前命令</button>
+            <button onclick="clearDebug()">清除调试</button>
+        </div>
+        
+        <div class="debug-panel" id="debug-panel">
+            调试信息将显示在这里...<br>
+        </div>
+        
+        <div class="two-column">
+            <div>
+                <h3>原始API数据</h3>
+                <pre id="raw-data" style="background: #f8f9fa; padding: 1rem; border-radius: 4px; font-size: 11px; overflow: auto; max-height: 400px;"></pre>
+            </div>
+            <div>
+                <h3>渲染的文档</h3>
+                <div class="doc-container" id="command-display-container">
+                    <p>请选择一个命令查看文档</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentLanguage = localStorage.getItem('language') || 'zh';
+        let currentCommand = null;
+        let allCommands = {};
+        
+        const debugPanel = document.getElementById('debug-panel');
+        const commandSelect = document.getElementById('command-select');
+        const rawDataDiv = document.getElementById('raw-data');
+        const docContainer = document.getElementById('command-display-container');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            debugPanel.innerHTML += `[${timestamp}] ${message}<br>`;
+            debugPanel.scrollTop = debugPanel.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearDebug() {
+            debugPanel.innerHTML = '调试信息已清除...<br>';
+        }
+        
+        // Language toggle functionality
+        document.querySelectorAll('.language-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.lang === currentLanguage);
+            
+            btn.addEventListener('click', () => {
+                const newLang = btn.dataset.lang;
+                if (newLang !== currentLanguage) {
+                    currentLanguage = newLang;
+                    localStorage.setItem('language', newLang);
+                    
+                    // Update button states
+                    document.querySelectorAll('.language-btn').forEach(b => {
+                        b.classList.toggle('active', b.dataset.lang === newLang);
+                    });
+                    
+                    log(`语言切换到: ${newLang}`);
+                    
+                    // Refresh current command documentation if available
+                    if (currentCommand) {
+                        log(`刷新命令文档: ${currentCommand.hex_id || currentCommand.id}`);
+                        displayCommandDocumentation(currentCommand, newLang);
+                    }
+                }
+            });
+        });
+        
+        // Load commands list
+        async function loadCommands() {
+            try {
+                log('加载命令列表...');
+                const response = await fetch('/api/commands');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                allCommands = await response.json();
+                log(`加载了 ${Object.keys(allCommands).length} 个命令分类`);
+                
+                // Populate select
+                commandSelect.innerHTML = '<option value="">-- 选择命令 --</option>';
+                Object.entries(allCommands).forEach(([category, commands]) => {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = category;
+                    commands.forEach(cmd => {
+                        const option = document.createElement('option');
+                        option.value = cmd.id;
+                        option.textContent = `${cmd.name} (${cmd.hex_id})`;
+                        optgroup.appendChild(option);
+                    });
+                    commandSelect.appendChild(optgroup);
+                });
+                
+            } catch (error) {
+                log(`加载命令列表失败: ${error.message}`);
+            }
+        }
+        
+        // Command selection
+        commandSelect.addEventListener('change', async (e) => {
+            const commandId = e.target.value;
+            if (!commandId) {
+                currentCommand = null;
+                rawDataDiv.textContent = '';
+                docContainer.innerHTML = '<p>请选择一个命令查看文档</p>';
+                return;
+            }
+            
+            try {
+                log(`获取命令详情: ID ${commandId}`);
+                const response = await fetch(`/api/commands/${commandId}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                currentCommand = await response.json();
+                
+                log(`命令数据获取成功: ${currentCommand.name_en || currentCommand.name_zh}`);
+                log(`中文名称: ${currentCommand.name_zh ? '✓' : '✗'}`);
+                log(`中文描述: ${currentCommand.description_zh ? '✓' : '✗'}`);
+                
+                // Show raw data
+                rawDataDiv.textContent = JSON.stringify(currentCommand, null, 2);
+                
+                // Display documentation
+                displayCommandDocumentation(currentCommand, currentLanguage);
+                
+            } catch (error) {
+                log(`获取命令详情失败: ${error.message}`);
+                rawDataDiv.textContent = `错误: ${error.message}`;
+                docContainer.innerHTML = `<p style="color: red;">加载失败: ${error.message}</p>`;
+            }
+        });
+        
+        function displayCommandDocumentation(command, lang = currentLanguage) {
+            log(`显示命令文档: 语言=${lang}, 命令=${command.hex_id || command.id}`);
+            
+            let description = '';
+            if (lang === 'zh' && command.description_zh) {
+                description = command.description_zh;
+                log('使用中文描述');
+            } else if (lang === 'en' && command.description_en) {
+                description = command.description_en;
+                log('使用英文描述');
+            } else {
+                description = command.description_zh || command.description_en || '暂无说明。';
+                log(`使用备用描述 (${command.description_zh ? '中文' : '英文'})`);
+            }
+            
+            log(`描述长度: ${description.length} 字符`);
+            docContainer.innerHTML = marked.parse(description);
+        }
+        
+        function testCurrentCommand() {
+            if (!currentCommand) {
+                log('没有选择命令');
+                return;
+            }
+            
+            log('=== 测试当前命令 ===');
+            log(`命令ID: ${currentCommand.id}`);
+            log(`Hex ID: ${currentCommand.hex_id}`);
+            log(`英文名称: ${currentCommand.name_en}`);
+            log(`中文名称: ${currentCommand.name_zh}`);
+            log(`英文描述长度: ${currentCommand.description_en ? currentCommand.description_en.length : 0}`);
+            log(`中文描述长度: ${currentCommand.description_zh ? currentCommand.description_zh.length : 0}`);
+            log(`当前语言: ${currentLanguage}`);
+            
+            displayCommandDocumentation(currentCommand, currentLanguage);
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            log(`初始化完成，当前语言: ${currentLanguage}`);
+            loadCommands();
+        });
+    </script>
+</body>
+</html>

@@ -151,10 +151,38 @@ app.get('/api/search', isAuthenticated, (req, res) => {
 });
 
 app.get('/api/commands/:id', isAuthenticated, (req, res) => {
+  console.log(`DEBUG: API request for command ID ${req.params.id}`);
   db.get('SELECT * FROM commands WHERE id = ?', [req.params.id], (err, row) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (row) res.json(row);
-    else res.status(404).json({ message: 'Command not found' });
+    if (err) {
+      console.log(`DEBUG: Database error:`, err.message);
+      return res.status(500).json({ error: err.message });
+    }
+    if (row) {
+      console.log(`DEBUG: Command ${req.params.id} raw data:`, {
+        id: row.id,
+        hex_id: row.hex_id,
+        name_en: row.name_en,
+        name_zh: row.name_zh,
+        names_equal: row.name_en === row.name_zh,
+        desc_en_length: row.description_en ? row.description_en.length : 0,
+        desc_zh_length: row.description_zh ? row.description_zh.length : 0,
+        descs_equal: row.description_en === row.description_zh,
+        desc_zh_preview: row.description_zh ? row.description_zh.substring(0, 50) : 'N/A'
+      });
+
+      // Test JSON serialization
+      const jsonString = JSON.stringify(row);
+      const parsed = JSON.parse(jsonString);
+      console.log(`DEBUG: After JSON serialization:`, {
+        name_zh: parsed.name_zh,
+        desc_zh_length: parsed.description_zh ? parsed.description_zh.length : 0
+      });
+
+      res.json(row);
+    } else {
+      console.log(`DEBUG: No command found with ID ${req.params.id}`);
+      res.status(404).json({ message: 'Command not found' });
+    }
   });
 });
 
