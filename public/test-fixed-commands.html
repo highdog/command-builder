@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试修复后的命令</title>
+    <script src="i18n.js"></script>
+    <script src="js/commands/base-command.js"></script>
+    <script src="js/command-loader.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .test-card {
+            margin: 1rem 0;
+            padding: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        
+        .test-card.success {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .test-card.error {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+        
+        .status {
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin: 0.5rem 0;
+        }
+        
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0.25rem;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        .form-container {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 1rem;
+            margin: 1rem 0;
+            background: white;
+        }
+        
+        .payload-display {
+            background: #e9ecef;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 测试修复后的命令接口</h1>
+        
+        <div class="status info">
+            <strong>测试目标:</strong> 验证所有6个新命令的接口修复是否成功
+        </div>
+        
+        <button onclick="runInterfaceTest()">🚀 开始接口测试</button>
+        <button onclick="clearResults()">🧹 清除结果</button>
+        
+        <div id="test-results"></div>
+    </div>
+
+    <script>
+        const newCommands = [
+            { id: '0x01', name: 'Register Notification Listeners', nameZh: '注册通知监听器' },
+            { id: '0x08', name: 'Set Bluetooth Led Configurations', nameZh: '设置蓝牙指示灯配置' },
+            { id: '0x0a', name: 'Set LE Configurations', nameZh: '设置 LE 配置' },
+            { id: '0x7d', name: 'Set Dolby Atmos Config', nameZh: '设置杜比全景声配置' },
+            { id: '0x7e', name: 'Get Audio Codecs Configurations', nameZh: '获取音频编解码器配置' },
+            { id: '0x7f', name: 'Set Audio Codecs Configurations', nameZh: '设置音频编解码器配置' }
+        ];
+        
+        async function runInterfaceTest() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '<div class="status info">🔄 正在测试接口...</div>';
+            
+            let allPassed = true;
+            const results = [];
+            
+            for (const cmd of newCommands) {
+                const result = await testCommandInterface(cmd);
+                results.push(result);
+                if (!result.success) {
+                    allPassed = false;
+                }
+            }
+            
+            // Generate summary
+            const summary = generateSummary(results, allPassed);
+            resultsDiv.innerHTML = summary + results.map(r => r.html).join('');
+        }
+        
+        async function testCommandInterface(cmd) {
+            const hexPart = cmd.id.replace('0x', '').padStart(2, '0').toUpperCase();
+            const className = `Command${hexPart}`;
+            
+            try {
+                // Step 1: Load command
+                const commandInstance = await window.commandLoader.loadCommand(cmd.id);
+                if (!commandInstance) {
+                    throw new Error('命令加载失败');
+                }
+                
+                // Step 2: Check class exists
+                const commandClass = window[className];
+                if (!commandClass) {
+                    throw new Error(`命令类 ${className} 不存在`);
+                }
+                
+                // Step 3: Test instantiation
+                const instance = new commandClass();
+                if (!instance.commandName) {
+                    throw new Error('命令实例化失败');
+                }
+                
+                // Step 4: Test render method
+                const testContainer = document.createElement('div');
+                instance.render(testContainer);
+                if (!testContainer.innerHTML || testContainer.innerHTML.length < 100) {
+                    throw new Error('render方法失败或内容过少');
+                }
+                
+                // Step 5: Test attachListeners method
+                if (typeof instance.attachListeners !== 'function') {
+                    throw new Error('attachListeners方法不存在');
+                }
+                
+                // Step 6: Test getPayload method
+                const payload = instance.getPayload();
+                if (!payload || !Array.isArray(payload)) {
+                    throw new Error('getPayload方法失败或返回格式错误');
+                }
+                
+                // Step 7: Test getPacketType method
+                const packetType = instance.getPacketType();
+                if (typeof packetType !== 'number') {
+                    throw new Error('getPacketType方法失败或返回格式错误');
+                }
+                
+                return {
+                    success: true,
+                    command: cmd,
+                    className: className,
+                    instance: instance,
+                    payload: payload,
+                    packetType: packetType,
+                    html: generateSuccessCard(cmd, instance, payload, packetType, testContainer.innerHTML)
+                };
+                
+            } catch (error) {
+                return {
+                    success: false,
+                    command: cmd,
+                    className: className,
+                    error: error.message,
+                    html: generateErrorCard(cmd, className, error.message)
+                };
+            }
+        }
+        
+        function generateSuccessCard(cmd, instance, payload, packetType, formHtml) {
+            return `
+                <div class="test-card success">
+                    <h3>✅ ${cmd.id} - ${cmd.nameZh}</h3>
+                    <div class="status success">
+                        <strong>接口测试通过!</strong> 所有必需方法正常工作
+                    </div>
+                    
+                    <div><strong>命令名称:</strong> ${instance.commandName}</div>
+                    <div><strong>类名:</strong> ${instance.constructor.name}</div>
+                    <div><strong>数据包类型:</strong> ${packetType}</div>
+                    
+                    <div class="payload-display">
+                        <strong>载荷数组:</strong> [${payload.map(b => '0x' + b.toString(16).padStart(2, '0')).join(', ')}]<br>
+                        <strong>载荷长度:</strong> ${payload.length} 字节
+                    </div>
+                    
+                    <details>
+                        <summary><strong>📋 表单HTML预览</strong></summary>
+                        <div class="form-container">${formHtml}</div>
+                    </details>
+                </div>
+            `;
+        }
+        
+        function generateErrorCard(cmd, className, error) {
+            return `
+                <div class="test-card error">
+                    <h3>❌ ${cmd.id} - ${cmd.nameZh}</h3>
+                    <div class="status error">
+                        <strong>接口测试失败!</strong> ${error}
+                    </div>
+                    <div><strong>期望类名:</strong> ${className}</div>
+                </div>
+            `;
+        }
+        
+        function generateSummary(results, allPassed) {
+            const passedCount = results.filter(r => r.success).length;
+            const totalCount = results.length;
+            
+            const summaryClass = allPassed ? 'success' : 'error';
+            const summaryIcon = allPassed ? '🎉' : '⚠️';
+            const summaryText = allPassed ? 
+                '所有命令接口修复成功! 现在可以在Command Builder中正常使用了!' : 
+                `${passedCount}/${totalCount} 个命令接口正常，还有问题需要解决。`;
+            
+            return `
+                <div class="status ${summaryClass}" style="margin: 2rem 0; padding: 1.5rem; font-size: 1.1em;">
+                    <h2>${summaryIcon} 接口测试总结</h2>
+                    <p><strong>${summaryText}</strong></p>
+                    <p>通过率: ${passedCount}/${totalCount} (${Math.round(passedCount/totalCount*100)}%)</p>
+                    ${allPassed ? '<p>🚀 Message Definition分类现在真正100%完成了!</p>' : ''}
+                </div>
+            `;
+        }
+        
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+        }
+        
+        // Auto-start test after page load
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(runInterfaceTest, 1000);
+        });
+    </script>
+</body>
+</html>

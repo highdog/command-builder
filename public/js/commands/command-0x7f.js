@@ -1,0 +1,53 @@
+/**
+ * Command 0x7F - Set Audio Codecs Configurations
+ * 设置音频编解码器配置
+ */
+class Command7F extends BaseCommand {
+    constructor(commandId) {
+        super(commandId);
+    }
+
+    render(container) {
+        const html = `
+            <div class="form-group">
+                <label for="field-packet-type-0x7f">数据包类型:</label>
+                <select id="field-packet-type-0x7f" class="payload-input">
+                    <option value="0" selected>COMMAND (set)</option>
+                    <option value="2">RESPONSE (device reply)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="field-ldac-status-0x7f">LDAC状态:</label>
+                <select id="field-ldac-status-0x7f" class="payload-input">
+                    <option value="0">开启 (ON)</option>
+                    <option value="1">关闭 (OFF)</option>
+                </select>
+        `;
+        container.innerHTML = html;
+        this.attachListeners();
+    }
+
+    attachListeners() {
+        // No special listeners needed for this command
+    }
+
+    getPayload() {
+        const ldacStatusEl = document.getElementById('field-ldac-status-0x7f');
+        const ldacStatus = ldacStatusEl ? parseInt(ldacStatusEl.value) || 0 : 0;
+
+        // Build byte according to specification (same format as 0x7E)
+        let codecByte = 0;
+        codecByte |= (0x00 & 0x3F); // Bits 0-5: LDAC codec type (0x00)
+        codecByte |= ((ldacStatus & 0x03) << 6); // Bits 6-7: Status
+
+        return [codecByte];
+    }
+
+    getPacketType() {
+        const packetTypeEl = document.getElementById('field-packet-type-0x7f');
+        return packetTypeEl ? parseInt(packetTypeEl.value, 10) : 0;
+    }
+}
+
+// Register the command class globally
+window.Command7F = Command7F;
