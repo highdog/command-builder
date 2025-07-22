@@ -98,6 +98,45 @@
         background-color: #e9ecef !important;
     }
 
+    /* Language toggle button */
+    .language-toggle {
+        display: flex;
+        align-items: center;
+        margin-right: 1rem;
+    }
+
+    .language-btn {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        color: #333;
+        padding: 0.25rem 0.5rem;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border-radius: 0;
+    }
+
+    .language-btn:first-child {
+        border-top-left-radius: 4px;
+        border-bottom-left-radius: 4px;
+    }
+
+    .language-btn:last-child {
+        border-top-right-radius: 4px;
+        border-bottom-right-radius: 4px;
+        border-left: none;
+    }
+
+    .language-btn.active {
+        background: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+
+    .language-btn:hover:not(.active) {
+        background: #e9ecef;
+    }
+
     .content-container {
         flex: 1;
         display: flex;
@@ -132,6 +171,10 @@
         <input type="search" id="global-search-box" placeholder="Search all commands...">
       </div>
       <div class="logout-container">
+        <div class="language-toggle">
+          <button class="language-btn active" data-lang="zh">中</button>
+          <button class="language-btn" data-lang="en">EN</button>
+        </div>
         <a href="/admin" id="ui-admin-link" style="display: none; margin-right: 1rem; color: #007bff; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; transition: background-color 0.2s;">Admin</a>
         <form action="/logout" method="POST" style="margin: 0;">
           <button type="submit" class="logout-btn">Logout</button>
@@ -325,17 +368,14 @@
           .then(response => response.json())
           .then(data => {
             currentCommandData = data;
-            commandName.textContent = data.name_en;
-            displayCommandDocumentation(data);
+            displayCommandDocumentation(data, currentLanguage);
+            if (currentUser && currentUser.role === 'admin') {
+              editCommandBtn.style.display = 'inline-block';
+            }
           });
       };
 
-      const displayCommandDocumentation = (data) => {
-        commandDisplayContainer.innerHTML = marked.parse(data.description_en || '');
-        if (currentUser && currentUser.role === 'admin') {
-          editCommandBtn.style.display = 'inline-block';
-        }
-      };
+
       
       const displayInitialMessage = () => {
         exitEditMode();
@@ -446,10 +486,106 @@
       modalForm.addEventListener('submit', (e) => { e.preventDefault(); saveModalForm(); });
       window.addEventListener('click', (e) => { if (e.target == modal) modal.style.display = 'none'; });
 
+      // --- LANGUAGE TOGGLE ---
+      const languageButtons = document.querySelectorAll('.language-btn');
+      let currentLanguage = localStorage.getItem('language') || 'zh';
+
+      // Set initial language state
+      languageButtons.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.lang === currentLanguage);
+      });
+
+      languageButtons.forEach(btn => {
+          btn.addEventListener('click', () => {
+              const newLang = btn.dataset.lang;
+              if (newLang !== currentLanguage) {
+                  currentLanguage = newLang;
+                  localStorage.setItem('language', newLang);
+
+                  // Update button states
+                  languageButtons.forEach(b => {
+                      b.classList.toggle('active', b.dataset.lang === newLang);
+                  });
+
+                  // Apply language changes
+                  applyLanguage(newLang);
+
+                  // Refresh current command documentation if available
+                  if (currentCommandData) {
+                      displayCommandDocumentation(currentCommandData, newLang);
+                  }
+              }
+          });
+      });
+
+      function applyLanguage(lang) {
+          // Update UI text based on language
+          const translations = {
+              zh: {
+                  selectCommand: '选择一个命令',
+                  selectCommandPrompt: '从侧边栏选择一个命令以查看其文档。',
+                  searchPlaceholder: '搜索所有命令...'
+              },
+              en: {
+                  selectCommand: 'Select a command',
+                  selectCommandPrompt: 'Select a command from the sidebar to view its documentation.',
+                  searchPlaceholder: 'Search all commands...'
+              }
+          };
+
+          const t = translations[lang];
+
+          // Update command name header
+          const commandName = document.getElementById('command-name');
+          if (commandName && commandName.textContent === '选择一个命令' || commandName.textContent === 'Select a command') {
+              commandName.textContent = t.selectCommand;
+          }
+
+          // Update search placeholder
+          const searchBox = document.getElementById('global-search-box');
+          if (searchBox) {
+              searchBox.placeholder = t.searchPlaceholder;
+          }
+
+          // Update initial prompt
+          const displayContainer = document.getElementById('command-display-container');
+          if (displayContainer && (displayContainer.innerHTML.includes('从侧边栏选择') || displayContainer.innerHTML.includes('Select a command from the sidebar'))) {
+              displayContainer.innerHTML = `<p>${t.selectCommandPrompt}</p>`;
+          }
+      }
+
+      function displayCommandDocumentation(data, lang = currentLanguage) {
+          const displayContainer = document.getElementById('command-display-container');
+          if (!displayContainer) return;
+
+          let description = '';
+          if (lang === 'zh' && data.description_zh) {
+              description = data.description_zh;
+          } else if (lang === 'en' && data.description_en) {
+              description = data.description_en;
+          } else {
+              // Fallback to available description
+              description = data.description_zh || data.description_en || '暂无说明。';
+          }
+
+          displayContainer.innerHTML = marked.parse(description);
+
+          // Update command name
+          const commandName = document.getElementById('command-name');
+          if (commandName) {
+              if (lang === 'zh' && data.name_zh) {
+                  commandName.textContent = data.name_zh;
+              } else {
+                  commandName.textContent = data.name_en || '未知命令';
+              }
+          }
+      }
+
       // --- INITIALIZATION ---
       const init = async () => {
         await checkSession();
         fetchCommands();
+        applyLanguage(currentLanguage);
       };
 
       init();

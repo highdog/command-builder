@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>语言切换演示</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        
+        .page-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        .top-nav {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1rem;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            height: 60px;
+        }
+        
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.2s;
+            opacity: 0.6;
+        }
+        
+        .nav-links a:hover {
+            background-color: #e9ecef;
+            opacity: 1;
+        }
+        
+        .nav-links a.active {
+            opacity: 1;
+            background-color: #007bff;
+            color: #fff;
+        }
+        
+        .logout-container {
+            display: flex;
+            align-items: center;
+        }
+        
+        /* Language toggle button */
+        .language-toggle {
+            display: flex;
+            align-items: center;
+            margin-right: 1rem;
+        }
+        
+        .language-btn {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            color: #333;
+            padding: 0.25rem 0.5rem;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 0;
+        }
+        
+        .language-btn:first-child {
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .language-btn:last-child {
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+            border-left: none;
+        }
+        
+        .language-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
+        .language-btn:hover:not(.active) {
+            background: #e9ecef;
+        }
+        
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        
+        .logout-btn:hover {
+            background: #c82333;
+        }
+        
+        .content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+        
+        .demo-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            background: white;
+        }
+        
+        .demo-section h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .language-example {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .language-card {
+            padding: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            background: #f8f9fa;
+        }
+        
+        .language-card h4 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        
+        .toggle-demo {
+            background: #e7f3ff;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <!-- Navigation Bar with Language Toggle -->
+        <div class="top-nav">
+            <div class="nav-links">
+                <a href="/" class="active">Command Builder</a>
+                <a href="/documentation">Documentation</a>
+            </div>
+            <div class="logout-container">
+                <div class="language-toggle">
+                    <button class="language-btn active" data-lang="zh">中</button>
+                    <button class="language-btn" data-lang="en">EN</button>
+                </div>
+                <a href="/admin" style="margin-right: 1rem; color: #007bff; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px;">Admin</a>
+                <button class="logout-btn">Logout</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="demo-section">
+                <h2 id="main-title">中英文切换功能演示</h2>
+                <p id="description">这个演示展示了导航栏上的中英文切换按钮功能。点击"中"或"EN"按钮可以切换界面语言。</p>
+                
+                <div class="toggle-demo">
+                    <h4 id="current-lang-title">当前语言: 中文</h4>
+                    <p id="current-lang-desc">语言设置会保存在本地存储中，下次访问时会记住您的选择。</p>
+                </div>
+            </div>
+
+            <div class="demo-section">
+                <h2 id="features-title">功能特点</h2>
+                <div class="language-example">
+                    <div class="language-card">
+                        <h4>中文界面</h4>
+                        <ul id="zh-features">
+                            <li>蓝牙协议选择</li>
+                            <li>命令选择和配置</li>
+                            <li>生成结果显示</li>
+                            <li>命令文档查看</li>
+                            <li>复制功能</li>
+                        </ul>
+                    </div>
+                    <div class="language-card">
+                        <h4>English Interface</h4>
+                        <ul id="en-features">
+                            <li>Bluetooth Protocol Selection</li>
+                            <li>Command Selection and Configuration</li>
+                            <li>Generated Result Display</li>
+                            <li>Command Documentation View</li>
+                            <li>Copy Function</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="demo-section">
+                <h2 id="usage-title">使用说明</h2>
+                <div id="usage-content">
+                    <ol>
+                        <li><strong>切换语言</strong>: 点击导航栏右上角的"中"或"EN"按钮</li>
+                        <li><strong>自动保存</strong>: 语言选择会自动保存到本地存储</li>
+                        <li><strong>即时更新</strong>: 界面文字会立即更新为选择的语言</li>
+                        <li><strong>文档切换</strong>: 命令文档会显示对应语言的版本</li>
+                        <li><strong>全局生效</strong>: 语言设置在所有页面间共享</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="demo-section">
+                <h2 id="technical-title">技术实现</h2>
+                <div id="technical-content">
+                    <p><strong>前端实现</strong>:</p>
+                    <ul>
+                        <li>使用 localStorage 保存语言偏好</li>
+                        <li>JavaScript 动态更新界面文字</li>
+                        <li>CSS 样式控制按钮状态</li>
+                        <li>事件监听器处理切换逻辑</li>
+                    </ul>
+                    
+                    <p><strong>后端支持</strong>:</p>
+                    <ul>
+                        <li>数据库存储中英文命令文档</li>
+                        <li>API 返回多语言数据</li>
+                        <li>根据语言参数返回对应内容</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const languageButtons = document.querySelectorAll('.language-btn');
+            let currentLanguage = localStorage.getItem('language') || 'zh';
+            
+            // Set initial language state
+            languageButtons.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === currentLanguage);
+            });
+            
+            // Apply initial language
+            applyLanguage(currentLanguage);
+            
+            languageButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const newLang = btn.dataset.lang;
+                    if (newLang !== currentLanguage) {
+                        currentLanguage = newLang;
+                        localStorage.setItem('language', newLang);
+                        
+                        // Update button states
+                        languageButtons.forEach(b => {
+                            b.classList.toggle('active', b.dataset.lang === newLang);
+                        });
+                        
+                        // Apply language changes
+                        applyLanguage(newLang);
+                    }
+                });
+            });
+            
+            function applyLanguage(lang) {
+                const translations = {
+                    zh: {
+                        mainTitle: '中英文切换功能演示',
+                        description: '这个演示展示了导航栏上的中英文切换按钮功能。点击"中"或"EN"按钮可以切换界面语言。',
+                        currentLangTitle: '当前语言: 中文',
+                        currentLangDesc: '语言设置会保存在本地存储中，下次访问时会记住您的选择。',
+                        featuresTitle: '功能特点',
+                        usageTitle: '使用说明',
+                        technicalTitle: '技术实现',
+                        usageContent: `
+                            <ol>
+                                <li><strong>切换语言</strong>: 点击导航栏右上角的"中"或"EN"按钮</li>
+                                <li><strong>自动保存</strong>: 语言选择会自动保存到本地存储</li>
+                                <li><strong>即时更新</strong>: 界面文字会立即更新为选择的语言</li>
+                                <li><strong>文档切换</strong>: 命令文档会显示对应语言的版本</li>
+                                <li><strong>全局生效</strong>: 语言设置在所有页面间共享</li>
+                            </ol>
+                        `,
+                        technicalContent: `
+                            <p><strong>前端实现</strong>:</p>
+                            <ul>
+                                <li>使用 localStorage 保存语言偏好</li>
+                                <li>JavaScript 动态更新界面文字</li>
+                                <li>CSS 样式控制按钮状态</li>
+                                <li>事件监听器处理切换逻辑</li>
+                            </ul>
+                            
+                            <p><strong>后端支持</strong>:</p>
+                            <ul>
+                                <li>数据库存储中英文命令文档</li>
+                                <li>API 返回多语言数据</li>
+                                <li>根据语言参数返回对应内容</li>
+                            </ul>
+                        `
+                    },
+                    en: {
+                        mainTitle: 'Chinese-English Language Toggle Demo',
+                        description: 'This demo shows the Chinese-English toggle button functionality in the navigation bar. Click "中" or "EN" button to switch interface language.',
+                        currentLangTitle: 'Current Language: English',
+                        currentLangDesc: 'Language settings are saved in local storage and will be remembered on your next visit.',
+                        featuresTitle: 'Features',
+                        usageTitle: 'Usage Instructions',
+                        technicalTitle: 'Technical Implementation',
+                        usageContent: `
+                            <ol>
+                                <li><strong>Switch Language</strong>: Click "中" or "EN" button in the top-right corner of navigation bar</li>
+                                <li><strong>Auto Save</strong>: Language selection is automatically saved to local storage</li>
+                                <li><strong>Instant Update</strong>: Interface text updates immediately to selected language</li>
+                                <li><strong>Document Switch</strong>: Command documentation displays in corresponding language version</li>
+                                <li><strong>Global Effect</strong>: Language settings are shared across all pages</li>
+                            </ol>
+                        `,
+                        technicalContent: `
+                            <p><strong>Frontend Implementation</strong>:</p>
+                            <ul>
+                                <li>Use localStorage to save language preference</li>
+                                <li>JavaScript dynamically updates interface text</li>
+                                <li>CSS styles control button states</li>
+                                <li>Event listeners handle toggle logic</li>
+                            </ul>
+                            
+                            <p><strong>Backend Support</strong>:</p>
+                            <ul>
+                                <li>Database stores Chinese and English command documentation</li>
+                                <li>API returns multilingual data</li>
+                                <li>Returns corresponding content based on language parameter</li>
+                            </ul>
+                        `
+                    }
+                };
+                
+                const t = translations[lang];
+                
+                document.getElementById('main-title').textContent = t.mainTitle;
+                document.getElementById('description').textContent = t.description;
+                document.getElementById('current-lang-title').textContent = t.currentLangTitle;
+                document.getElementById('current-lang-desc').textContent = t.currentLangDesc;
+                document.getElementById('features-title').textContent = t.featuresTitle;
+                document.getElementById('usage-title').textContent = t.usageTitle;
+                document.getElementById('technical-title').textContent = t.technicalTitle;
+                document.getElementById('usage-content').innerHTML = t.usageContent;
+                document.getElementById('technical-content').innerHTML = t.technicalContent;
+            }
+        });
+    </script>
+</body>
+</html>
