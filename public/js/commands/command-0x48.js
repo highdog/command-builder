@@ -30,9 +30,12 @@ class Command48 extends BaseCommand {
     }
 
     render(container) {
+        const currentLang = i18nManager.getCurrentLanguage();
+        const isZh = currentLang === 'zh';
+
         const html = `
             <div class="form-group">
-                <label for="field-packet-type-0x48">数据包类型:</label>
+                <label for="field-packet-type-0x48">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                 <select id="field-packet-type-0x48" class="payload-input">
                     <option value="0" selected>COMMAND (trigger button)</option>
                     <option value="2">RESPONSE (result status)</option>
@@ -40,34 +43,34 @@ class Command48 extends BaseCommand {
             </div>
             <div id="command-options-0x48">
                 <div class="form-group">
-                    <label for="field-media-button-0x48">媒体按钮:</label>
+                    <label for="field-media-button-0x48">${isZh ? '媒体按钮:' : 'Media Button:'}</label>
                     <select id="field-media-button-0x48" class="payload-input">
-                        <option value="0x00">PLAY_PAUSE (播放/暂停)</option>
-                        <option value="0x01">NEXT_TRACK (下一曲)</option>
-                        <option value="0x02">PREVIOUS_TRACK (上一曲)</option>
-                        <option value="0x03">VOLUME_UP (音量+)</option>
-                        <option value="0x04">VOLUME_DOWN (音量-)</option>
-                        <option value="0x05">STOP (停止)</option>
-                        <option value="0x06">FAST_FORWARD (快进)</option>
-                        <option value="0x07">REWIND (快退)</option>
-                        <option value="0x08">MUTE (静音)</option>
-                        <option value="0x09">VOICE_ASSISTANT (语音助手)</option>
+                        <option value="0x00">${isZh ? 'PLAY_PAUSE (播放/暂停)' : 'PLAY_PAUSE'}</option>
+                        <option value="0x01">${isZh ? 'NEXT_TRACK (下一曲)' : 'NEXT_TRACK'}</option>
+                        <option value="0x02">${isZh ? 'PREVIOUS_TRACK (上一曲)' : 'PREVIOUS_TRACK'}</option>
+                        <option value="0x03">${isZh ? 'VOLUME_UP (音量+)' : 'VOLUME_UP'}</option>
+                        <option value="0x04">${isZh ? 'VOLUME_DOWN (音量-)' : 'VOLUME_DOWN'}</option>
+                        <option value="0x05">${isZh ? 'STOP (停止)' : 'STOP'}</option>
+                        <option value="0x06">${isZh ? 'FAST_FORWARD (快进)' : 'FAST_FORWARD'}</option>
+                        <option value="0x07">${isZh ? 'REWIND (快退)' : 'REWIND'}</option>
+                        <option value="0x08">${isZh ? 'MUTE (静音)' : 'MUTE'}</option>
+                        <option value="0x09">${isZh ? 'VOICE_ASSISTANT (语音助手)' : 'VOICE_ASSISTANT'}</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="field-press-duration-0x48">按压持续时间 (ms):</label>
+                    <label for="field-press-duration-0x48">${isZh ? '按压持续时间 (ms):' : 'Press Duration (ms):'}</label>
                     <input type="number" id="field-press-duration-0x48" min="0" max="65535" value="100" style="width: 100px;">
-                    <span>毫秒 (0-65535)</span>
+                    <span>${isZh ? '毫秒 (0-65535)' : 'milliseconds (0-65535)'}</span>
                 </div>
             </div>
             <div id="response-options-0x48" style="display:none;">
                 <div class="form-group">
-                    <label for="field-status-0x48">执行状态:</label>
+                    <label for="field-status-0x48">${isZh ? '执行状态:' : 'Execution Status:'}</label>
                     <select id="field-status-0x48" class="payload-input">
-                        <option value="0x00">SUCCESS (成功)</option>
-                        <option value="0x01">FAILED (失败)</option>
-                        <option value="0x02">INVALID_BUTTON (按钮无效)</option>
-                        <option value="0x03">NOT_CONNECTED (未连接)</option>
+                        <option value="0x00">${isZh ? 'SUCCESS (成功)' : 'SUCCESS'}</option>
+                        <option value="0x01">${isZh ? 'FAILED (失败)' : 'FAILED'}</option>
+                        <option value="0x02">${isZh ? 'INVALID_BUTTON (按钮无效)' : 'INVALID_BUTTON'}</option>
+                        <option value="0x03">${isZh ? 'NOT_CONNECTED (未连接)' : 'NOT_CONNECTED'}</option>
                     </select>
                 </div>
             </div>

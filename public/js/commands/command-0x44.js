@@ -28,9 +28,12 @@ class Command44 extends BaseCommand {
     }
 
     render(container) {
+        const currentLang = i18nManager.getCurrentLanguage();
+        const isZh = currentLang === 'zh';
+
         const html = `
             <div class="form-group">
-                <label for="field-packet-type-0x44">数据包类型:</label>
+                <label for="field-packet-type-0x44">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                 <select id="field-packet-type-0x44" class="payload-input">
                     <option value="0">COMMAND (get)</option>
                     <option value="2" selected>RESPONSE (device reply)</option>
@@ -38,24 +41,24 @@ class Command44 extends BaseCommand {
             </div>
             <div id="response-options-0x44">
                 <div class="form-group">
-                    <label for="field-eq-mode-0x44">均衡器模式:</label>
+                    <label for="field-eq-mode-0x44">${isZh ? '均衡器模式:' : 'Equalizer Mode:'}</label>
                     <select id="field-eq-mode-0x44" class="payload-input">
-                        <option value="0x00">OFF (关闭)</option>
-                        <option value="0x01">ROCK (摇滚)</option>
-                        <option value="0x02">POP (流行)</option>
-                        <option value="0x03">JAZZ (爵士)</option>
-                        <option value="0x04">CLASSICAL (古典)</option>
-                        <option value="0x05">ELECTRONIC (电子)</option>
-                        <option value="0x06">BASS_BOOST (低音增强)</option>
-                        <option value="0x07">TREBLE_BOOST (高音增强)</option>
-                        <option value="0x08">VOCAL (人声)</option>
-                        <option value="0x09">CUSTOM (自定义)</option>
-                        <option value="0x0A">FLAT (平坦)</option>
-                        <option value="0x0B">ACOUSTIC (原声)</option>
-                        <option value="0x0C">LATIN (拉丁)</option>
-                        <option value="0x0D">LOUNGE (休闲)</option>
-                        <option value="0x0E">PIANO (钢琴)</option>
-                        <option value="0x0F">R_AND_B (R&B)</option>
+                        <option value="0x00">${isZh ? 'OFF (关闭)' : 'OFF'}</option>
+                        <option value="0x01">${isZh ? 'ROCK (摇滚)' : 'ROCK'}</option>
+                        <option value="0x02">${isZh ? 'POP (流行)' : 'POP'}</option>
+                        <option value="0x03">${isZh ? 'JAZZ (爵士)' : 'JAZZ'}</option>
+                        <option value="0x04">${isZh ? 'CLASSICAL (古典)' : 'CLASSICAL'}</option>
+                        <option value="0x05">${isZh ? 'ELECTRONIC (电子)' : 'ELECTRONIC'}</option>
+                        <option value="0x06">${isZh ? 'BASS_BOOST (低音增强)' : 'BASS_BOOST'}</option>
+                        <option value="0x07">${isZh ? 'TREBLE_BOOST (高音增强)' : 'TREBLE_BOOST'}</option>
+                        <option value="0x08">${isZh ? 'VOCAL (人声)' : 'VOCAL'}</option>
+                        <option value="0x09">${isZh ? 'CUSTOM (自定义)' : 'CUSTOM'}</option>
+                        <option value="0x0A">${isZh ? 'FLAT (平坦)' : 'FLAT'}</option>
+                        <option value="0x0B">${isZh ? 'ACOUSTIC (原声)' : 'ACOUSTIC'}</option>
+                        <option value="0x0C">${isZh ? 'LATIN (拉丁)' : 'LATIN'}</option>
+                        <option value="0x0D">${isZh ? 'LOUNGE (休闲)' : 'LOUNGE'}</option>
+                        <option value="0x0E">${isZh ? 'PIANO (钢琴)' : 'PIANO'}</option>
+                        <option value="0x0F">${isZh ? 'R_AND_B (R&B)' : 'R_AND_B'}</option>
                     </select>
                 </div>
             </div>

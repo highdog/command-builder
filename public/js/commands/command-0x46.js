@@ -22,9 +22,12 @@ class Command46 extends BaseCommand {
     }
 
     render(container) {
+        const currentLang = i18nManager.getCurrentLanguage();
+        const isZh = currentLang === 'zh';
+
         const html = `
             <div class="form-group">
-                <label for="field-packet-type-0x46">数据包类型:</label>
+                <label for="field-packet-type-0x46">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                 <select id="field-packet-type-0x46" class="payload-input">
                     <option value="0">COMMAND (get)</option>
                     <option value="2" selected>RESPONSE (device reply)</option>
@@ -32,21 +35,21 @@ class Command46 extends BaseCommand {
             </div>
             <div id="command-options-0x46" style="display:none;">
                 <div class="form-group">
-                    <label for="field-version-0x46">请求版本:</label>
+                    <label for="field-version-0x46">${isZh ? '请求版本:' : 'Request Version:'}</label>
                     <select id="field-version-0x46" class="payload-input">
-                        <option value="1">V1 (5频段)</option>
-                        <option value="2">V2 (8频段)</option>
-                        <option value="3">V3 (10频段)</option>
+                        <option value="1">${isZh ? 'V1 (5频段)' : 'V1 (5 bands)'}</option>
+                        <option value="2">${isZh ? 'V2 (8频段)' : 'V2 (8 bands)'}</option>
+                        <option value="3">${isZh ? 'V3 (10频段)' : 'V3 (10 bands)'}</option>
                     </select>
                 </div>
             </div>
             <div id="response-options-0x46">
                 <div class="form-group">
-                    <label for="field-response-version-0x46">配置版本:</label>
+                    <label for="field-response-version-0x46">${isZh ? '配置版本:' : 'Config Version:'}</label>
                     <select id="field-response-version-0x46" class="payload-input">
-                        <option value="1">V1 (5频段)</option>
-                        <option value="2">V2 (8频段)</option>
-                        <option value="3">V3 (10频段)</option>
+                        <option value="1">${isZh ? 'V1 (5频段)' : 'V1 (5 bands)'}</option>
+                        <option value="2">${isZh ? 'V2 (8频段)' : 'V2 (8 bands)'}</option>
+                        <option value="3">${isZh ? 'V3 (10频段)' : 'V3 (10 bands)'}</option>
                     </select>
                 </div>
                 <div id="eq-bands-container-0x46"></div>
@@ -72,12 +75,15 @@ class Command46 extends BaseCommand {
     }
 
     updateBands() {
+        const currentLang = i18nManager.getCurrentLanguage();
+        const isZh = currentLang === 'zh';
+
         const version = parseInt(document.getElementById('field-response-version-0x46').value);
         const bandCount = this.bandCounts[version];
         const container = document.getElementById('eq-bands-container-0x46');
-        
-        let html = '<fieldset><legend>均衡器频段设置 (增益值: -12 到 +12 dB)</legend>';
-        
+
+        let html = `<fieldset><legend>${isZh ? '均衡器频段设置 (增益值: -12 到 +12 dB)' : 'Equalizer Band Settings (Gain: -12 to +12 dB)'}</legend>`;
+
         for (let i = 0; i < bandCount; i++) {
             const frequency = this.getFrequencyLabel(version, i);
             html += `
@@ -88,7 +94,7 @@ class Command46 extends BaseCommand {
                 </div>
             `;
         }
-        
+
         html += '</fieldset>';
         container.innerHTML = html;
     }
