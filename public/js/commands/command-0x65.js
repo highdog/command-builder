@@ -8,9 +8,12 @@ class Command65 extends BaseCommand {
     }
 
     render(container) {
+        const currentLang = i18nManager.getCurrentLanguage();
+        const isZh = currentLang === 'zh';
+        
         const html = `
             <div class="form-group">
-                <label for="field-packet-type-0x65">数据包类型:</label>
+                <label for="field-packet-type-0x65">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
                 <select id="field-packet-type-0x65" class="payload-input">
                     <option value="0" selected>COMMAND (execute)</option>
                     <option value="2">RESPONSE (device reply)</option>
@@ -18,7 +21,7 @@ class Command65 extends BaseCommand {
             </div>
             <div id="response-options-0x65">
                 <div class="form-group">
-                    <label for="field-value-0x65">值:</label>
+                    <label for="field-value-0x65">${isZh ? '值:' : 'Value:'}</label>
                     <input type="number" id="field-value-0x65" min="0" max="255" value="0" style="width: 80px;">
                     <small>0-255</small>
                 </div>
