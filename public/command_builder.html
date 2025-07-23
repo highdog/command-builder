@@ -536,6 +536,9 @@
 
 
         const renderCommandSelect = () => {
+            // 保存当前选择的值
+            const currentValue = commandSelect.value;
+
             const defaultText = i18nManager.t('main.selectCommand');
             commandSelect.innerHTML = `<option value="">${defaultText}</option>`;
             for (const category in allCommands) {
@@ -548,6 +551,11 @@
                     optgroup.appendChild(option);
                 });
                 commandSelect.appendChild(optgroup);
+            }
+
+            // 恢复之前选择的值
+            if (currentValue) {
+                commandSelect.value = currentValue;
             }
         };
 
