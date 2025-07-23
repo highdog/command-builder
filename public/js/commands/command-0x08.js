@@ -30,31 +30,6 @@ class Command08 extends BaseCommand {
                         <option value="1">${isZh ? '关闭' : 'Off'}</option>
                     </select>
                 </div>
-
-                <div class="info-box" style="background: #e7f3ff; padding: 15px; border-radius: 5px; margin: 15px 0;">
-                    <h5>${isZh ? '载荷规范' : 'Payload Specification'}</h5>
-                    <p><strong>${isZh ? '蓝牙LED配置载荷:' : 'Bluetooth LED configurations payload:'}</strong></p>
-                    <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
-                        <tr style="background: #f8f9fa;">
-                            <th style="border: 1px solid #dee2e6; padding: 8px;">${isZh ? '字节索引' : 'Byte Index'}</th>
-                            <th style="border: 1px solid #dee2e6; padding: 8px;">${isZh ? '类型' : 'Type'}</th>
-                            <th style="border: 1px solid #dee2e6; padding: 8px;">${isZh ? '描述' : 'Description'}</th>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid #dee2e6; padding: 8px;">0</td>
-                            <td style="border: 1px solid #dee2e6; padding: 8px;">uint8</td>
-                            <td style="border: 1px solid #dee2e6; padding: 8px;">${isZh ? 'LED配置枚举值' : 'LED configurations enum value'}</td>
-                        </tr>
-                    </table>
-                    
-                    <p><strong>${isZh ? '枚举值:' : 'Enum Values:'}</strong></p>
-                    <ul>
-                        <li><code>0x00</code> - ${isZh ? '开启：蓝牙LED开启' : 'On: Bluetooth LED is on'}</li>
-                        <li><code>0x01</code> - ${isZh ? '关闭：蓝牙LED关闭' : 'Off: Bluetooth LED is off'}</li>
-                    </ul>
-                    
-                    <p><em>${isZh ? '默认值：开启' : 'Default value: On'}</em></p>
-                </div>
             </div>
         `;
         
