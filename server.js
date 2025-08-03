@@ -17,6 +17,12 @@ const db = new sqlite3.Database('./db.sqlite', (err) => {
 });
 
 // Middleware
+// Set default charset for all responses
+app.use((req, res, next) => {
+  res.charset = 'utf-8';
+  next();
+});
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(session({
@@ -498,17 +504,41 @@ app.delete('/api/enum-values/:id', isAuthenticated, isAdmin, async (req, res) =>
 app.use(express.static(path.join(__dirname, 'public'), {
   index: false, // Disable default index.html handling
   setHeaders: (res, filePath) => {
-    // Disable caching for HTML files to ensure the latest version is always served
+    // Set proper charset for HTML files to fix Chinese character encoding
     if (path.extname(filePath) === '.html') {
       res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    }
+    // Set proper charset for JavaScript files
+    if (path.extname(filePath) === '.js') {
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    }
+    // Set proper charset for CSS files
+    if (path.extname(filePath) === '.css') {
+      res.setHeader('Content-Type', 'text/css; charset=utf-8');
     }
   }
 }));
-app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
-app.get('/', isAuthenticated, (req, res) => res.sendFile(path.join(__dirname, 'public', 'command_builder.html')));
-app.get('/documentation', isAuthenticated, (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
-app.get('/admin', isAuthenticated, isAdmin, (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
-app.get('/command-editor', isAuthenticated, isAdmin, (req, res) => res.sendFile(path.join(__dirname, 'public', 'command_editor.html')));
+app.get('/login', (req, res) => {
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+app.get('/', isAuthenticated, (req, res) => {
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.sendFile(path.join(__dirname, 'public', 'command_builder.html'));
+});
+app.get('/documentation', isAuthenticated, (req, res) => {
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+app.get('/admin', isAuthenticated, isAdmin, (req, res) => {
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+app.get('/command-editor', isAuthenticated, isAdmin, (req, res) => {
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.sendFile(path.join(__dirname, 'public', 'command_editor.html'));
+});
 
 // Start server
 app.listen(port, () => {
