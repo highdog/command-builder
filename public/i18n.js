@@ -89,6 +89,21 @@ const i18n = {
             packetType: '数据包类型',
             hexValue: '十六进制值',
             byteLength: '字节长度'
+        },
+
+        // 管理员功能
+        admin: {
+            editCommand: '编辑命令',
+            cancelEdit: '取消编辑',
+            saveChanges: '保存更改',
+            cancel: '取消',
+            nameZh: '中文名称',
+            nameEn: '英文名称',
+            descriptionZh: '中文描述',
+            descriptionEn: '英文描述',
+            saveSuccess: '保存成功！',
+            saveError: '保存失败',
+            networkError: '网络错误'
         }
     },
     
@@ -181,6 +196,21 @@ const i18n = {
             packetType: 'Packet Type',
             hexValue: 'Hex Value',
             byteLength: 'Byte Length'
+        },
+
+        // Admin functions
+        admin: {
+            editCommand: 'Edit Command',
+            cancelEdit: 'Cancel Edit',
+            saveChanges: 'Save Changes',
+            cancel: 'Cancel',
+            nameZh: 'Chinese Name',
+            nameEn: 'English Name',
+            descriptionZh: 'Chinese Description',
+            descriptionEn: 'English Description',
+            saveSuccess: 'Saved successfully!',
+            saveError: 'Save failed',
+            networkError: 'Network error'
         }
     }
 };

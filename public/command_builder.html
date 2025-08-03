@@ -253,6 +253,113 @@
             overflow-y: auto;
             padding: 1rem;
         }
+
+        /* Admin Edit Styles */
+        .command-display-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .command-title-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .command-title-section h3 {
+            margin: 0;
+            color: #333;
+        }
+
+        .edit-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
+        }
+
+        .edit-btn:hover {
+            background: #218838;
+        }
+
+        .edit-form {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+
+        .edit-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .save-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
+        }
+
+        .save-btn:hover {
+            background: #0056b3;
+        }
+
+        .cancel-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
+        }
+
+        .cancel-btn:hover {
+            background: #545b62;
+        }
     </style>
 </head>
 <body>
@@ -314,8 +421,46 @@
 
       <!-- Right Main Content -->
       <div class="main-content">
+        <div class="command-display-header" style="display: none;">
+          <div class="command-title-section">
+            <h3 id="command-title"></h3>
+            <button id="edit-command-btn" class="edit-btn" style="display: none;" onclick="toggleEditMode()">
+              <span data-i18n="admin.editCommand">编辑命令</span>
+            </button>
+          </div>
+        </div>
         <div id="command-display-container">
           <p data-i18n="main.selectCommandDoc">请从左侧选择一个命令以查看其文档。</p>
+        </div>
+
+        <!-- Edit Mode Container (Hidden by default) -->
+        <div id="command-edit-container" style="display: none;">
+          <div class="edit-form">
+            <div class="form-group">
+              <label for="edit-name-zh">中文名称:</label>
+              <input type="text" id="edit-name-zh" class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="edit-name-en">English Name:</label>
+              <input type="text" id="edit-name-en" class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="edit-desc-zh">中文描述:</label>
+              <textarea id="edit-desc-zh" class="form-control" rows="10"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="edit-desc-en">English Description:</label>
+              <textarea id="edit-desc-en" class="form-control" rows="10"></textarea>
+            </div>
+            <div class="edit-actions">
+              <button onclick="saveCommandChanges()" class="save-btn">
+                <span data-i18n="admin.saveChanges">保存更改</span>
+              </button>
+              <button onclick="cancelEdit()" class="cancel-btn">
+                <span data-i18n="admin.cancel">取消</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -335,6 +480,7 @@
         let currentCommand = null;
         let allCommands = {};
         let currentLanguage = i18nManager.getCurrentLanguage();
+        let isAdmin = false;
 
         // --- LANGUAGE FUNCTIONS ---
         function displayCommandDocumentation(command, lang = currentLanguage) {
@@ -346,7 +492,25 @@
             });
 
             const docContainer = document.getElementById('command-display-container');
+            const headerContainer = document.querySelector('.command-display-header');
+            const titleElement = document.getElementById('command-title');
+            const editBtn = document.getElementById('edit-command-btn');
+
             if (!docContainer) return;
+
+            // Show header and set title
+            if (headerContainer && titleElement) {
+                headerContainer.style.display = 'flex';
+                const commandName = lang === 'zh' ?
+                    (command.name_zh || command.name) :
+                    (command.name_en || command.name);
+                titleElement.textContent = `${commandName} (${command.hex_id})`;
+            }
+
+            // Show edit button for admin users
+            if (editBtn && isAdmin) {
+                editBtn.style.display = 'inline-block';
+            }
 
             let description = '';
             if (lang === 'zh' && command.description_zh) {
@@ -438,7 +602,8 @@
                 const data = await response.json();
                 if (data.loggedIn) {
                     currentUser = data.user;
-                    if (currentUser.role === 'admin') {
+                    isAdmin = currentUser.role === 'admin';
+                    if (isAdmin) {
                         adminLink.style.display = 'inline-block';
                     }
                     return true;
@@ -749,6 +914,166 @@
 
 
         init();
+
+        // --- ADMIN EDIT FUNCTIONS ---
+        let isEditMode = false;
+        isAdmin = currentUser && currentUser.role === 'admin';
+
+        window.toggleEditMode = function() {
+            if (!isAdmin || !currentCommand) return;
+
+            isEditMode = !isEditMode;
+            const displayContainer = document.getElementById('command-display-container');
+            const editContainer = document.getElementById('command-edit-container');
+            const editBtn = document.getElementById('edit-command-btn');
+
+            if (isEditMode) {
+                // Switch to edit mode
+                displayContainer.style.display = 'none';
+                editContainer.style.display = 'block';
+                editBtn.innerHTML = '<span data-i18n="admin.cancelEdit">取消编辑</span>';
+
+                // Populate edit form
+                document.getElementById('edit-name-zh').value = currentCommand.name_zh || currentCommand.name || '';
+                document.getElementById('edit-name-en').value = currentCommand.name_en || currentCommand.name || '';
+                document.getElementById('edit-desc-zh').value = currentCommand.description_zh || '';
+                document.getElementById('edit-desc-en').value = currentCommand.description_en || '';
+            } else {
+                // Switch back to display mode
+                displayContainer.style.display = 'block';
+                editContainer.style.display = 'none';
+                editBtn.innerHTML = '<span data-i18n="admin.editCommand">编辑命令</span>';
+            }
+        };
+
+        // Function to directly exit edit mode (used after successful save)
+        function exitEditMode() {
+            if (!isAdmin || !currentCommand) return;
+
+            isEditMode = false;
+            const displayContainer = document.getElementById('command-display-container');
+            const editContainer = document.getElementById('command-edit-container');
+            const editBtn = document.getElementById('edit-command-btn');
+
+            // Switch back to display mode
+            displayContainer.style.display = 'block';
+            editContainer.style.display = 'none';
+            editBtn.innerHTML = '<span data-i18n="admin.editCommand">编辑命令</span>';
+        }
+
+        window.saveCommandChanges = function() {
+            if (!isAdmin || !currentCommand) return;
+
+            const nameZh = document.getElementById('edit-name-zh').value.trim();
+            const nameEn = document.getElementById('edit-name-en').value.trim();
+            const descZh = document.getElementById('edit-desc-zh').value.trim();
+            const descEn = document.getElementById('edit-desc-en').value.trim();
+
+            // Prepare the data to save
+            const updatedCommand = {
+                ...currentCommand,
+                name_zh: nameZh,
+                name_en: nameEn,
+                description_zh: descZh,
+                description_en: descEn
+            };
+
+            // Save to server
+            fetch('/api/admin/update-command', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    commandId: currentCommand.hex_id,
+                    data: updatedCommand
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update local command data
+                    Object.assign(currentCommand, updatedCommand);
+
+                    // Update the commands in allCommands
+                    for (const category in allCommands) {
+                        const commandIndex = allCommands[category].findIndex(cmd => cmd.hex_id === currentCommand.hex_id);
+                        if (commandIndex !== -1) {
+                            allCommands[category][commandIndex] = currentCommand;
+                            break;
+                        }
+                    }
+
+                    // Exit edit mode and refresh display
+                    exitEditMode();
+                    displayCommandDocumentation(currentCommand, currentLanguage);
+
+                    // Show success message
+                    showNotification('命令更新成功！', 'success');
+                } else {
+                    showNotification('保存失败：' + (data.error || '未知错误'), 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Save error:', error);
+                showNotification('保存失败：网络错误', 'error');
+            });
+        };
+
+        window.cancelEdit = function() {
+            if (isEditMode) {
+                exitEditMode();
+            }
+        };
+
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 4px;
+                color: white;
+                font-weight: 500;
+                z-index: 10000;
+                opacity: 0;
+                transform: translateX(100%);
+                transition: all 0.3s ease;
+            `;
+
+            // Set background color based on type
+            const colors = {
+                success: '#28a745',
+                error: '#dc3545',
+                warning: '#ffc107',
+                info: '#17a2b8'
+            };
+            notification.style.backgroundColor = colors[type] || colors.info;
+
+            document.body.appendChild(notification);
+
+            // Animate in
+            setTimeout(() => {
+                notification.style.opacity = '1';
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
     });
 
     // Protocol examples modal functionality

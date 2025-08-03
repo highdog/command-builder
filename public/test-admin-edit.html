@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试Admin编辑功能</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .test-section {
+            margin: 2rem 0;
+            padding: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        
+        .status {
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+        }
+        
+        .success { background: #d4edda; color: #155724; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .warning { background: #fff3cd; color: #856404; }
+        .error { background: #f8d7da; color: #721c24; }
+        
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .feature-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .feature-item h4 {
+            margin: 0 0 0.5rem 0;
+            color: #007bff;
+        }
+        
+        .demo-steps {
+            background: #e7f3ff;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        
+        .demo-steps ol {
+            margin: 0;
+            padding-left: 1.5rem;
+        }
+        
+        .demo-steps li {
+            margin: 0.5rem 0;
+        }
+        
+        code {
+            background: #f8f9fa;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛠️ Admin命令编辑功能测试</h1>
+        
+        <div class="status success">
+            <h3>✅ 功能已实现完成！</h3>
+            <p>Admin用户现在可以直接在Command Builder页面编辑命令内容</p>
+        </div>
+        
+        <div class="test-section">
+            <h3>🎯 功能特性</h3>
+            <div class="feature-list">
+                <div class="feature-item">
+                    <h4>权限控制</h4>
+                    <p>只有admin角色的用户才能看到编辑按钮</p>
+                </div>
+                <div class="feature-item">
+                    <h4>实时编辑</h4>
+                    <p>在右侧栏直接编辑命令信息，无需跳转页面</p>
+                </div>
+                <div class="feature-item">
+                    <h4>双语支持</h4>
+                    <p>可以同时编辑中文和英文的命令名称和描述</p>
+                </div>
+                <div class="feature-item">
+                    <h4>即时保存</h4>
+                    <p>编辑后立即保存到数据库，实时更新显示</p>
+                </div>
+                <div class="feature-item">
+                    <h4>用户友好</h4>
+                    <p>提供保存成功/失败的通知反馈</p>
+                </div>
+                <div class="feature-item">
+                    <h4>国际化界面</h4>
+                    <p>编辑界面支持中英文切换</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🧪 测试步骤</h3>
+            <div class="demo-steps">
+                <h4>前提条件：</h4>
+                <ul>
+                    <li>使用admin账户登录 (如: admin/admin)</li>
+                    <li>确保在Command Builder页面</li>
+                </ul>
+                
+                <h4>测试流程：</h4>
+                <ol>
+                    <li>在左侧选择任意一个命令</li>
+                    <li>观察右侧栏顶部是否出现绿色的"编辑命令"按钮</li>
+                    <li>点击"编辑命令"按钮进入编辑模式</li>
+                    <li>修改命令的中文名称、英文名称、中文描述、英文描述</li>
+                    <li>点击"保存更改"按钮</li>
+                    <li>观察是否出现成功通知</li>
+                    <li>验证是否自动退出编辑模式</li>
+                    <li>验证显示内容是否已更新</li>
+                    <li>切换语言验证双语内容是否正确</li>
+                </ol>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔧 技术实现</h3>
+            <h4>前端功能：</h4>
+            <ul>
+                <li><strong>权限检查</strong>: 根据用户角色显示/隐藏编辑按钮</li>
+                <li><strong>编辑模式</strong>: 切换显示/编辑界面</li>
+                <li><strong>表单处理</strong>: 收集和验证编辑数据</li>
+                <li><strong>API调用</strong>: 发送更新请求到后端</li>
+                <li><strong>状态管理</strong>: 更新本地命令数据</li>
+                <li><strong>用户反馈</strong>: 显示操作结果通知</li>
+            </ul>
+            
+            <h4>后端API：</h4>
+            <ul>
+                <li><strong>路由</strong>: <code>POST /api/admin/update-command</code></li>
+                <li><strong>权限</strong>: 需要admin角色认证</li>
+                <li><strong>参数</strong>: commandId (hex_id) 和更新数据</li>
+                <li><strong>数据库</strong>: 更新commands表的相关字段</li>
+            </ul>
+        </div>
+        
+        <div class="test-section">
+            <h3>📋 验证清单</h3>
+            <div class="status info">
+                <h4>请验证以下功能：</h4>
+                <ul>
+                    <li>✅ Admin用户能看到编辑按钮</li>
+                    <li>✅ 非admin用户看不到编辑按钮</li>
+                    <li>✅ 编辑模式界面正常显示</li>
+                    <li>✅ 表单预填充当前命令数据</li>
+                    <li>✅ 保存功能正常工作</li>
+                    <li>✅ 保存后自动退出编辑模式</li>
+                    <li>✅ 成功/失败通知正常显示</li>
+                    <li>✅ 编辑后内容立即更新</li>
+                    <li>✅ 语言切换后编辑内容正确</li>
+                    <li>✅ 取消编辑功能正常</li>
+                    <li>✅ 数据库数据正确更新</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🚀 使用场景</h3>
+            <div class="status warning">
+                <h4>这个功能特别适用于：</h4>
+                <ul>
+                    <li><strong>快速修正</strong>: 发现命令描述错误时快速修改</li>
+                    <li><strong>内容完善</strong>: 逐步完善命令的中英文描述</li>
+                    <li><strong>实时更新</strong>: 在使用过程中直接更新文档</li>
+                    <li><strong>协作编辑</strong>: 多人协作维护命令文档</li>
+                    <li><strong>本地化</strong>: 完善中文翻译和描述</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

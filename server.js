@@ -308,6 +308,42 @@ app.delete('/api/commands/:id', isAuthenticated, isAdmin, (req, res) => {
   });
 });
 
+// Update command by hex_id (for inline editing)
+app.post('/api/admin/update-command', isAuthenticated, isAdmin, (req, res) => {
+  console.log('DEBUG: update-command API called');
+  console.log('DEBUG: Request body:', req.body);
+  console.log('DEBUG: User session:', req.session.user);
+
+  const { commandId, data } = req.body;
+
+  if (!commandId || !data) {
+    console.log('DEBUG: Missing commandId or data');
+    return res.status(400).json({ success: false, error: 'Missing commandId or data' });
+  }
+
+  const { name_zh, name_en, description_zh, description_en } = data;
+  console.log('DEBUG: Updating command:', commandId, 'with data:', { name_zh, name_en, description_zh, description_en });
+
+  db.run(
+    'UPDATE commands SET name_zh = ?, name_en = ?, description_zh = ?, description_en = ? WHERE hex_id = ?',
+    [name_zh, name_en, description_zh, description_en, commandId],
+    function(err) {
+      if (err) {
+        console.error('Error updating command:', err);
+        return res.status(500).json({ success: false, error: err.message });
+      }
+
+      console.log('DEBUG: Update result - changes:', this.changes);
+
+      if (this.changes === 0) {
+        return res.status(404).json({ success: false, error: 'Command not found' });
+      }
+
+      res.json({ success: true, message: 'Command updated successfully' });
+    }
+  );
+});
+
 // --- User Management API (Admins only) ---
 
 app.get('/api/users', isAuthenticated, isAdmin, (req, res) => {
