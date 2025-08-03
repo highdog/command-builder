@@ -61,9 +61,10 @@ jspm_packages/
 ehthumbs.db
 Thumbs.db
 
-# Database files (if you want to ignore local database)
-# *.db
-# *.sqlite
+# Database files (ignore local database files)
+*.db
+*.sqlite
+db.sqlite
 
 # Temporary files
 tmp/
