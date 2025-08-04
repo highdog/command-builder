@@ -505,7 +505,8 @@
                 const commandName = lang === 'zh' ?
                     (command.name_zh || command.name) :
                     (command.name_en || command.name);
-                titleElement.textContent = `${commandName} (${command.hex_id})`;
+                // Only show hex_id if it exists and is not null
+                titleElement.textContent = command.hex_id ? `${commandName} (${command.hex_id})` : commandName;
             }
 
             // Show edit button for admin users
@@ -729,7 +730,8 @@
                 allCommands[category].forEach(command => {
                     const option = document.createElement('option');
                     option.value = command.id;
-                    option.textContent = `${command.name} (${command.hex_id})`;
+                    // Only show hex_id if it exists and is not null
+                    option.textContent = command.hex_id ? `${command.name} (${command.hex_id})` : command.name;
                     optgroup.appendChild(option);
                 });
                 commandSelect.appendChild(optgroup);
