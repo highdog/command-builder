@@ -102,34 +102,104 @@ class CommandEditorMixin {
         const optionsPanel = document.getElementById('options-panel');
         const conditionHtml = this.renderConditionEditor(field, fieldIndex, isZh);
         
+        // Generate field type selector only for new fields without a type
+        let fieldTypeSelector = '';
+        const isNewFieldWithoutType = (field.type === null || field.type === undefined) &&
+                                     (!field.options || field.options.length === 0) &&
+                                     !field.maxLength;
+
+        if (isNewFieldWithoutType) {
+            fieldTypeSelector = `
+                <div class="field-type-selector">
+                    <h5>${isZh ? '选择字段类型' : 'Select Field Type'}</h5>
+                    <div class="type-options">
+                        <button type="button" class="button" onclick="window.currentCommandHandler.setFieldType(${fieldIndex}, 'select')" style="margin-right: 0.5rem;">
+                            ${isZh ? '选择字段 (Select)' : 'Select Field'}
+                        </button>
+                        <button type="button" class="button" onclick="window.currentCommandHandler.setFieldType(${fieldIndex}, 'text')">
+                            ${isZh ? '文本字段 (Text)' : 'Text Field'}
+                        </button>
+                    </div>
+                    <p style="color: #6c757d; font-size: 0.9rem; margin-top: 0.5rem;">
+                        ${isZh ? '选择字段类型后可以配置具体选项' : 'Select a field type to configure options'}
+                    </p>
+                </div>
+            `;
+        }
+
+        // Generate field-specific content based on field type
+        let fieldSpecificContent = '';
+
+        if (field.type === 'text') {
+            // Text field configuration
+            fieldSpecificContent = `
+                <div class="text-field-config">
+                    <h5>${isZh ? '文本字段配置' : 'Text Field Configuration'}</h5>
+
+                    <div class="config-item">
+                        <label>${isZh ? '最大长度:' : 'Max Length:'}</label>
+                        <input type="number" value="${field.maxLength || 16}" min="1" max="255"
+                               onchange="window.currentCommandHandler.updateFieldProperty(${fieldIndex}, 'maxLength', parseInt(this.value))">
+                    </div>
+
+                    <div class="config-item">
+                        <label>${isZh ? '默认值:' : 'Default Value:'}</label>
+                        <input type="text" value="${field.defaultValue || ''}"
+                               onchange="window.currentCommandHandler.updateFieldProperty(${fieldIndex}, 'defaultValue', this.value)">
+                    </div>
+
+                    <div class="config-item">
+                        <label>
+                            <input type="checkbox" ${field.hasOfflineOption ? 'checked' : ''}
+                                   onchange="window.currentCommandHandler.updateFieldProperty(${fieldIndex}, 'hasOfflineOption', this.checked)">
+                            ${isZh ? '包含离线选项' : 'Include Offline Option'}
+                        </label>
+                    </div>
+                </div>
+            `;
+        } else if (field.type === 'select' || (field.type !== 'text' && field.options && field.options.length > 0)) {
+            // Select field with options (existing fields with options are treated as select fields)
+            fieldSpecificContent = `
+                <div class="option-list">
+                    <h5>${isZh ? '选项列表' : 'Options'}</h5>
+                    <div id="option-items">
+                        ${(field.options || []).map((opt, optIndex) => `
+                            <div class="option-list-item" data-option-index="${optIndex}">
+                                <input type="text" value="${opt.value || ''}" placeholder="${isZh ? '值' : 'Value'}"
+                                       onchange="window.currentCommandHandler.updateOption(${fieldIndex}, ${optIndex}, 'value', this.value)">
+                                <input type="text" value="${opt.label || ''}" placeholder="${isZh ? '标签' : 'Label'}"
+                                       onchange="window.currentCommandHandler.updateOption(${fieldIndex}, ${optIndex}, 'label', this.value)">
+                                <button type="button" class="cancel-btn" onclick="window.currentCommandHandler.removeOption(${fieldIndex}, ${optIndex})">
+                                    ${isZh ? '删除' : 'Delete'}
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button type="button" class="button" onclick="window.currentCommandHandler.addOption(${fieldIndex})" style="width: 100%; margin-top: 0.5rem;">
+                        ${isZh ? '添加选项' : 'Add Option'}
+                    </button>
+                </div>
+            `;
+        } else if (isNewFieldWithoutType) {
+            // New field without type - type selector will be shown above
+            fieldSpecificContent = '';
+        }
+
+        // Only show condition editor for fields that have a type
+        const showConditionEditor = !isNewFieldWithoutType;
+
         optionsPanel.innerHTML = `
             <div class="field-name-editor">
                 <label>${isZh ? '字段名称:' : 'Field Name:'}</label>
-                <input type="text" value="${field.name || ''}" placeholder="${isZh ? '输入字段名称' : 'Enter field name'}" 
+                <input type="text" value="${field.name || ''}" placeholder="${isZh ? '输入字段名称' : 'Enter field name'}"
                        onchange="window.currentCommandHandler.updateFieldName(${fieldIndex}, this.value)">
             </div>
-            
-            ${conditionHtml}
-            
-            <div class="option-list">
-                <h5>${isZh ? '选项列表' : 'Options'}</h5>
-                <div id="option-items">
-                    ${field.options.map((opt, optIndex) => `
-                        <div class="option-list-item" data-option-index="${optIndex}">
-                            <input type="text" value="${opt.value || ''}" placeholder="${isZh ? '值' : 'Value'}" 
-                                   onchange="window.currentCommandHandler.updateOption(${fieldIndex}, ${optIndex}, 'value', this.value)">
-                            <input type="text" value="${opt.label || ''}" placeholder="${isZh ? '标签' : 'Label'}" 
-                                   onchange="window.currentCommandHandler.updateOption(${fieldIndex}, ${optIndex}, 'label', this.value)">
-                            <button type="button" class="cancel-btn" onclick="window.currentCommandHandler.removeOption(${fieldIndex}, ${optIndex})">
-                                ${isZh ? '删除' : 'Delete'}
-                            </button>
-                        </div>
-                    `).join('')}
-                </div>
-                <button type="button" class="button" onclick="window.currentCommandHandler.addOption(${fieldIndex})" style="width: 100%; margin-top: 0.5rem;">
-                    ${isZh ? '添加选项' : 'Add Option'}
-                </button>
-            </div>
+
+            ${fieldTypeSelector}
+
+            ${showConditionEditor ? conditionHtml : ''}
+
+            ${fieldSpecificContent}
         `;
     }
 
@@ -174,13 +244,64 @@ class CommandEditorMixin {
     updateFieldName(fieldIndex, newName) {
         if (this.config.fields[fieldIndex] && newName.trim()) {
             this.config.fields[fieldIndex].name = newName.trim();
-            
+
             // Update the field list display
             const fieldItem = document.querySelector(`[data-field-index="${fieldIndex}"] .field-name`);
             if (fieldItem) {
                 fieldItem.textContent = newName.trim();
             }
         }
+    }
+
+    /**
+     * Update field property
+     * @param {number} fieldIndex - Index of field to update
+     * @param {string} property - Property name to update
+     * @param {*} value - New value
+     */
+    updateFieldProperty(fieldIndex, property, value) {
+        if (this.config.fields[fieldIndex]) {
+            this.config.fields[fieldIndex][property] = value;
+            console.log(`Updated field ${fieldIndex} property ${property} to:`, value);
+        }
+    }
+
+    /**
+     * Set field type and initialize appropriate properties
+     * @param {number} fieldIndex - Index of field to update
+     * @param {string} type - Field type ('select' or 'text')
+     */
+    setFieldType(fieldIndex, type) {
+        const currentLang = i18nManager.getCurrentLanguage();
+        const isZh = currentLang === 'zh';
+        const field = this.config.fields[fieldIndex];
+
+        if (!field) return;
+
+        field.type = type;
+
+        if (type === 'text') {
+            // Initialize text field properties
+            field.maxLength = 16;
+            field.defaultValue = '';
+            field.hasOfflineOption = false;
+            // Remove options if they exist
+            delete field.options;
+        } else if (type === 'select') {
+            // Initialize select field properties
+            field.options = [
+                { value: '0', label: isZh ? '选项1' : 'Option 1' }
+            ];
+            // Remove text field properties if they exist
+            delete field.maxLength;
+            delete field.defaultValue;
+            delete field.hasOfflineOption;
+        }
+
+        console.log(`Set field ${fieldIndex} type to ${type}:`, field);
+
+        // Refresh the options panel to show the new configuration
+        this.selectField(fieldIndex);
     }
 
     /**
@@ -224,24 +345,21 @@ class CommandEditorMixin {
     addField() {
         const currentLang = i18nManager.getCurrentLanguage();
         const isZh = currentLang === 'zh';
-        
-        const fieldName = prompt(isZh ? '请输入字段名称:' : 'Enter field name:', isZh ? '新字段' : 'New Field');
-        if (!fieldName || !fieldName.trim()) return;
-        
+
+        // Create a new field with default settings (no type specified yet)
         const newField = {
             id: `field_${Date.now()}`,
-            name: fieldName.trim(),
-            options: [
-                { value: '0', label: isZh ? '选项1' : 'Option 1' }
-            ]
+            name: isZh ? '新字段' : 'New Field',
+            type: null, // No type selected yet
+            options: [] // Empty options for now
         };
-        
+
         this.config.fields.push(newField);
-        
+
         // Refresh modal if it's open
         if (document.getElementById('edit-modal-overlay')) {
             this.refreshModal();
-            // Select the new field
+            // Select the new field to show type selector
             this.selectField(this.config.fields.length - 1);
         }
     }

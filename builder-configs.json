@@ -42,5 +42,76 @@
         }
       }
     ]
+  },
+  "0x02": {
+    "fields": [
+      {
+        "id": "packetType",
+        "name": "Packet Type",
+        "options": [
+          {
+            "value": "0",
+            "label": "COMMAND (get)"
+          },
+          {
+            "value": "2",
+            "label": "RESPONSE (device reply)"
+          }
+        ]
+      },
+      {
+        "id": "productType",
+        "name": "Product Type",
+        "options": [
+          {
+            "value": "earbuds",
+            "label": "Earbuds"
+          },
+          {
+            "value": "headset",
+            "label": "Headset"
+          }
+        ],
+        "showWhen": {
+          "fieldId": "packetType",
+          "value": "2"
+        }
+      },
+      {
+        "id": "leftEarbudSerial",
+        "name": "Left Earbud Serial",
+        "type": "text",
+        "maxLength": 16,
+        "defaultValue": "L_SERIAL_12345",
+        "hasOfflineOption": true,
+        "showWhen": {
+          "fieldId": "productType",
+          "value": "earbuds"
+        }
+      },
+      {
+        "id": "rightEarbudSerial",
+        "name": "Right Earbud Serial",
+        "type": "text",
+        "maxLength": 16,
+        "defaultValue": "R_SERIAL_67890",
+        "hasOfflineOption": true,
+        "showWhen": {
+          "fieldId": "productType",
+          "value": "earbuds"
+        }
+      },
+      {
+        "id": "headsetSerial",
+        "name": "Headset Serial",
+        "type": "text",
+        "maxLength": 16,
+        "defaultValue": "H_SERIAL_ABCDE",
+        "showWhen": {
+          "fieldId": "productType",
+          "value": "headset"
+        }
+      }
+    ]
   }
 }
