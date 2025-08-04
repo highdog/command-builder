@@ -147,7 +147,12 @@ class CommandLoader {
             }
 
             // Ensure specific methods are available
-            const methodsToEnsure = ['canEdit', 'renderEditMode', 'addOption', 'removeOption', 'addField', 'removeField', 'previewBuilder', 'saveChanges', 'cancelEdit'];
+            const methodsToEnsure = [
+                'canEdit', 'renderEditMode', 'addOption', 'removeOption', 'addField', 'removeField',
+                'selectField', 'editFieldName', 'updateFieldName', 'updateOption', 'updateCondition', 'refreshModal',
+                'closeEditModal', 'saveModalChanges', 'showEditModal', 'renderFieldList', 'renderConditionEditor',
+                'previewBuilder', 'saveChanges', 'cancelEdit'
+            ];
             methodsToEnsure.forEach(methodName => {
                 if (typeof command[methodName] === 'function' && !handlerObject[methodName]) {
                     handlerObject[methodName] = command[methodName].bind(command);
@@ -160,6 +165,8 @@ class CommandLoader {
                 console.log('0x00 canEdit method:', typeof handlerObject.canEdit);
                 console.log('0x00 addField method:', typeof handlerObject.addField);
                 console.log('0x00 removeField method:', typeof handlerObject.removeField);
+                console.log('0x00 selectField method:', typeof handlerObject.selectField);
+                console.log('0x00 editFieldName method:', typeof handlerObject.editFieldName);
             }
 
             // Add handler with both lowercase and uppercase keys for compatibility
