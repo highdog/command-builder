@@ -125,6 +125,9 @@ class CommandEditorMixin {
                         <button type="button" class="button" onclick="window.currentCommandHandler.setFieldType(${fieldIndex}, 'checkbox')">
                             ${isZh ? '复选框字段 (Checkbox)' : 'Checkbox Field'}
                         </button>
+                        <button type="button" class="button" onclick="window.currentCommandHandler.setFieldType(${fieldIndex}, 'version')">
+                            ${isZh ? '版本字段 (Version)' : 'Version Field'}
+                        </button>
                     </div>
                     <p style="color: #6c757d; font-size: 0.9rem; margin-top: 0.5rem;">
                         ${isZh ? '选择字段类型后可以配置具体选项' : 'Select a field type to configure options'}
@@ -231,6 +234,28 @@ class CommandEditorMixin {
                             <input type="checkbox" ${field.invertLogic ? 'checked' : ''}
                                    onchange="window.currentCommandHandler.updateFieldProperty(${fieldIndex}, 'invertLogic', this.checked)">
                             ${isZh ? '反向逻辑 (0=开启, 1=关闭)' : 'Invert Logic (0=ON, 1=OFF)'}
+                        </label>
+                    </div>
+                </div>
+            `;
+        } else if (field.type === 'version') {
+            // Version field configuration
+            fieldSpecificContent = `
+                <div class="version-field-config">
+                    <h5>${isZh ? '版本字段配置' : 'Version Field Configuration'}</h5>
+
+                    <div class="config-item">
+                        <label>${isZh ? '默认版本:' : 'Default Version:'}</label>
+                        <input type="text" value="${field.defaultValue || '1.0.0'}"
+                               placeholder="1.0.0"
+                               onchange="window.currentCommandHandler.updateFieldProperty(${fieldIndex}, 'defaultValue', this.value)">
+                    </div>
+
+                    <div class="config-item">
+                        <label>
+                            <input type="checkbox" ${field.hasOfflineOption ? 'checked' : ''}
+                                   onchange="window.currentCommandHandler.updateFieldProperty(${fieldIndex}, 'hasOfflineOption', this.checked)">
+                            ${isZh ? '包含离线选项' : 'Include Offline Option'}
                         </label>
                     </div>
                 </div>
@@ -415,6 +440,18 @@ class CommandEditorMixin {
             delete field.hasOfflineOption;
             delete field.min;
             delete field.max;
+            delete field.offlineValue;
+        } else if (type === 'version') {
+            // Initialize version field properties
+            field.defaultValue = '1.0.0';
+            field.hasOfflineOption = false;
+            // Remove other field properties
+            delete field.options;
+            delete field.maxLength;
+            delete field.min;
+            delete field.max;
+            delete field.bitPosition;
+            delete field.invertLogic;
             delete field.offlineValue;
         } else if (type === 'select') {
             // Initialize select field properties

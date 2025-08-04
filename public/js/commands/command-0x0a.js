@@ -1,137 +1,165 @@
-// 0x0A Set LE Configurations (设置 LE 配置)
+/**
+ * Command 0x0A - Set LE Configurations
+ * Handles setting LE (Low Energy) configurations
+ */
 class Command0A extends BaseCommand {
-    constructor() {
-        super();
-        this.commandId = '0x0A';
-        this.commandName = 'Set LE Configurations';
-        this.commandNameZh = '设置 LE 配置';
+    constructor(commandId) {
+        super(commandId);
+    }
+
+    // Get default configuration
+    getDefaultConfig() {
+        return {
+            fields: [
+                {
+                    id: 'packetType',
+                    name: 'Packet Type',
+                    options: [
+                        { value: '0', label: 'COMMAND' },
+                        { value: '2', label: 'RESPONSE' }
+                    ]
+                },
+                {
+                    id: 'googleFastPair',
+                    name: 'Google Fast Pair',
+                    options: [
+                        { value: '0', label: 'On' },
+                        { value: '1', label: 'Off' }
+                    ]
+                },
+                {
+                    id: 'leAudio',
+                    name: 'LE Audio',
+                    options: [
+                        { value: '0', label: 'On' },
+                        { value: '1', label: 'Off' }
+                    ]
+                }
+            ]
+        };
     }
 
     render(container) {
+        console.log('Command0A render called with container:', container);
+        console.log('Current config:', this.config);
+
         const currentLang = i18nManager.getCurrentLanguage();
         const isZh = currentLang === 'zh';
-        
-        container.innerHTML = `
-            <div class="form-section">
-                <h4>${isZh ? '设置LE配置' : 'Set LE Configurations'}</h4>
-                
-                <div class="form-group">
-                    <label for="field-packet-type">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
-                    <select id="field-packet-type">
-                        <option value="0">COMMAND</option>
-                        <option value="2">RESPONSE</option>
+
+        // Safety check for config
+        if (!this.config || !this.config.fields || !Array.isArray(this.config.fields)) {
+            console.error('Invalid config in Command0A render, using defaults');
+            this.config = this.getDefaultConfig();
+        }
+
+        // Generate dynamic fields based on configuration
+        const fieldsHtml = this.config.fields.map(field => {
+            const fieldId = `field-${field.id}-0x0a`;
+            const groupId = `field-group-${field.id}-0x0a`;
+
+            // Generate options HTML with localized labels
+            const optionsHtml = field.options.map(option => {
+                let label = option.label;
+                // Localize common labels
+                if (isZh) {
+                    if (label === 'On') label = '开启 (ON)';
+                    else if (label === 'Off') label = '关闭 (OFF)';
+                }
+                return `<option value="${option.value}">${label}</option>`;
+            }).join('');
+
+            const fieldHtml = `
+                <div class="form-group" id="${groupId}">
+                    <label for="${fieldId}">${field.name}:</label>
+                    <select id="${fieldId}" class="payload-input">
+                        ${optionsHtml}
                     </select>
                 </div>
+            `;
 
-                <div class="form-group">
-                    <label for="field-google-fast-pair">${isZh ? 'Google Fast Pair:' : 'Google Fast Pair:'}</label>
-                    <select id="field-google-fast-pair">
-                        <option value="0">${isZh ? '开启 (ON)' : 'On'}</option>
-                        <option value="1">${isZh ? '关闭 (OFF)' : 'Off'}</option>
-                    </select>
-                </div>
+            return fieldHtml;
+        }).join('');
 
-                <div class="form-group">
-                    <label for="field-le-audio">${isZh ? 'LE Audio:' : 'LE Audio:'}</label>
-                    <select id="field-le-audio">
-                        <option value="0">${isZh ? '开启 (ON)' : 'On'}</option>
-                        <option value="1">${isZh ? '关闭 (OFF)' : 'Off'}</option>
-                    </select>
-                </div>
+        const html = `<div class="dynamic-fields">
+                ${fieldsHtml}
+            </div>`;
 
-                <div class="info-box" style="background: #e7f3ff; padding: 15px; border-radius: 5px; margin: 15px 0;">
-                    <h5>${isZh ? '载荷规范' : 'Payload Specification'}</h5>
-                    <p><strong>${isZh ? 'LE配置载荷:' : 'LE configurations payload:'}</strong></p>
-                    <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
-                        <tr style="background: #f8f9fa;">
-                            <th style="border: 1px solid #dee2e6; padding: 8px;">${isZh ? '位索引' : 'Bit Index'}</th>
-                            <th style="border: 1px solid #dee2e6; padding: 8px;">${isZh ? '类型' : 'Type'}</th>
-                            <th style="border: 1px solid #dee2e6; padding: 8px;">${isZh ? '描述' : 'Description'}</th>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid #dee2e6; padding: 8px;">0</td>
-                            <td style="border: 1px solid #dee2e6; padding: 8px;">uint 1 bit</td>
-                            <td style="border: 1px solid #dee2e6; padding: 8px;">${isZh ? 'GOOGLE_FAST_PAIR 启用状态' : 'GOOGLE_FAST_PAIR enabled status'}</td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid #dee2e6; padding: 8px;">1</td>
-                            <td style="border: 1px solid #dee2e6; padding: 8px;">uint 1 bit</td>
-                            <td style="border: 1px solid #dee2e6; padding: 8px;">${isZh ? 'LE_AUDIO 启用状态' : 'LE_AUDIO enabled status'}</td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid #dee2e6; padding: 8px;">2-7</td>
-                            <td style="border: 1px solid #dee2e6; padding: 8px;">uint 6 bits</td>
-                            <td style="border: 1px solid #dee2e6; padding: 8px;">${isZh ? '占位符' : 'Placeholder'}</td>
-                        </tr>
-                    </table>
-                    
-                    <p><strong>${isZh ? '状态值:' : 'Status Values:'}</strong></p>
-                    <ul>
-                        <li><code>0x0</code> - ${isZh ? '开启 (ON)' : 'ON'}</li>
-                        <li><code>0x1</code> - ${isZh ? '关闭 (OFF)' : 'OFF'}</li>
-                    </ul>
-                    
-                    <p><strong>${isZh ? '默认值:' : 'Default Values:'}</strong></p>
-                    <ul>
-                        <li>GOOGLE_FAST_PAIR: ${isZh ? '开启' : 'ON'}</li>
-                        <li>LE_AUDIO: ${isZh ? '关闭' : 'OFF'}</li>
-                    </ul>
-                    
-                    <p><strong>${isZh ? '示例:' : 'Example:'}</strong></p>
-                    <p>${isZh ? '二进制载荷' : 'Binary payload'} <code>00000001</code>:</p>
-                    <ul>
-                        <li><code>000000__</code> - ${isZh ? '占位符' : 'placeholder'}</li>
-                        <li><code>______0_</code> - LE audio (OFF)</li>
-                        <li><code>_______1</code> - Google fast pair (ON)</li>
-                    </ul>
-                </div>
-            </div>
-        `;
-        
+        console.log('Setting container innerHTML:', html);
+        container.innerHTML = html;
+
+        // Use setTimeout to ensure DOM is fully rendered before setting defaults
+        setTimeout(() => {
+            this.setDefaultValues();
+        }, 0);
+
         this.attachListeners();
     }
 
+    setDefaultValues() {
+        // Set packet type to COMMAND by default (this is a set command)
+        const packetTypeField = document.getElementById('field-packetType-0x0a');
+        if (packetTypeField) {
+            packetTypeField.value = '0';
+            packetTypeField.dispatchEvent(new Event('change'));
+        }
+
+        // Set Google Fast Pair to On by default
+        const googleFastPairField = document.getElementById('field-googleFastPair-0x0a');
+        if (googleFastPairField) {
+            googleFastPairField.value = '0';
+            googleFastPairField.dispatchEvent(new Event('change'));
+        }
+
+        // Set LE Audio to Off by default
+        const leAudioField = document.getElementById('field-leAudio-0x0a');
+        if (leAudioField) {
+            leAudioField.value = '1';
+            leAudioField.dispatchEvent(new Event('change'));
+        }
+    }
+
     attachListeners() {
-        this.addListener('field-packet-type', 'change');
-        this.addListener('field-google-fast-pair', 'change');
-        this.addListener('field-le-audio', 'change');
+        // Add listeners for all fields to trigger output generation
+        this.config.fields.forEach(field => {
+            const fieldId = `field-${field.id}-0x0a`;
+            this.addListener(fieldId, 'change');
+        });
     }
 
     getPayload() {
-        const packetType = this.getPacketType();
-        const googleFastPair = document.getElementById('field-google-fast-pair')?.value || '0';
-        const leAudio = document.getElementById('field-le-audio')?.value || '1'; // Default OFF
-        
+        const googleFastPairElement = document.getElementById('field-googleFastPair-0x0a');
+        const leAudioElement = document.getElementById('field-leAudio-0x0a');
+
+        if (!googleFastPairElement || !leAudioElement) return [];
+
+        const googleFastPair = googleFastPairElement.value || '0';
+        const leAudio = leAudioElement.value || '1'; // Default OFF
+
         // Build the byte according to bit specification
         let configByte = 0;
-        
-        // Bit 0: GOOGLE_FAST_PAIR status
+
+        // Bit 0: GOOGLE_FAST_PAIR status (0=ON, 1=OFF)
         if (googleFastPair === '1') {
             configByte |= 0x01; // Set bit 0 for OFF
         }
         // Bit 0 remains 0 for ON (default)
-        
-        // Bit 1: LE_AUDIO status  
+
+        // Bit 1: LE_AUDIO status (0=ON, 1=OFF)
         if (leAudio === '1') {
             configByte |= 0x02; // Set bit 1 for OFF
         }
         // Bit 1 remains 0 for ON
-        
+
         // Bits 2-7: Placeholder (000000)
         // Already 0 by default
-        
-        if (packetType === 0) {
-            // COMMAND: LE configuration payload
-            return [configByte];
-        } else {
-            // RESPONSE: Same format - the actual data that was applied
-            return [configByte];
-        }
+
+        // Both COMMAND and RESPONSE have the same payload format
+        return [configByte];
     }
 
     getPacketType() {
-        const packetType = document.getElementById('field-packet-type')?.value || '0';
-        return parseInt(packetType);
+        const packetTypeElement = document.getElementById('field-packetType-0x0a');
+        return packetTypeElement ? parseInt(packetTypeElement.value, 10) : 0;
     }
 }
 

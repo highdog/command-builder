@@ -839,7 +839,8 @@ select:focus, input:focus, textarea:focus {
 /* Text field configuration styles */
 .text-field-config,
 .number-field-config,
-.checkbox-field-config {
+.checkbox-field-config,
+.version-field-config {
     margin-bottom: 1rem;
 }
 
