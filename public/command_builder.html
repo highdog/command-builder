@@ -650,6 +650,14 @@
                 if (!response.ok) throw new Error('Failed to fetch command details');
                 currentCommand = await response.json();
 
+                // Validate command data
+                if (!currentCommand || !currentCommand.hex_id) {
+                    console.error('Invalid command data received:', currentCommand);
+                    docContainer.innerHTML = '<p class="error">错误：无效的命令数据</p>';
+                    payloadBuilderContainer.innerHTML = '<p class="error">错误：无效的命令数据</p>';
+                    return;
+                }
+
                 console.log('Fetched command data:', {
                     id: currentCommand.id,
                     hex_id: currentCommand.hex_id,
@@ -678,6 +686,14 @@
                     handler.render(payloadBuilderContainer);
                 } else {
                     console.log('Handler not found for:', currentCommand.hex_id);
+
+                    // Check if hex_id is valid before trying string operations
+                    if (!currentCommand.hex_id) {
+                        console.error('Error: currentCommand.hex_id is null or undefined');
+                        payloadBuilderContainer.innerHTML = '<p class="error">错误：命令ID无效</p>';
+                        return;
+                    }
+
                     console.log('Trying alternative lookups...');
                     const altHandler1 = customCommandHandlers[currentCommand.hex_id.toLowerCase()];
                     const altHandler2 = customCommandHandlers[currentCommand.hex_id.toUpperCase()];
