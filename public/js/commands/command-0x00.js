@@ -6,8 +6,6 @@
 class Command00 extends BaseCommand {
     constructor(commandId) {
         super(commandId);
-        this.config = this.getDefaultConfig();
-        this.loadConfigFromServer();
     }
 
     // Get default configuration

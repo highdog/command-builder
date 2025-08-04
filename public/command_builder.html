@@ -134,6 +134,7 @@
   </div>
 
   <!-- Load the new modular command system -->
+  <script src="/js/commands/command-editor-mixin.js"></script>
   <script src="/js/commands/base-command.js"></script>
   <script src="/js/command-loader.js"></script>
   <script>
@@ -571,19 +572,26 @@
         const initializeCommands = async () => {
             try {
                 console.log('Loading modular command handlers...');
+                console.log('CommandLoader available:', typeof CommandLoader);
+                console.log('commandLoader instance:', commandLoader);
 
                 // Load all available commands
                 const availableCommands = CommandLoader.AVAILABLE_COMMANDS;
+                console.log('Available commands:', availableCommands);
 
                 for (const commandId of availableCommands) {
                     try {
+                        console.log(`Attempting to load command: ${commandId}`);
                         await commandLoader.loadCommand(commandId);
-                        console.log(`Loaded command: ${commandId}`);
+                        console.log(`Successfully loaded command: ${commandId}`);
                     } catch (error) {
-                        console.warn(`Failed to load command ${commandId}:`, error);
+                        console.error(`Failed to load command ${commandId}:`, error);
                         // Continue loading other commands even if one fails
                     }
                 }
+
+                console.log('All commands loaded, creating legacy handlers...');
+                console.log('Commands in loader:', Object.keys(commandLoader.commands));
 
                 // Create legacy handlers object for backward compatibility
                 customCommandHandlers = commandLoader.createLegacyHandlers();
@@ -611,15 +619,23 @@
 
         // --- INITIALIZATION ---
         const init = async () => {
-            if (await checkSession()) {
+            console.log('Starting initialization...');
+            const sessionValid = await checkSession();
+            console.log('Session check result:', sessionValid);
+
+            if (sessionValid) {
                 // Clear any existing content first
                 clearAllContent();
 
+                console.log('About to initialize commands...');
                 await initializeCommands();
+                console.log('Commands initialized, fetching command list...');
                 fetchCommands();
 
                 // Apply initial language
                 applyLanguage(currentLanguage);
+            } else {
+                console.log('Session check failed, skipping initialization');
             }
         };
 

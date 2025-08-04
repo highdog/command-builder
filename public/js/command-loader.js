@@ -50,9 +50,11 @@ class CommandLoader {
             }
 
             // Create instance and store it
+            console.log(`Creating instance of ${commandClassName} for ${commandId}`);
             const commandInstance = new CommandClass(commandId);
             this.commands[commandId] = commandInstance;
-            
+
+            console.log(`Successfully created command instance for ${commandId}:`, commandInstance);
             return commandInstance;
         } catch (error) {
             console.error(`Failed to load command ${commandId}:`, error);
@@ -65,11 +67,12 @@ class CommandLoader {
      * @returns {Promise<Object>} Promise that resolves to object with all command instances
      */
     async loadAllCommands() {
-        const loadPromises = CommandLoader.AVAILABLE_COMMANDS.map(
-            commandId => this.loadCommand(commandId)
-        );
-
         try {
+            // Load all commands (editor mixin is already loaded in HTML)
+            const loadPromises = CommandLoader.AVAILABLE_COMMANDS.map(
+                commandId => this.loadCommand(commandId)
+            );
+
             await Promise.all(loadPromises);
             return this.commands;
         } catch (error) {
@@ -129,8 +132,10 @@ class CommandLoader {
      */
     createLegacyHandlers() {
         const legacyHandlers = {};
+        console.log('Creating legacy handlers from commands:', Object.keys(this.commands));
 
         for (const [commandId, command] of Object.entries(this.commands)) {
+            console.log(`Processing command ${commandId}:`, command);
             const handlerObject = {
                 render: (container) => command.render(container),
                 attachListeners: () => command.attachListeners(),

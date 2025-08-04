@@ -5,6 +5,25 @@
 class BaseCommand {
     constructor(commandId) {
         this.commandId = commandId;
+        this.config = this.getDefaultConfig();
+        this.loadConfigFromServer();
+
+        // Mix in the editor functionality
+        this.mixinEditorMethods();
+    }
+
+    /**
+     * Mix in editor methods from CommandEditorMixin
+     */
+    mixinEditorMethods() {
+        if (typeof CommandEditorMixin !== 'undefined') {
+            const mixinMethods = Object.getOwnPropertyNames(CommandEditorMixin.prototype)
+                .filter(name => name !== 'constructor' && typeof CommandEditorMixin.prototype[name] === 'function');
+
+            mixinMethods.forEach(methodName => {
+                this[methodName] = CommandEditorMixin.prototype[methodName].bind(this);
+            });
+        }
     }
 
     /**
@@ -36,6 +55,62 @@ class BaseCommand {
      */
     getPacketType() {
         throw new Error('getPacketType() method must be implemented by subclass');
+    }
+
+    /**
+     * Get default configuration for this command
+     * Should be overridden by subclasses
+     * @returns {Object} Default configuration object
+     */
+    getDefaultConfig() {
+        return {
+            fields: []
+        };
+    }
+
+    /**
+     * Load configuration from server
+     */
+    async loadConfigFromServer() {
+        try {
+            const response = await fetch(`/api/commands/${this.commandId}/builder-config`);
+            if (response.ok) {
+                const savedConfig = await response.json();
+                console.log(`Loaded saved config for ${this.commandId}:`, savedConfig);
+
+                // Convert old format to new format if needed
+                this.config = this.migrateConfig(savedConfig);
+
+                // Re-render if already rendered
+                const container = document.getElementById('payload-builder-container');
+                if (container && container.innerHTML.trim() !== '' && window.currentCommand && window.currentCommand.hex_id === this.commandId) {
+                    console.log(`Re-rendering ${this.commandId} with loaded config`);
+                    this.render(container);
+                }
+            } else if (response.status === 404) {
+                console.log(`No saved config found for ${this.commandId}, using defaults`);
+            } else {
+                console.error(`Failed to load config for ${this.commandId}:`, response.status);
+            }
+        } catch (error) {
+            console.error(`Error loading config for ${this.commandId}:`, error);
+        }
+    }
+
+    /**
+     * Migrate old config format to new format
+     * Should be overridden by subclasses if needed
+     * @param {Object} config - Config to migrate
+     * @returns {Object} Migrated config
+     */
+    migrateConfig(config) {
+        // If it's already in new format, return as is
+        if (config.fields && Array.isArray(config.fields)) {
+            return config;
+        }
+
+        // Default migration - return as is or use defaults
+        return config.fields ? config : this.getDefaultConfig();
     }
 
     /**
@@ -97,6 +172,25 @@ class BaseCommand {
                 }
             });
         }
+    }
+
+    /**
+     * Check if this command can be edited
+     * @returns {boolean} True if command can be edited
+     */
+    canEdit() {
+        return window.isAdmin === true;
+    }
+
+    /**
+     * Render edit mode (should be overridden by subclasses that support editing)
+     * @param {HTMLElement} container - Container to render edit mode into
+     */
+    renderEditMode(container) {
+        if (!this.canEdit()) return;
+
+        // Default implementation shows modal editor
+        this.showEditModal();
     }
 }
 
