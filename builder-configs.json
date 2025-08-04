@@ -1,0 +1,36 @@
+{
+  "0x00": {
+    "packetTypeOptions": [
+      {
+        "value": "0",
+        "label": "COMMAND (get)"
+      },
+      {
+        "value": "2",
+        "label": "RESPONSE (device)"
+      }
+    ],
+    "deviceTypeOptions": [
+      {
+        "value": "0x00",
+        "label": "VERIO_100"
+      },
+      {
+        "value": "0x01",
+        "label": "VERIO_200"
+      },
+      {
+        "value": "0x02",
+        "label": "VERIO_300"
+      },
+      {
+        "value": "0x03",
+        "label": "AVENTHO_300"
+      },
+      {
+        "value": "0x04",
+        "label": "aa"
+      }
+    ]
+  }
+}

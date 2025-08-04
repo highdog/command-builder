@@ -63,9 +63,13 @@ function dbRun(query, params = []) {
 // --- AUTH MIDDLEWARE ---
 
 function isAuthenticated(req, res, next) {
+  console.log('isAuthenticated check for:', req.path);
+  console.log('Session user:', req.session.user);
+
   if (req.session.user) {
     next();
   } else {
+    console.log('Authentication failed for:', req.path);
     if (req.path.startsWith('/api/')) {
       return res.status(401).json({ message: 'Not authenticated' });
     }
@@ -74,9 +78,14 @@ function isAuthenticated(req, res, next) {
 }
 
 function isAdmin(req, res, next) {
+  console.log('isAdmin check for:', req.path);
+  console.log('User role:', req.session.user ? req.session.user.role : 'no user');
+
   if (req.session.user && req.session.user.role === 'admin') {
+    console.log('Admin access granted for:', req.path);
     next();
   } else {
+    console.log('Admin access denied for:', req.path);
     res.status(403).json({ message: 'Forbidden: Admins only' });
   }
 }
@@ -538,6 +547,66 @@ app.get('/admin', isAuthenticated, isAdmin, (req, res) => {
 app.get('/command-editor', isAuthenticated, isAdmin, (req, res) => {
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.sendFile(path.join(__dirname, 'public', 'command_editor.html'));
+});
+
+// Builder Configuration API
+app.post('/api/commands/:hex_id/builder-config', isAuthenticated, isAdmin, (req, res) => {
+  console.log('Builder config API called');
+  console.log('Request params:', req.params);
+  console.log('Request body:', req.body);
+  console.log('User session:', req.session.user);
+
+  const { hex_id } = req.params;
+  const config = req.body;
+
+  console.log(`Saving builder config for ${hex_id}:`, config);
+
+  // For now, we'll store builder configs in a simple JSON file
+  const fs = require('fs');
+  const configPath = path.join(__dirname, 'builder-configs.json');
+
+  let configs = {};
+  try {
+    if (fs.existsSync(configPath)) {
+      configs = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    }
+  } catch (error) {
+    console.error('Error reading builder configs:', error);
+  }
+
+  configs[hex_id] = config;
+
+  try {
+    fs.writeFileSync(configPath, JSON.stringify(configs, null, 2));
+    console.log(`Builder config saved for ${hex_id}`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error saving builder config:', error);
+    res.status(500).json({ error: 'Failed to save builder configuration' });
+  }
+});
+
+app.get('/api/commands/:hex_id/builder-config', isAuthenticated, (req, res) => {
+  const { hex_id } = req.params;
+
+  const fs = require('fs');
+  const configPath = path.join(__dirname, 'builder-configs.json');
+
+  try {
+    if (fs.existsSync(configPath)) {
+      const configs = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      if (configs[hex_id]) {
+        res.json(configs[hex_id]);
+      } else {
+        res.status(404).json({ error: 'Builder configuration not found' });
+      }
+    } else {
+      res.status(404).json({ error: 'No builder configurations found' });
+    }
+  } catch (error) {
+    console.error('Error reading builder config:', error);
+    res.status(500).json({ error: 'Failed to read builder configuration' });
+  }
 });
 
 // Start server

@@ -5,365 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>蓝牙命令构建器</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/command-builder.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=help" />
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="i18n.js"></script>
-    <style>
-        /* Protocol help icon styles */
-        .protocol-help-icon {
-            display: inline-block;
-            margin-left: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            color: #007bff;
-            user-select: none;
-            position: relative;
-        }
-
-        .protocol-help-icon:hover {
-            color: #0056b3;
-        }
-
-        /* Protocol examples modal */
-        .protocol-examples-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-        }
-
-        .protocol-examples-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            max-width: 600px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .protocol-examples-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
-        }
-
-        .protocol-examples-close {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #666;
-            padding: 0;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .protocol-examples-close:hover {
-            color: #000;
-        }
-
-        .protocol-example {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 5px;
-            border-left: 4px solid #007bff;
-            transition: all 0.3s ease;
-        }
-
-        .protocol-example h4 {
-            margin: 0 0 10px 0;
-            color: #333;
-        }
-
-        .protocol-code {
-            font-family: 'Courier New', monospace;
-            background: #e9ecef;
-            padding: 8px 12px;
-            border-radius: 3px;
-            margin: 8px 0;
-            font-size: 14px;
-            word-break: break-all;
-        }
-
-        .protocol-description {
-            font-size: 14px;
-            color: #666;
-            margin: 5px 0;
-        }
-
-        .protocol-field {
-            display: inline-block;
-            margin: 2px 4px;
-            padding: 2px 6px;
-            background: #007bff;
-            color: white;
-            border-radius: 3px;
-            font-size: 12px;
-        }
-
-        /* Layout styles for fixed height and independent scrolling */
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
-        }
-
-        .page-container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-
-        .top-nav {
-            flex-shrink: 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 1rem;
-            background: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
-            height: 60px;
-        }
-
-        .nav-links {
-            display: flex;
-            align-items: center;
-            gap: 2rem;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: #333;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.2s;
-            opacity: 0.6;
-        }
-
-        .nav-links a:hover {
-            background-color: #e9ecef;
-            opacity: 1;
-        }
-
-        .nav-links a.active {
-            opacity: 1;
-            background-color: #007bff;
-            color: #fff;
-        }
-
-        .logout-container {
-            display: flex;
-            align-items: center;
-        }
-
-        .logout-btn {
-            background: #dc3545;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.2s;
-        }
-
-        .logout-btn:hover {
-            background: #c82333;
-        }
-
-        .logout-container a:hover {
-            background-color: #e9ecef !important;
-        }
-
-        /* Language toggle button */
-        .language-toggle {
-            display: flex;
-            align-items: center;
-            margin-right: 1rem;
-        }
-
-        .language-btn {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            color: #333;
-            padding: 0.25rem 0.5rem;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-            border-radius: 0;
-        }
-
-        .language-btn:first-child {
-            border-top-left-radius: 4px;
-            border-bottom-left-radius: 4px;
-        }
-
-        .language-btn:last-child {
-            border-top-right-radius: 4px;
-            border-bottom-right-radius: 4px;
-            border-left: none;
-        }
-
-        .language-btn.active {
-            background: #007bff;
-            color: white;
-            border-color: #007bff;
-        }
-
-        .language-btn:hover:not(.active) {
-            background: #e9ecef;
-        }
-
-        .content-container {
-            flex: 1;
-            display: flex;
-            overflow: hidden;
-        }
-
-        .sidebar {
-            width: 350px;
-            flex-shrink: 0;
-            overflow-y: auto;
-            border-right: 1px solid #dee2e6;
-            background: #f8f9fa;
-        }
-
-        .main-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1rem;
-        }
-
-        /* Admin Edit Styles */
-        .command-display-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid #dee2e6;
-        }
-
-        .command-title-section {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .command-title-section h3 {
-            margin: 0;
-            color: #333;
-        }
-
-        .edit-btn {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 0.4rem 0.8rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: background-color 0.2s;
-        }
-
-        .edit-btn:hover {
-            background: #218838;
-        }
-
-        .edit-form {
-            background: #f8f9fa;
-            padding: 1.5rem;
-            border-radius: 8px;
-            border: 1px solid #dee2e6;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            font-family: inherit;
-            resize: vertical;
-            box-sizing: border-box;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: #007bff;
-            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-        }
-
-        .edit-actions {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1.5rem;
-        }
-
-        .save-btn {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 0.6rem 1.2rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: background-color 0.2s;
-        }
-
-        .save-btn:hover {
-            background: #0056b3;
-        }
-
-        .cancel-btn {
-            background: #6c757d;
-            color: white;
-            border: none;
-            padding: 0.6rem 1.2rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: background-color 0.2s;
-        }
-
-        .cancel-btn:hover {
-            background: #545b62;
-        }
-    </style>
 </head>
-<body>
+<body class="command-builder-page">
 
   <div class="page-container">
     <!-- Top Navigation Bar -->
@@ -407,8 +54,16 @@
                         <option value="" data-i18n="main.selectCommand">-- 请稍候 --</option>
                     </select>
                 </div>
-                <div id="payload-builder-container">
-                    <!-- Payload fields will be generated here -->
+                <div class="payload-builder-section">
+                    <div class="payload-builder-header" style="display: none;">
+                        <h4>命令构建器</h4>
+                        <button id="edit-builder-btn" class="edit-btn" style="display: none;" onclick="toggleBuilderEditMode()">
+                            <span data-i18n="admin.editBuilder">Edit</span>
+                        </button>
+                    </div>
+                    <div id="payload-builder-container">
+                        <!-- Payload fields will be generated here -->
+                    </div>
                 </div>
                 <div id="output-container" style="margin-top: 1.5rem; display: none;">
                     <h4 data-i18n="main.resultLabel">生成结果:</h4>
@@ -481,7 +136,7 @@
         let currentCommand = null;
         let allCommands = {};
         let currentLanguage = i18nManager.getCurrentLanguage();
-        let isAdmin = false;
+        window.isAdmin = false; // Make isAdmin globally accessible
 
         // --- LANGUAGE FUNCTIONS ---
         function displayCommandDocumentation(command, lang = currentLanguage) {
@@ -510,7 +165,7 @@
             }
 
             // Show edit button for admin users
-            if (editBtn && isAdmin) {
+            if (editBtn && window.isAdmin) {
                 editBtn.style.display = 'inline-block';
             }
 
@@ -604,8 +259,13 @@
                 const data = await response.json();
                 if (data.loggedIn) {
                     currentUser = data.user;
-                    isAdmin = currentUser.role === 'admin';
-                    if (isAdmin) {
+                    window.isAdmin = currentUser.role === 'admin';
+                    console.log('Session check result:', {
+                        user: currentUser,
+                        isAdmin: window.isAdmin,
+                        role: currentUser.role
+                    });
+                    if (window.isAdmin) {
                         adminLink.style.display = 'inline-block';
                     }
                     return true;
@@ -689,9 +349,22 @@
                 console.log('  exact matches:', Object.keys(customCommandHandlers).filter(k => k === currentCommand.hex_id));
                 console.log('  customCommandHandlers keys sample:', Object.keys(customCommandHandlers).slice(0, 10));
 
+                // Show builder header and edit button for admin users
+                const builderHeader = document.querySelector('.payload-builder-header');
+                const editBuilderBtn = document.getElementById('edit-builder-btn');
+
+                let currentHandler = null;
+
                 if (handler) {
                     console.log('Handler found, rendering...');
-                    // THE FIX: Pass the container to the render function
+                    currentHandler = handler;
+
+                    // Reload configuration if the handler supports it
+                    if (typeof handler.loadConfigFromServer === 'function') {
+                        console.log('Reloading configuration for command:', currentCommand.hex_id);
+                        await handler.loadConfigFromServer();
+                    }
+
                     handler.render(payloadBuilderContainer);
                 } else {
                     console.log('Handler not found for:', currentCommand.hex_id);
@@ -703,9 +376,40 @@
 
                     if (altHandler1 || altHandler2) {
                         console.log('Alternative handler found, using it...');
-                        (altHandler1 || altHandler2).render(payloadBuilderContainer);
+                        currentHandler = altHandler1 || altHandler2;
+                        currentHandler.render(payloadBuilderContainer);
                     } else {
                         payloadBuilderContainer.innerHTML = '<p>此命令暂无自定义构建器。</p>';
+                    }
+                }
+
+                // Set current handler globally and show edit button if applicable
+                window.currentCommandHandler = currentHandler;
+
+                console.log('Edit button debug info:', {
+                    builderHeader: !!builderHeader,
+                    editBuilderBtn: !!editBuilderBtn,
+                    isAdmin: window.isAdmin,
+                    currentHandler: !!currentHandler,
+                    hasCanEdit: currentHandler && typeof currentHandler.canEdit === 'function',
+                    canEditResult: currentHandler && currentHandler.canEdit ? currentHandler.canEdit() : 'N/A',
+                    commandHexId: currentCommand ? currentCommand.hex_id : 'N/A'
+                });
+
+                if (builderHeader) {
+                    builderHeader.style.display = 'flex';
+                    if (editBuilderBtn && window.isAdmin && currentHandler && currentHandler.canEdit && currentHandler.canEdit()) {
+                        console.log('Showing edit button for command:', currentCommand.hex_id);
+                        editBuilderBtn.style.display = 'inline-block';
+                    } else if (editBuilderBtn) {
+                        console.log('Hiding edit button. Reasons:', {
+                            noEditBtn: !editBuilderBtn,
+                            notAdmin: !window.isAdmin,
+                            noHandler: !currentHandler,
+                            noCanEdit: !currentHandler || !currentHandler.canEdit,
+                            canEditFalse: currentHandler && currentHandler.canEdit && !currentHandler.canEdit()
+                        });
+                        editBuilderBtn.style.display = 'none';
                     }
                 }
             } catch (error) {
@@ -936,10 +640,10 @@
 
         // --- ADMIN EDIT FUNCTIONS ---
         let isEditMode = false;
-        isAdmin = currentUser && currentUser.role === 'admin';
+        // isAdmin is already set in checkSession(), no need to reset it here
 
         window.toggleEditMode = function() {
-            if (!isAdmin || !currentCommand) return;
+            if (!window.isAdmin || !currentCommand) return;
 
             isEditMode = !isEditMode;
             const displayContainer = document.getElementById('command-display-container');
@@ -967,7 +671,7 @@
 
         // Function to directly exit edit mode (used after successful save)
         function exitEditMode() {
-            if (!isAdmin || !currentCommand) return;
+            if (!window.isAdmin || !currentCommand) return;
 
             isEditMode = false;
             const displayContainer = document.getElementById('command-display-container');
@@ -981,7 +685,7 @@
         }
 
         window.saveCommandChanges = function() {
-            if (!isAdmin || !currentCommand) return;
+            if (!window.isAdmin || !currentCommand) return;
 
             const nameZh = document.getElementById('edit-name-zh').value.trim();
             const nameEn = document.getElementById('edit-name-en').value.trim();
@@ -1173,6 +877,33 @@
             });
         }
     });
+
+    // Builder Edit Mode Functions
+    window.builderEditMode = false;
+
+    window.toggleBuilderEditMode = function() {
+        if (!window.isAdmin || !window.currentCommandHandler) return;
+
+        const editBtn = document.getElementById('edit-builder-btn');
+        const container = document.getElementById('payload-builder-container');
+
+        if (!window.builderEditMode) {
+            // Entering edit mode
+            window.builderEditMode = true;
+            editBtn.textContent = 'Save';
+            if (window.currentCommandHandler.renderEditMode) {
+                window.currentCommandHandler.renderEditMode(container);
+            }
+        } else {
+            // Saving changes (exitEditMode will be called by saveChanges)
+            if (window.currentCommandHandler.saveChanges) {
+                window.currentCommandHandler.saveChanges();
+            }
+            // Note: builderEditMode will be reset by exitEditMode in saveChanges
+        }
+    }
+
+    // All builder edit functionality is now handled by individual command classes
   </script>
 
   <!-- Protocol Examples Modal -->

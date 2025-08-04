@@ -26,10 +26,11 @@ class CommandLoader {
     /**
      * Load a specific command handler
      * @param {string} commandId - Command ID (e.g., '0x00')
+     * @param {boolean} forceReload - Force reload even if already cached
      * @returns {Promise<BaseCommand>} Promise that resolves to the command instance
      */
-    async loadCommand(commandId) {
-        if (this.commands[commandId]) {
+    async loadCommand(commandId, forceReload = false) {
+        if (this.commands[commandId] && !forceReload) {
             return this.commands[commandId];
         }
 
@@ -137,9 +138,23 @@ class CommandLoader {
             // Copy any additional methods/properties from the command instance
             for (const prop in command) {
                 if (typeof command[prop] === 'function' &&
-                    !['render', 'attachListeners', 'getPayload', 'getPacketType', 'constructor'].includes(prop)) {
+                    !['constructor'].includes(prop)) {
                     handlerObject[prop] = command[prop].bind(command);
                 }
+            }
+
+            // Ensure specific methods are available
+            const methodsToEnsure = ['canEdit', 'renderEditMode', 'addOption', 'removeOption', 'previewBuilder', 'saveChanges', 'cancelEdit'];
+            methodsToEnsure.forEach(methodName => {
+                if (typeof command[methodName] === 'function' && !handlerObject[methodName]) {
+                    handlerObject[methodName] = command[methodName].bind(command);
+                }
+            });
+
+            // Debug: Log available methods for 0x00 command
+            if (commandId === '0x00') {
+                console.log('0x00 command methods:', Object.keys(handlerObject));
+                console.log('0x00 canEdit method:', typeof handlerObject.canEdit);
             }
 
             // Add handler with both lowercase and uppercase keys for compatibility
@@ -148,6 +163,17 @@ class CommandLoader {
         }
 
         return legacyHandlers;
+    }
+
+    /**
+     * Reload a specific command's configuration
+     * @param {string} commandId - Command ID to reload
+     */
+    async reloadCommandConfig(commandId) {
+        if (this.commands[commandId] && typeof this.commands[commandId].loadConfigFromServer === 'function') {
+            await this.commands[commandId].loadConfigFromServer();
+            console.log(`Reloaded config for command ${commandId}`);
+        }
     }
 }
 

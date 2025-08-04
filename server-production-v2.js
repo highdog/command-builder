@@ -554,6 +554,62 @@ app.get('/command-editor', isAuthenticated, isAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'command_editor.html'));
 });
 
+// Builder Configuration API
+app.post('/api/commands/:hex_id/builder-config', isAuthenticated, isAdmin, (req, res) => {
+  const { hex_id } = req.params;
+  const config = req.body;
+
+  console.log(`Saving builder config for ${hex_id}:`, config);
+
+  // For now, we'll store builder configs in a simple JSON file
+  // In a real implementation, you might want to use a database table
+  const fs = require('fs');
+  const configPath = path.join(__dirname, 'builder-configs.json');
+
+  let configs = {};
+  try {
+    if (fs.existsSync(configPath)) {
+      configs = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    }
+  } catch (error) {
+    console.error('Error reading builder configs:', error);
+  }
+
+  configs[hex_id] = config;
+
+  try {
+    fs.writeFileSync(configPath, JSON.stringify(configs, null, 2));
+    console.log(`Builder config saved for ${hex_id}`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error saving builder config:', error);
+    res.status(500).json({ error: 'Failed to save builder configuration' });
+  }
+});
+
+app.get('/api/commands/:hex_id/builder-config', isAuthenticated, (req, res) => {
+  const { hex_id } = req.params;
+
+  const fs = require('fs');
+  const configPath = path.join(__dirname, 'builder-configs.json');
+
+  try {
+    if (fs.existsSync(configPath)) {
+      const configs = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      if (configs[hex_id]) {
+        res.json(configs[hex_id]);
+      } else {
+        res.status(404).json({ error: 'Builder configuration not found' });
+      }
+    } else {
+      res.status(404).json({ error: 'No builder configurations found' });
+    }
+  } catch (error) {
+    console.error('Error reading builder config:', error);
+    res.status(500).json({ error: 'Failed to read builder configuration' });
+  }
+});
+
 // Graceful shutdown
 process.on('SIGINT', () => {
   console.log('\nReceived SIGINT. Graceful shutdown...');
