@@ -20,9 +20,15 @@ class BaseCommand {
             const mixinMethods = Object.getOwnPropertyNames(CommandEditorMixin.prototype)
                 .filter(name => name !== 'constructor' && typeof CommandEditorMixin.prototype[name] === 'function');
 
+            console.log(`Mixing in editor methods for ${this.commandId}:`, mixinMethods);
+
             mixinMethods.forEach(methodName => {
                 this[methodName] = CommandEditorMixin.prototype[methodName].bind(this);
             });
+
+            console.log(`${this.commandId} now has showEditModal:`, typeof this.showEditModal);
+        } else {
+            console.error(`CommandEditorMixin not available for ${this.commandId}`);
         }
     }
 

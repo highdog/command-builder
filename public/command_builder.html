@@ -972,11 +972,21 @@
     window.builderEditMode = false;
 
     window.toggleBuilderEditMode = function() {
-        if (!window.isAdmin || !window.currentCommandHandler) return;
+        console.log('toggleBuilderEditMode called');
+        console.log('isAdmin:', window.isAdmin);
+        console.log('currentCommandHandler:', window.currentCommandHandler);
+
+        if (!window.isAdmin || !window.currentCommandHandler) {
+            console.log('Exiting: no admin or no handler');
+            return;
+        }
 
         const editBtn = document.getElementById('edit-builder-btn');
         const container = document.getElementById('payload-builder-container');
         const builderHeader = document.querySelector('.payload-builder-header');
+
+        console.log('builderEditMode:', window.builderEditMode);
+        console.log('renderEditMode available:', typeof window.currentCommandHandler.renderEditMode);
 
         if (!window.builderEditMode) {
             // Entering edit mode
@@ -993,7 +1003,10 @@
             }
 
             if (window.currentCommandHandler.renderEditMode) {
+                console.log('Calling renderEditMode...');
                 window.currentCommandHandler.renderEditMode(container);
+            } else {
+                console.log('renderEditMode not available');
             }
         }
     }

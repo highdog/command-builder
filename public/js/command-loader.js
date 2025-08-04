@@ -164,14 +164,16 @@ class CommandLoader {
                 }
             });
 
-            // Debug: Log available methods for 0x00 command
-            if (commandId === '0x00') {
-                console.log('0x00 command methods:', Object.keys(handlerObject));
-                console.log('0x00 canEdit method:', typeof handlerObject.canEdit);
-                console.log('0x00 addField method:', typeof handlerObject.addField);
-                console.log('0x00 removeField method:', typeof handlerObject.removeField);
-                console.log('0x00 selectField method:', typeof handlerObject.selectField);
-                console.log('0x00 editFieldName method:', typeof handlerObject.editFieldName);
+            // Debug: Log available methods for 0x00 and 0x01 commands
+            if (commandId === '0x00' || commandId === '0x01') {
+                console.log(`${commandId} command methods:`, Object.keys(handlerObject));
+                console.log(`${commandId} canEdit method:`, typeof handlerObject.canEdit);
+                console.log(`${commandId} renderEditMode method:`, typeof handlerObject.renderEditMode);
+                console.log(`${commandId} showEditModal method:`, typeof handlerObject.showEditModal);
+                console.log(`${commandId} addField method:`, typeof handlerObject.addField);
+                console.log(`${commandId} removeField method:`, typeof handlerObject.removeField);
+                console.log(`${commandId} selectField method:`, typeof handlerObject.selectField);
+                console.log(`${commandId} editFieldName method:`, typeof handlerObject.editFieldName);
             }
 
             // Add handler with both lowercase and uppercase keys for compatibility

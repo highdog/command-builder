@@ -4,6 +4,65 @@
  */
 class CommandEditorMixin {
     /**
+     * Show edit modal with field editor
+     */
+    showEditModal() {
+        const currentLang = i18nManager.getCurrentLanguage();
+        const isZh = currentLang === 'zh';
+
+        // Safety check for config
+        if (!this.config || !this.config.fields || !Array.isArray(this.config.fields)) {
+            console.error(`Invalid config in renderEditMode for ${this.commandId}, using defaults`);
+            this.config = this.getDefaultConfig();
+        }
+
+        // Create modal HTML
+        const modalHtml = `
+            <div class="modal-overlay" id="edit-modal-overlay">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>${isZh ? `编辑 ${this.commandId} 命令构建器` : `Edit ${this.commandId} Command Builder`}</h3>
+                        <button class="modal-close" onclick="window.currentCommandHandler.closeEditModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="modal-left-panel">
+                            <h4>${isZh ? '字段列表' : 'Fields'}</h4>
+                            <div id="field-list">
+                                ${this.renderFieldList(isZh)}
+                            </div>
+                            <button type="button" class="button" onclick="window.currentCommandHandler.addField()" style="width: 100%; margin-top: 1rem;">
+                                ${isZh ? '添加新字段' : 'Add New Field'}
+                            </button>
+                        </div>
+                        <div class="modal-right-panel">
+                            <div id="options-panel">
+                                <div class="no-field-selected">
+                                    ${isZh ? '请选择左侧的字段来编辑选项' : 'Select a field from the left to edit options'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="cancel-btn" onclick="window.currentCommandHandler.closeEditModal()">
+                            ${isZh ? '取消' : 'Cancel'}
+                        </button>
+                        <button type="button" class="button" onclick="window.currentCommandHandler.saveModalChanges()">
+                            ${isZh ? '保存' : 'Save'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Add modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // Initialize with first field selected if available
+        if (this.config.fields.length > 0) {
+            this.selectField(0);
+        }
+    }
+    /**
      * Render field list for modal
      * @param {boolean} isZh - Whether to use Chinese labels
      * @returns {string} HTML string for field list
