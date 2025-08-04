@@ -836,6 +836,99 @@ select:focus, input:focus, textarea:focus {
     font-size: 0.75rem;
 }
 
+
+
+/* Command edit layout styles */
+.command-edit-layout {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    align-items: flex-start;
+}
+
+.command-edit-left,
+.command-edit-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 0; /* 确保flex子项等宽 */
+}
+
+.language-label {
+    display: none; /* 隐藏语言标签 */
+}
+
+.command-edit-section {
+    margin-bottom: 1.5rem;
+}
+
+.command-edit-section:first-child {
+    margin-top: 0; /* 第一个区域顶部无边距 */
+}
+
+.command-edit-section label {
+    display: block;
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 0.5rem;
+    height: 1.5rem; /* 固定标签高度确保对齐 */
+    line-height: 1.5rem;
+}
+
+.command-edit-section input,
+.command-edit-section textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-family: inherit;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    box-sizing: border-box;
+}
+
+.command-edit-section input {
+    height: 3rem; /* 固定输入框高度 */
+}
+
+.command-edit-section textarea {
+    min-height: 600px; /* 增加描述区域高度到600px */
+    resize: vertical;
+}
+
+.command-edit-section input:focus,
+.command-edit-section textarea:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.edit-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    padding: 2rem 0;
+    border-top: 1px solid #dee2e6;
+    margin-top: 2rem;
+}
+
+/* Responsive design for command edit */
+@media (max-width: 768px) {
+    .command-edit-layout {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .command-edit-left,
+    .command-edit-right {
+        width: 100%;
+    }
+
+    .command-edit-section textarea {
+        min-height: 400px;
+    }
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     .modal-content {
@@ -855,10 +948,15 @@ select:focus, input:focus, textarea:focus {
     }
 
     .modal-left-panel {
-        height: 40%;
+        height: 50%;
     }
 
     .modal-right-panel {
-        height: 60%;
+        height: 50%;
+    }
+
+    .command-edit-modal .modal-left-panel,
+    .command-edit-modal .modal-right-panel {
+        width: 100%;
     }
 }

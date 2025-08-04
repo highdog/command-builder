@@ -90,31 +90,43 @@
 
         <!-- Edit Mode Container (Hidden by default) -->
         <div id="command-edit-container" style="display: none;">
-          <div class="edit-form">
-            <div class="form-group">
-              <label for="edit-name-zh">中文名称:</label>
-              <input type="text" id="edit-name-zh" class="form-control">
+          <div class="command-edit-layout">
+            <div class="command-edit-left">
+              <div class="language-label english-label">English</div>
+              <div class="command-edit-form">
+                <div class="command-edit-section">
+                  <label for="edit-name-en">Name (EN):</label>
+                  <input type="text" id="edit-name-en" class="form-control">
+                </div>
+                <div class="command-edit-section">
+                  <label for="edit-desc-en">Description (EN):</label>
+                  <textarea id="edit-desc-en" class="form-control"></textarea>
+                </div>
+              </div>
             </div>
-            <div class="form-group">
-              <label for="edit-name-en">English Name:</label>
-              <input type="text" id="edit-name-en" class="form-control">
+
+            <div class="command-edit-right">
+              <div class="language-label chinese-label">中文</div>
+              <div class="command-edit-form">
+                <div class="command-edit-section">
+                  <label for="edit-name-zh">名称 (中文):</label>
+                  <input type="text" id="edit-name-zh" class="form-control">
+                </div>
+                <div class="command-edit-section">
+                  <label for="edit-desc-zh">描述 (中文):</label>
+                  <textarea id="edit-desc-zh" class="form-control"></textarea>
+                </div>
+              </div>
             </div>
-            <div class="form-group">
-              <label for="edit-desc-zh">中文描述:</label>
-              <textarea id="edit-desc-zh" class="form-control" rows="10"></textarea>
-            </div>
-            <div class="form-group">
-              <label for="edit-desc-en">English Description:</label>
-              <textarea id="edit-desc-en" class="form-control" rows="10"></textarea>
-            </div>
-            <div class="edit-actions">
-              <button onclick="saveCommandChanges()" class="save-btn">
-                <span data-i18n="admin.saveChanges">保存更改</span>
-              </button>
-              <button onclick="cancelEdit()" class="cancel-btn">
-                <span data-i18n="admin.cancel">取消</span>
-              </button>
-            </div>
+          </div>
+
+          <div class="edit-actions">
+            <button onclick="saveCommandChanges()" class="save-btn">
+              <span data-i18n="admin.saveChanges">保存更改</span>
+            </button>
+            <button onclick="cancelEdit()" class="cancel-btn">
+              <span data-i18n="admin.cancel">取消</span>
+            </button>
           </div>
         </div>
       </div>
