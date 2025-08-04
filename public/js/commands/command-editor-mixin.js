@@ -122,6 +122,9 @@ class CommandEditorMixin {
                         <button type="button" class="button" onclick="window.currentCommandHandler.setFieldType(${fieldIndex}, 'number')">
                             ${isZh ? '数字字段 (Number)' : 'Number Field'}
                         </button>
+                        <button type="button" class="button" onclick="window.currentCommandHandler.setFieldType(${fieldIndex}, 'checkbox')">
+                            ${isZh ? '复选框字段 (Checkbox)' : 'Checkbox Field'}
+                        </button>
                     </div>
                     <p style="color: #6c757d; font-size: 0.9rem; margin-top: 0.5rem;">
                         ${isZh ? '选择字段类型后可以配置具体选项' : 'Select a field type to configure options'}
@@ -183,6 +186,52 @@ class CommandEditorMixin {
                         <input type="number" value="${field.defaultValue || 0}"
                                min="${field.min || 0}" max="${field.max || 255}"
                                onchange="window.currentCommandHandler.updateFieldProperty(${fieldIndex}, 'defaultValue', parseInt(this.value))">
+                    </div>
+
+                    <div class="config-item">
+                        <label>
+                            <input type="checkbox" ${field.hasOfflineOption ? 'checked' : ''}
+                                   onchange="window.currentCommandHandler.updateFieldProperty(${fieldIndex}, 'hasOfflineOption', this.checked)">
+                            ${isZh ? '包含离线选项' : 'Include Offline Option'}
+                        </label>
+                    </div>
+
+                    ${field.hasOfflineOption ? `
+                        <div class="config-item">
+                            <label>${isZh ? '离线值 (十六进制):' : 'Offline Value (Hex):'}</label>
+                            <input type="text" value="0x${(field.offlineValue || 0xFF).toString(16).toUpperCase()}"
+                                   placeholder="0xFF"
+                                   onchange="window.currentCommandHandler.updateOfflineValue(${fieldIndex}, this.value)">
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        } else if (field.type === 'checkbox') {
+            // Checkbox field configuration
+            fieldSpecificContent = `
+                <div class="checkbox-field-config">
+                    <h5>${isZh ? '复选框字段配置' : 'Checkbox Field Configuration'}</h5>
+
+                    <div class="config-item">
+                        <label>${isZh ? '位位置:' : 'Bit Position:'}</label>
+                        <input type="number" value="${field.bitPosition || 0}" min="0" max="7"
+                               onchange="window.currentCommandHandler.updateFieldProperty(${fieldIndex}, 'bitPosition', parseInt(this.value))">
+                    </div>
+
+                    <div class="config-item">
+                        <label>
+                            <input type="checkbox" ${field.defaultValue ? 'checked' : ''}
+                                   onchange="window.currentCommandHandler.updateFieldProperty(${fieldIndex}, 'defaultValue', this.checked)">
+                            ${isZh ? '默认选中' : 'Default Checked'}
+                        </label>
+                    </div>
+
+                    <div class="config-item">
+                        <label>
+                            <input type="checkbox" ${field.invertLogic ? 'checked' : ''}
+                                   onchange="window.currentCommandHandler.updateFieldProperty(${fieldIndex}, 'invertLogic', this.checked)">
+                            ${isZh ? '反向逻辑 (0=开启, 1=关闭)' : 'Invert Logic (0=ON, 1=OFF)'}
+                        </label>
                     </div>
                 </div>
             `;
@@ -292,6 +341,33 @@ class CommandEditorMixin {
         if (this.config.fields[fieldIndex]) {
             this.config.fields[fieldIndex][property] = value;
             console.log(`Updated field ${fieldIndex} property ${property} to:`, value);
+
+            // If hasOfflineOption changed, refresh the panel to show/hide offline value input
+            if (property === 'hasOfflineOption') {
+                this.selectField(fieldIndex);
+            }
+        }
+    }
+
+    /**
+     * Update offline value for number fields
+     * @param {number} fieldIndex - Index of field to update
+     * @param {string} hexValue - Hex value string (e.g., "0xFF")
+     */
+    updateOfflineValue(fieldIndex, hexValue) {
+        if (this.config.fields[fieldIndex]) {
+            // Parse hex value
+            let numValue;
+            if (hexValue.startsWith('0x') || hexValue.startsWith('0X')) {
+                numValue = parseInt(hexValue, 16);
+            } else {
+                numValue = parseInt(hexValue, 16);
+            }
+
+            if (!isNaN(numValue)) {
+                this.config.fields[fieldIndex].offlineValue = numValue;
+                console.log(`Updated field ${fieldIndex} offline value to: 0x${numValue.toString(16).toUpperCase()}`);
+            }
         }
     }
 
@@ -323,10 +399,23 @@ class CommandEditorMixin {
             field.min = 0;
             field.max = 255;
             field.defaultValue = 0;
+            field.hasOfflineOption = false;
+            field.offlineValue = 0xFF;
+            // Remove other field properties
+            delete field.options;
+            delete field.maxLength;
+        } else if (type === 'checkbox') {
+            // Initialize checkbox field properties
+            field.bitPosition = 0;
+            field.defaultValue = false;
+            field.invertLogic = false;
             // Remove other field properties
             delete field.options;
             delete field.maxLength;
             delete field.hasOfflineOption;
+            delete field.min;
+            delete field.max;
+            delete field.offlineValue;
         } else if (type === 'select') {
             // Initialize select field properties
             field.options = [
@@ -338,6 +427,9 @@ class CommandEditorMixin {
             delete field.hasOfflineOption;
             delete field.min;
             delete field.max;
+            delete field.bitPosition;
+            delete field.invertLogic;
+            delete field.offlineValue;
         }
 
         console.log(`Set field ${fieldIndex} type to ${type}:`, field);

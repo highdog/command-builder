@@ -154,7 +154,7 @@ class CommandLoader {
             // Ensure specific methods are available
             const methodsToEnsure = [
                 'canEdit', 'renderEditMode', 'addOption', 'removeOption', 'addField', 'removeField',
-                'selectField', 'editFieldName', 'updateFieldName', 'updateFieldProperty', 'setFieldType', 'updateOption', 'updateCondition', 'refreshModal',
+                'selectField', 'editFieldName', 'updateFieldName', 'updateFieldProperty', 'updateOfflineValue', 'setFieldType', 'updateOption', 'updateCondition', 'refreshModal',
                 'closeEditModal', 'saveModalChanges', 'showEditModal', 'renderFieldList', 'renderConditionEditor',
                 'previewBuilder', 'saveChanges', 'cancelEdit'
             ];
