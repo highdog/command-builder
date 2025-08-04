@@ -215,13 +215,9 @@ app.get('/api/commands/:id', isAuthenticated, (req, res) => {
         desc_zh_preview: row.description_zh ? row.description_zh.substring(0, 50) : 'N/A'
       });
 
-      // Validate hex_id before sending response
+      // Log if hex_id is missing but don't block the response
       if (!row.hex_id) {
-        console.error(`ERROR: Command ${req.params.id} has null/undefined hex_id`);
-        return res.status(400).json({
-          error: 'Invalid command data: hex_id is missing',
-          command_id: req.params.id
-        });
+        console.log(`INFO: Command ${req.params.id} has null/undefined hex_id - will show documentation only`);
       }
 
       // Test JSON serialization

@@ -650,9 +650,9 @@
                 if (!response.ok) throw new Error('Failed to fetch command details');
                 currentCommand = await response.json();
 
-                // Validate command data
-                if (!currentCommand || !currentCommand.hex_id) {
-                    console.error('Invalid command data received:', currentCommand);
+                // Check if command data is completely invalid
+                if (!currentCommand) {
+                    console.error('No command data received');
                     docContainer.innerHTML = '<p class="error">错误：无效的命令数据</p>';
                     payloadBuilderContainer.innerHTML = '<p class="error">错误：无效的命令数据</p>';
                     return;
@@ -668,7 +668,15 @@
                     currentLanguage: currentLanguage
                 });
 
+                // Always display documentation first
                 displayCommandDocumentation(currentCommand, currentLanguage);
+
+                // Handle payload builder based on hex_id availability
+                if (!currentCommand.hex_id) {
+                    console.log('Command has no hex_id, showing no-builder message');
+                    payloadBuilderContainer.innerHTML = '<p>当前选项无构建命令</p>';
+                    return;
+                }
 
                 const handler = customCommandHandlers[currentCommand.hex_id];
                 console.log('Looking for handler:');
@@ -686,14 +694,6 @@
                     handler.render(payloadBuilderContainer);
                 } else {
                     console.log('Handler not found for:', currentCommand.hex_id);
-
-                    // Check if hex_id is valid before trying string operations
-                    if (!currentCommand.hex_id) {
-                        console.error('Error: currentCommand.hex_id is null or undefined');
-                        payloadBuilderContainer.innerHTML = '<p class="error">错误：命令ID无效</p>';
-                        return;
-                    }
-
                     console.log('Trying alternative lookups...');
                     const altHandler1 = customCommandHandlers[currentCommand.hex_id.toLowerCase()];
                     const altHandler2 = customCommandHandlers[currentCommand.hex_id.toUpperCase()];
