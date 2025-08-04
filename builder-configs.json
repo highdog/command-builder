@@ -1,35 +1,45 @@
 {
   "0x00": {
-    "packetTypeOptions": [
+    "fields": [
       {
-        "value": "0",
-        "label": "COMMAND (get)"
+        "id": "packetType",
+        "name": "Packet Type",
+        "options": [
+          {
+            "value": "0",
+            "label": "COMMAND (get)"
+          },
+          {
+            "value": "2",
+            "label": "RESPONSE (device)"
+          }
+        ]
       },
       {
-        "value": "2",
-        "label": "RESPONSE (device)"
-      }
-    ],
-    "deviceTypeOptions": [
-      {
-        "value": "0x00",
-        "label": "VERIO_100"
-      },
-      {
-        "value": "0x01",
-        "label": "VERIO_200"
-      },
-      {
-        "value": "0x02",
-        "label": "VERIO_300"
-      },
-      {
-        "value": "0x03",
-        "label": "AVENTHO_300"
-      },
-      {
-        "value": "0x04",
-        "label": "aa"
+        "id": "deviceType",
+        "name": "Device Type",
+        "options": [
+          {
+            "value": "0x00",
+            "label": "VERIO_100"
+          },
+          {
+            "value": "0x01",
+            "label": "VERIO_200"
+          },
+          {
+            "value": "0x02",
+            "label": "VERIO_300"
+          },
+          {
+            "value": "0x03",
+            "label": "AVENTHO_300"
+          }
+        ],
+        "showWhen": {
+          "fieldId": "packetType",
+          "value": "2"
+        }
       }
     ]
   }

@@ -102,13 +102,16 @@ class CommandLoader {
      * @returns {Promise} Promise that resolves when script is loaded
      */
     loadScript(scriptPath) {
-        if (this.loadedScripts.has(scriptPath)) {
-            return Promise.resolve();
-        }
+        // For development, always reload scripts to avoid cache issues
+        // if (this.loadedScripts.has(scriptPath)) {
+        //     return Promise.resolve();
+        // }
 
         return new Promise((resolve, reject) => {
             const script = document.createElement('script');
-            script.src = scriptPath;
+            // Add cache-busting parameter
+            const cacheBuster = Date.now();
+            script.src = `${scriptPath}?v=${cacheBuster}`;
             script.onload = () => {
                 this.loadedScripts.add(scriptPath);
                 resolve();
@@ -144,7 +147,7 @@ class CommandLoader {
             }
 
             // Ensure specific methods are available
-            const methodsToEnsure = ['canEdit', 'renderEditMode', 'addOption', 'removeOption', 'previewBuilder', 'saveChanges', 'cancelEdit'];
+            const methodsToEnsure = ['canEdit', 'renderEditMode', 'addOption', 'removeOption', 'addField', 'removeField', 'previewBuilder', 'saveChanges', 'cancelEdit'];
             methodsToEnsure.forEach(methodName => {
                 if (typeof command[methodName] === 'function' && !handlerObject[methodName]) {
                     handlerObject[methodName] = command[methodName].bind(command);
@@ -155,6 +158,8 @@ class CommandLoader {
             if (commandId === '0x00') {
                 console.log('0x00 command methods:', Object.keys(handlerObject));
                 console.log('0x00 canEdit method:', typeof handlerObject.canEdit);
+                console.log('0x00 addField method:', typeof handlerObject.addField);
+                console.log('0x00 removeField method:', typeof handlerObject.removeField);
             }
 
             // Add handler with both lowercase and uppercase keys for compatibility

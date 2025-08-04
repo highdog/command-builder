@@ -548,3 +548,84 @@ select:focus, input:focus, textarea:focus {
 .logout-container a:hover {
     background-color: #e9ecef !important;
 }
+
+/* New field editor styles */
+.field-editor {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: #f8f9fa;
+}
+
+.field-header {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.field-name-input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.fields-container {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.dynamic-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Condition editor styles */
+.condition-editor {
+    margin: 1rem 0;
+    padding: 0.75rem;
+    background: #e9ecef;
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+}
+
+.condition-editor h6 {
+    margin: 0 0 0.5rem 0;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.condition-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.condition-controls label {
+    font-size: 0.85rem;
+    color: #6c757d;
+    white-space: nowrap;
+}
+
+.condition-controls select,
+.condition-controls input {
+    padding: 0.25rem;
+    border: 1px solid #ced4da;
+    border-radius: 3px;
+    font-size: 0.85rem;
+}
+
+.condition-controls select {
+    min-width: 120px;
+}
+
+.condition-controls input {
+    width: 80px;
+}
