@@ -128,6 +128,12 @@ class CommandEditorMixin {
                         <button type="button" class="button" onclick="window.currentCommandHandler.setFieldType(${fieldIndex}, 'version')">
                             ${isZh ? '版本字段 (Version)' : 'Version Field'}
                         </button>
+                        <button type="button" class="button" onclick="window.currentCommandHandler.setFieldType(${fieldIndex}, 'dynamic_group')">
+                            ${isZh ? '动态字段组 (Dynamic Group)' : 'Dynamic Group Field'}
+                        </button>
+                        <button type="button" class="button" onclick="window.currentCommandHandler.setFieldType(${fieldIndex}, 'mac')">
+                            ${isZh ? 'MAC地址字段 (MAC Address)' : 'MAC Address Field'}
+                        </button>
                     </div>
                     <p style="color: #6c757d; font-size: 0.9rem; margin-top: 0.5rem;">
                         ${isZh ? '选择字段类型后可以配置具体选项' : 'Select a field type to configure options'}
@@ -257,6 +263,59 @@ class CommandEditorMixin {
                                    onchange="window.currentCommandHandler.updateFieldProperty(${fieldIndex}, 'hasOfflineOption', this.checked)">
                             ${isZh ? '包含离线选项' : 'Include Offline Option'}
                         </label>
+                    </div>
+                </div>
+            `;
+        } else if (field.type === 'mac') {
+            // MAC address field configuration
+            fieldSpecificContent = `
+                <div class="mac-field-config">
+                    <h5>${isZh ? 'MAC地址字段配置' : 'MAC Address Field Configuration'}</h5>
+
+                    <div class="config-item">
+                        <label>${isZh ? '默认MAC地址:' : 'Default MAC Address:'}</label>
+                        <input type="text" value="${field.defaultValue || '12:34:56:78:9A:BC'}"
+                               placeholder="AA:BB:CC:DD:EE:FF" pattern="[0-9A-Fa-f:]{17}"
+                               onchange="window.currentCommandHandler.updateFieldProperty(${fieldIndex}, 'defaultValue', this.value)">
+                    </div>
+
+                    <div class="config-item">
+                        <p style="color: #6c757d; font-size: 0.9rem;">
+                            ${isZh ? 'MAC地址格式: AA:BB:CC:DD:EE:FF (十六进制，用冒号分隔)' : 'MAC Address format: AA:BB:CC:DD:EE:FF (hexadecimal, colon-separated)'}
+                        </p>
+                    </div>
+                </div>
+            `;
+        } else if (field.type === 'dynamic_group') {
+            // Dynamic group field configuration
+            fieldSpecificContent = `
+                <div class="dynamic-group-config">
+                    <h5>${isZh ? '动态字段组配置' : 'Dynamic Group Configuration'}</h5>
+
+                    <div class="config-item">
+                        <label>${isZh ? '字段组项目:' : 'Group Items:'}</label>
+                        <div id="dynamic-group-items-${fieldIndex}">
+                            ${(field.defaultItems || []).map((item, itemIndex) => `
+                                <div class="dynamic-item" data-item-index="${itemIndex}">
+                                    ${Object.entries(field.itemTemplate || {}).map(([key, template]) => `
+                                        <div class="item-field">
+                                            <label>${template.name}:</label>
+                                            <select onchange="window.currentCommandHandler.updateDynamicGroupItem(${fieldIndex}, ${itemIndex}, '${key}', this.value)">
+                                                ${template.options.map(opt =>
+                                                    `<option value="${opt.value}" ${item[key] === opt.value ? 'selected' : ''}>${opt.label}</option>`
+                                                ).join('')}
+                                            </select>
+                                        </div>
+                                    `).join('')}
+                                    <button type="button" class="cancel-btn" onclick="window.currentCommandHandler.removeDynamicGroupItem(${fieldIndex}, ${itemIndex})">
+                                        ${isZh ? '删除' : 'Delete'}
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button type="button" class="button" onclick="window.currentCommandHandler.addDynamicGroupItem(${fieldIndex})" style="width: 100%; margin-top: 0.5rem;">
+                            ${isZh ? '添加项目' : 'Add Item'}
+                        </button>
                     </div>
                 </div>
             `;
@@ -397,6 +456,61 @@ class CommandEditorMixin {
     }
 
     /**
+     * Add item to dynamic group field
+     * @param {number} fieldIndex - Index of field to update
+     */
+    addDynamicGroupItem(fieldIndex) {
+        const field = this.config.fields[fieldIndex];
+        if (field && field.type === 'dynamic_group') {
+            if (!field.defaultItems) field.defaultItems = [];
+
+            // Create new item with default values
+            const newItem = {};
+            Object.keys(field.itemTemplate || {}).forEach(key => {
+                const template = field.itemTemplate[key];
+                newItem[key] = template.options[0]?.value || '0';
+            });
+
+            field.defaultItems.push(newItem);
+            console.log(`Added item to dynamic group field ${fieldIndex}:`, newItem);
+
+            // Refresh the field display
+            this.selectField(fieldIndex);
+        }
+    }
+
+    /**
+     * Remove item from dynamic group field
+     * @param {number} fieldIndex - Index of field to update
+     * @param {number} itemIndex - Index of item to remove
+     */
+    removeDynamicGroupItem(fieldIndex, itemIndex) {
+        const field = this.config.fields[fieldIndex];
+        if (field && field.type === 'dynamic_group' && field.defaultItems) {
+            field.defaultItems.splice(itemIndex, 1);
+            console.log(`Removed item ${itemIndex} from dynamic group field ${fieldIndex}`);
+
+            // Refresh the field display
+            this.selectField(fieldIndex);
+        }
+    }
+
+    /**
+     * Update item in dynamic group field
+     * @param {number} fieldIndex - Index of field to update
+     * @param {number} itemIndex - Index of item to update
+     * @param {string} key - Key of the item property to update
+     * @param {string} value - New value
+     */
+    updateDynamicGroupItem(fieldIndex, itemIndex, key, value) {
+        const field = this.config.fields[fieldIndex];
+        if (field && field.type === 'dynamic_group' && field.defaultItems && field.defaultItems[itemIndex]) {
+            field.defaultItems[itemIndex][key] = value;
+            console.log(`Updated dynamic group field ${fieldIndex} item ${itemIndex} ${key} to:`, value);
+        }
+    }
+
+    /**
      * Set field type and initialize appropriate properties
      * @param {number} fieldIndex - Index of field to update
      * @param {string} type - Field type ('select' or 'text')
@@ -453,6 +567,43 @@ class CommandEditorMixin {
             delete field.bitPosition;
             delete field.invertLogic;
             delete field.offlineValue;
+        } else if (type === 'dynamic_group') {
+            // Initialize dynamic group field properties
+            field.itemTemplate = {
+                field1: {
+                    name: isZh ? '字段1' : 'Field 1',
+                    options: [
+                        { value: '0', label: isZh ? '选项1' : 'Option 1' }
+                    ]
+                }
+            };
+            field.defaultItems = [
+                { field1: '0' }
+            ];
+            // Remove other field properties
+            delete field.options;
+            delete field.maxLength;
+            delete field.min;
+            delete field.max;
+            delete field.bitPosition;
+            delete field.invertLogic;
+            delete field.offlineValue;
+            delete field.defaultValue;
+            delete field.hasOfflineOption;
+        } else if (type === 'mac') {
+            // Initialize MAC address field properties
+            field.defaultValue = '12:34:56:78:9A:BC';
+            // Remove other field properties
+            delete field.options;
+            delete field.maxLength;
+            delete field.min;
+            delete field.max;
+            delete field.bitPosition;
+            delete field.invertLogic;
+            delete field.offlineValue;
+            delete field.hasOfflineOption;
+            delete field.itemTemplate;
+            delete field.defaultItems;
         } else if (type === 'select') {
             // Initialize select field properties
             field.options = [

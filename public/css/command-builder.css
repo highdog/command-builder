@@ -840,8 +840,35 @@ select:focus, input:focus, textarea:focus {
 .text-field-config,
 .number-field-config,
 .checkbox-field-config,
-.version-field-config {
+.version-field-config,
+.dynamic-group-config,
+.mac-field-config {
     margin-bottom: 1rem;
+}
+
+/* Dynamic group field styles */
+.dynamic-item {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    background: #f8f9fa;
+}
+
+.item-field {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.item-field label {
+    min-width: 100px;
+    margin: 0;
+}
+
+.item-field select {
+    flex: 1;
 }
 
 /* Checkbox field styles */

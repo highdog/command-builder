@@ -21,6 +21,33 @@ class Command17 extends BaseCommand {
                         { value: '2', label: 'RESPONSE' },
                         { value: '1', label: 'NOTIFICATION' }
                     ]
+                },
+                {
+                    id: 'peripheralStates',
+                    name: 'Peripheral States',
+                    type: 'dynamic_group',
+                    itemTemplate: {
+                        type: {
+                            name: 'Peripheral Type',
+                            options: [
+                                { value: '0', label: 'DONGLE' }
+                            ]
+                        },
+                        state: {
+                            name: 'Connection State',
+                            options: [
+                                { value: '0', label: 'DISCONNECTED' },
+                                { value: '1', label: 'CONNECTED' }
+                            ]
+                        }
+                    },
+                    defaultItems: [
+                        { type: '0', state: '1' } // Default: DONGLE CONNECTED
+                    ],
+                    showWhen: {
+                        fieldId: 'packetType',
+                        value: '2' // Show when not COMMAND
+                    }
                 }
             ]
         };
@@ -180,6 +207,12 @@ class Command17 extends BaseCommand {
     getPacketType() {
         const packetTypeElement = document.getElementById('field-packetType-0x17');
         return packetTypeElement ? parseInt(packetTypeElement.value, 10) : 0;
+    }
+
+    createSelect(options, selectedValue = 0) {
+        return Object.entries(options).map(([key, value]) =>
+            `<option value="${value}" ${value === selectedValue ? 'selected' : ''}>${key}</option>`
+        ).join('');
     }
 }
 

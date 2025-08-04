@@ -113,5 +113,132 @@
         }
       }
     ]
+  },
+  "0x17": {
+    "fields": [
+      {
+        "id": "packetType",
+        "name": "Packet Type",
+        "options": [
+          {
+            "value": "0",
+            "label": "COMMAND (get)"
+          },
+          {
+            "value": "2",
+            "label": "RESPONSE"
+          },
+          {
+            "value": "1",
+            "label": "NOTIFICATION"
+          }
+        ]
+      },
+      {
+        "id": "peripheralStates",
+        "name": "Peripheral States",
+        "type": "dynamic_group",
+        "itemTemplate": {
+          "type": {
+            "name": "Peripheral Type",
+            "options": [
+              {
+                "value": "0",
+                "label": "DONGLE"
+              }
+            ]
+          },
+          "state": {
+            "name": "Connection State",
+            "options": [
+              {
+                "value": "0",
+                "label": "DISCONNECTED"
+              },
+              {
+                "value": "1",
+                "label": "CONNECTED"
+              }
+            ]
+          }
+        },
+        "defaultItems": [
+          {
+            "type": "0",
+            "state": "1"
+          }
+        ],
+        "showWhen": {
+          "fieldId": "packetType",
+          "value": "2"
+        }
+      }
+    ]
+  },
+  "0x19": {
+    "fields": [
+      {
+        "id": "packetType",
+        "name": "Packet Type",
+        "options": [
+          {
+            "value": "0",
+            "label": "COMMAND (get)"
+          },
+          {
+            "value": "2",
+            "label": "RESPONSE (device reply)"
+          }
+        ]
+      },
+      {
+        "id": "productType",
+        "name": "Product Type",
+        "options": [
+          {
+            "value": "earbuds",
+            "label": "Earbuds"
+          },
+          {
+            "value": "headset",
+            "label": "Headset"
+          }
+        ],
+        "showWhen": {
+          "fieldId": "packetType",
+          "value": "2"
+        }
+      },
+      {
+        "id": "leftEarbudMac",
+        "name": "Left Earbud MAC",
+        "type": "mac",
+        "defaultValue": "12:34:56:78:9A:BC",
+        "showWhen": {
+          "fieldId": "productType",
+          "value": "earbuds"
+        }
+      },
+      {
+        "id": "rightEarbudMac",
+        "name": "Right Earbud MAC",
+        "type": "mac",
+        "defaultValue": "12:34:56:78:9A:BD",
+        "showWhen": {
+          "fieldId": "productType",
+          "value": "earbuds"
+        }
+      },
+      {
+        "id": "headsetMac",
+        "name": "Headset MAC",
+        "type": "mac",
+        "defaultValue": "12:34:56:78:9A:BE",
+        "showWhen": {
+          "fieldId": "productType",
+          "value": "headset"
+        }
+      }
+    ]
   }
 }
