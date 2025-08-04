@@ -72,10 +72,12 @@ const sessionConfig = {
   secret: sessionSecret,
   resave: false,
   saveUninitialized: false,
-  cookie: { 
+  name: 'command-builder-session', // Custom session name
+  cookie: {
     secure: false, // Set to true if using HTTPS
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'lax' // Help with cross-origin issues
   }
 };
 
@@ -147,13 +149,29 @@ app.use(express.static(path.join(__dirname, 'public'), {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'healthy', 
+  res.json({
+    status: 'healthy',
     timestamp: new Date().toISOString(),
     port: port,
     host: host,
     environment: process.env.NODE_ENV || 'development'
   });
+});
+
+// Session check endpoint
+app.get('/api/session', (req, res) => {
+  if (req.session.user) {
+    res.json({
+      authenticated: true,
+      user: {
+        id: req.session.user.id,
+        username: req.session.user.username,
+        role: req.session.user.role
+      }
+    });
+  } else {
+    res.json({ authenticated: false });
+  }
 });
 
 // --- LOGIN SYSTEM ---
