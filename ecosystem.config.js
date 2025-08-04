@@ -1,7 +1,7 @@
 module.exports = {
   apps: [{
     name: 'command-builder',
-    script: 'server-production.js',
+    script: 'server-production-v2.js',
     instances: 1,
     autorestart: true,
     watch: false,
