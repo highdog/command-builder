@@ -113,11 +113,14 @@ class CommandEditorMixin {
                 <div class="field-type-selector">
                     <h5>${isZh ? '选择字段类型' : 'Select Field Type'}</h5>
                     <div class="type-options">
-                        <button type="button" class="button" onclick="window.currentCommandHandler.setFieldType(${fieldIndex}, 'select')" style="margin-right: 0.5rem;">
+                        <button type="button" class="button" onclick="window.currentCommandHandler.setFieldType(${fieldIndex}, 'select')">
                             ${isZh ? '选择字段 (Select)' : 'Select Field'}
                         </button>
                         <button type="button" class="button" onclick="window.currentCommandHandler.setFieldType(${fieldIndex}, 'text')">
                             ${isZh ? '文本字段 (Text)' : 'Text Field'}
+                        </button>
+                        <button type="button" class="button" onclick="window.currentCommandHandler.setFieldType(${fieldIndex}, 'number')">
+                            ${isZh ? '数字字段 (Number)' : 'Number Field'}
                         </button>
                     </div>
                     <p style="color: #6c757d; font-size: 0.9rem; margin-top: 0.5rem;">
@@ -154,6 +157,32 @@ class CommandEditorMixin {
                                    onchange="window.currentCommandHandler.updateFieldProperty(${fieldIndex}, 'hasOfflineOption', this.checked)">
                             ${isZh ? '包含离线选项' : 'Include Offline Option'}
                         </label>
+                    </div>
+                </div>
+            `;
+        } else if (field.type === 'number') {
+            // Number field configuration
+            fieldSpecificContent = `
+                <div class="number-field-config">
+                    <h5>${isZh ? '数字字段配置' : 'Number Field Configuration'}</h5>
+
+                    <div class="config-item">
+                        <label>${isZh ? '最小值:' : 'Min Value:'}</label>
+                        <input type="number" value="${field.min || 0}"
+                               onchange="window.currentCommandHandler.updateFieldProperty(${fieldIndex}, 'min', parseInt(this.value))">
+                    </div>
+
+                    <div class="config-item">
+                        <label>${isZh ? '最大值:' : 'Max Value:'}</label>
+                        <input type="number" value="${field.max || 255}"
+                               onchange="window.currentCommandHandler.updateFieldProperty(${fieldIndex}, 'max', parseInt(this.value))">
+                    </div>
+
+                    <div class="config-item">
+                        <label>${isZh ? '默认值:' : 'Default Value:'}</label>
+                        <input type="number" value="${field.defaultValue || 0}"
+                               min="${field.min || 0}" max="${field.max || 255}"
+                               onchange="window.currentCommandHandler.updateFieldProperty(${fieldIndex}, 'defaultValue', parseInt(this.value))">
                     </div>
                 </div>
             `;
@@ -285,17 +314,30 @@ class CommandEditorMixin {
             field.maxLength = 16;
             field.defaultValue = '';
             field.hasOfflineOption = false;
-            // Remove options if they exist
+            // Remove other field properties
             delete field.options;
+            delete field.min;
+            delete field.max;
+        } else if (type === 'number') {
+            // Initialize number field properties
+            field.min = 0;
+            field.max = 255;
+            field.defaultValue = 0;
+            // Remove other field properties
+            delete field.options;
+            delete field.maxLength;
+            delete field.hasOfflineOption;
         } else if (type === 'select') {
             // Initialize select field properties
             field.options = [
                 { value: '0', label: isZh ? '选项1' : 'Option 1' }
             ];
-            // Remove text field properties if they exist
+            // Remove other field properties
             delete field.maxLength;
             delete field.defaultValue;
             delete field.hasOfflineOption;
+            delete field.min;
+            delete field.max;
         }
 
         console.log(`Set field ${fieldIndex} type to ${type}:`, field);

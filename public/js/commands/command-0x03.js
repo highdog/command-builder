@@ -7,43 +7,186 @@ class Command03 extends BaseCommand {
         super(commandId);
     }
 
+    // Get default configuration
+    getDefaultConfig() {
+        return {
+            fields: [
+                {
+                    id: 'packetType',
+                    name: 'Packet Type',
+                    options: [
+                        { value: '0', label: 'COMMAND (get)' },
+                        { value: '2', label: 'RESPONSE (device reply)' }
+                    ]
+                },
+                {
+                    id: 'featureVersion',
+                    name: 'Feature Version',
+                    type: 'number',
+                    min: 0,
+                    max: 255,
+                    defaultValue: 0,
+                    showWhen: {
+                        fieldId: 'packetType',
+                        value: '2'
+                    }
+                }
+            ]
+        };
+    }
+
     render(container) {
+        console.log('Command03 render called with container:', container);
+        console.log('Current config:', this.config);
+
         const currentLang = i18nManager.getCurrentLanguage();
         const isZh = currentLang === 'zh';
 
-        const html = `
-            <div class="form-group">
-                <label for="field-packet-type-0x03">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
-                <select id="field-packet-type-0x03" class="payload-input">
-                    <option value="0">COMMAND (get)</option>
-                    <option value="2" selected>RESPONSE (device reply)</option>
-                </select>
-            </div>
-            <div id="response-options-0x03">
-                <div class="form-group">
-                    <label for="field-feature-version-0x03">${isZh ? '功能版本 (0-255):' : 'Feature Version (0-255):'}</label>
-                    <input type="number" id="field-feature-version-0x03" min="0" max="255" value="0" style="width: 90%;">
-                </div>
-            </div>
-        `;
+        // Safety check for config
+        if (!this.config || !this.config.fields || !Array.isArray(this.config.fields)) {
+            console.error('Invalid config in Command03 render, using defaults');
+            this.config = this.getDefaultConfig();
+        }
+
+        // Generate dynamic fields based on configuration
+        const fieldsHtml = this.config.fields.map(field => {
+            const fieldId = `field-${field.id}-0x03`;
+            const groupId = `field-group-${field.id}-0x03`;
+
+            let fieldHtml = '';
+
+            // Determine initial visibility for conditional fields
+            let initialStyle = '';
+            if (field.showWhen) {
+                // For conditional fields, start hidden and let setDefaultValues show them if needed
+                initialStyle = 'style="display: none;"';
+            }
+
+            if (field.type === 'number') {
+                // Number input field
+                fieldHtml = `
+                    <div class="form-group" id="${groupId}" ${initialStyle}>
+                        <label for="${fieldId}">${field.name} (${field.min}-${field.max}):</label>
+                        <input type="number" id="${fieldId}" class="payload-input"
+                               min="${field.min || 0}"
+                               max="${field.max || 255}"
+                               value="${field.defaultValue || 0}"
+                               style="width: 90%;">
+                    </div>
+                `;
+            } else {
+                // Select field
+                const optionsHtml = field.options.map(option =>
+                    `<option value="${option.value}">${option.label}</option>`
+                ).join('');
+
+                fieldHtml = `
+                    <div class="form-group" id="${groupId}" ${initialStyle}>
+                        <label for="${fieldId}">${field.name}:</label>
+                        <select id="${fieldId}" class="payload-input">
+                            ${optionsHtml}
+                        </select>
+                    </div>
+                `;
+            }
+
+            return fieldHtml;
+        }).join('');
+
+        const html = `<div class="dynamic-fields">
+                ${fieldsHtml}
+            </div>`;
+
+        console.log('Setting container innerHTML:', html);
         container.innerHTML = html;
+
+        // Use setTimeout to ensure DOM is fully rendered before setting defaults
+        setTimeout(() => {
+            this.setDefaultValues();
+        }, 0);
+
         this.attachListeners();
     }
 
+    setDefaultValues() {
+        // Set packet type to RESPONSE by default
+        const packetTypeField = document.getElementById('field-packetType-0x03');
+        if (packetTypeField) {
+            packetTypeField.value = '2';
+            // Trigger change event to show response options
+            packetTypeField.dispatchEvent(new Event('change'));
+        }
+
+        // Set initial visibility for conditional fields
+        this.updateFieldVisibility();
+    }
+
+    updateFieldVisibility() {
+        this.config.fields.forEach(field => {
+            if (field.showWhen) {
+                const triggerFieldId = `field-${field.showWhen.fieldId}-0x03`;
+                const targetGroupId = `field-group-${field.id}-0x03`;
+
+                const triggerElement = document.getElementById(triggerFieldId);
+                const targetGroup = document.getElementById(targetGroupId);
+
+                if (triggerElement && targetGroup) {
+                    // Check if condition is met and show/hide accordingly
+                    if (triggerElement.value === field.showWhen.value) {
+                        targetGroup.style.display = 'block';
+                    } else {
+                        targetGroup.style.display = 'none';
+                    }
+                }
+            }
+        });
+    }
+
     attachListeners() {
-        this.addListener('field-packet-type-0x03', 'change', (e) => {
-            document.getElementById('response-options-0x03').style.display = 
-                e.target.value === '2' ? 'block' : 'none';
+        // Add listeners for conditional field display
+        this.config.fields.forEach(field => {
+            if (field.showWhen) {
+                const triggerFieldId = `field-${field.showWhen.fieldId}-0x03`;
+                const targetGroupId = `field-group-${field.id}-0x03`;
+
+                const triggerElement = document.getElementById(triggerFieldId);
+                const targetGroup = document.getElementById(targetGroupId);
+
+                if (triggerElement && targetGroup) {
+                    triggerElement.addEventListener('change', (e) => {
+                        if (e.target.value === field.showWhen.value) {
+                            targetGroup.style.display = 'block';
+                        } else {
+                            targetGroup.style.display = 'none';
+                        }
+                    });
+                }
+            }
+        });
+
+        // Add listeners for all fields to trigger output generation
+        this.config.fields.forEach(field => {
+            const fieldId = `field-${field.id}-0x03`;
+            this.addListener(fieldId, 'change');
+            if (field.type === 'number') {
+                this.addListener(fieldId, 'input');
+            }
         });
     }
 
     getPayload() {
         if (this.getPacketType() === 0) return [];
-        return [parseInt(document.getElementById('field-feature-version-0x03').value) || 0];
+
+        const featureVersionElement = document.getElementById('field-featureVersion-0x03');
+        if (!featureVersionElement) return [];
+
+        const featureVersion = parseInt(featureVersionElement.value) || 0;
+        return [featureVersion];
     }
 
     getPacketType() {
-        return parseInt(document.getElementById('field-packet-type-0x03').value, 10);
+        const packetTypeElement = document.getElementById('field-packetType-0x03');
+        return packetTypeElement ? parseInt(packetTypeElement.value, 10) : 0;
     }
 }
 
