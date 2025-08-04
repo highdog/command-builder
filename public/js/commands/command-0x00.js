@@ -34,11 +34,13 @@ class Command00 extends BaseCommand {
                 console.log('Loaded saved config from server:', savedConfig);
                 this.config = savedConfig;
 
-                // Re-render if already rendered
+                // Re-render only if this command is currently active
                 const container = document.getElementById('payload-builder-container');
-                if (container && container.innerHTML.trim() !== '') {
-                    console.log('Re-rendering with loaded config');
+                if (container && container.innerHTML.trim() !== '' && window.currentCommand && window.currentCommand.hex_id === '0x00') {
+                    console.log('Re-rendering 0x00 with loaded config');
                     this.render(container);
+                } else {
+                    console.log('Not re-rendering 0x00 - either no content or different command active');
                 }
             } else if (response.status === 404) {
                 console.log('No saved config found, using defaults');
@@ -165,11 +167,7 @@ class Command00 extends BaseCommand {
                     <button type="button" class="button" onclick="window.currentCommandHandler.addOption('deviceType')">添加选项</button>
                 </div>
 
-                <div style="margin-top: 1rem;">
-                    <button type="button" class="button" onclick="window.currentCommandHandler.previewBuilder()">预览效果</button>
-                    <button type="button" class="button" onclick="window.currentCommandHandler.saveChanges()">保存修改</button>
-                    <button type="button" class="cancel-btn" onclick="window.currentCommandHandler.cancelEdit()">取消</button>
-                </div>
+
             </div>
         `;
 
@@ -201,35 +199,7 @@ class Command00 extends BaseCommand {
         }
     }
 
-    previewBuilder() {
-        const config = this.collectConfig();
-        const container = document.getElementById('payload-builder-container');
 
-        // Temporarily update config and re-render
-        const originalConfig = this.config;
-        this.config = config;
-
-        const previewHtml = `
-            <div style="border: 2px solid #007bff; padding: 1rem; border-radius: 4px; background: #f8f9ff;">
-                <h6 style="color: #007bff; margin-top: 0;">预览效果:</h6>
-                <div id="preview-content"></div>
-                <div style="margin-top: 1rem;">
-                    <button type="button" class="button" onclick="window.currentCommandHandler.backToEdit()">返回编辑</button>
-                </div>
-            </div>
-        `;
-
-        container.innerHTML = previewHtml;
-        this.render(document.getElementById('preview-content'));
-
-        // Restore original config
-        this.config = originalConfig;
-    }
-
-    backToEdit() {
-        const container = document.getElementById('payload-builder-container');
-        this.renderEditMode(container);
-    }
 
     collectConfig() {
         const packetTypeContainer = document.getElementById('packet-type-options');
@@ -305,6 +275,7 @@ class Command00 extends BaseCommand {
     }
 
     cancelEdit() {
+        console.log('Canceling edit mode');
         this.exitEditMode();
     }
 
@@ -312,14 +283,18 @@ class Command00 extends BaseCommand {
         // Reset the global edit mode flag
         window.builderEditMode = false;
 
+        // Restore original header
+        const builderHeader = document.querySelector('.payload-builder-header');
+        if (builderHeader) {
+            builderHeader.innerHTML = `
+                <button id="edit-builder-btn" class="edit-btn" style="display: inline-block;" onclick="toggleBuilderEditMode()">
+                    <span data-i18n="admin.editBuilder">Edit</span>
+                </button>
+            `;
+        }
+
         const container = document.getElementById('payload-builder-container');
         this.render(container);
-
-        // Update edit button text
-        const editBtn = document.getElementById('edit-builder-btn');
-        if (editBtn) {
-            editBtn.textContent = 'Edit';
-        }
     }
 
     showNotification(message, type = 'info') {

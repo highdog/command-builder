@@ -151,7 +151,7 @@ select:focus, input:focus, textarea:focus {
 }
 
 .edit-btn {
-    background: #28a745;
+    background: #007bff;
     color: white;
     border: none;
     padding: 0.25rem 0.5rem;
@@ -162,7 +162,7 @@ select:focus, input:focus, textarea:focus {
 }
 
 .edit-btn:hover {
-    background: #218838;
+    background: #0056b3;
 }
 
 .cancel-btn {

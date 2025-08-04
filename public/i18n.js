@@ -94,6 +94,7 @@ const i18n = {
         // 管理员功能
         admin: {
             editCommand: '编辑命令',
+            editBuilder: '编辑',
             cancelEdit: '取消编辑',
             saveChanges: '保存更改',
             cancel: '取消',
@@ -201,6 +202,7 @@ const i18n = {
         // Admin functions
         admin: {
             editCommand: 'Edit Command',
+            editBuilder: 'Edit',
             cancelEdit: 'Cancel Edit',
             saveChanges: 'Save Changes',
             cancel: 'Cancel',

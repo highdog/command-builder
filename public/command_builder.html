@@ -56,7 +56,6 @@
                 </div>
                 <div class="payload-builder-section">
                     <div class="payload-builder-header" style="display: none;">
-                        <h4>命令构建器</h4>
                         <button id="edit-builder-btn" class="edit-btn" style="display: none;" onclick="toggleBuilderEditMode()">
                             <span data-i18n="admin.editBuilder">Edit</span>
                         </button>
@@ -425,6 +424,7 @@
         const renderCommandSelect = () => {
             // 保存当前选择的值
             const currentValue = commandSelect.value;
+            console.log('renderCommandSelect - currentValue:', currentValue);
 
             const defaultText = i18nManager.t('main.selectCommand');
             commandSelect.innerHTML = `<option value="">${defaultText}</option>`;
@@ -442,8 +442,14 @@
             }
 
             // 恢复之前选择的值
-            if (currentValue) {
+            if (currentValue && currentValue !== '') {
+                console.log('Restoring previous selection:', currentValue);
                 commandSelect.value = currentValue;
+            } else {
+                console.log('No previous selection to restore, clearing content');
+                commandSelect.value = '';
+                // Clear content when no command is selected
+                clearAllContent();
             }
         };
 
@@ -519,7 +525,31 @@
             generateOutput();
         });
         commandSelect.addEventListener('change', (e) => {
-            fetchCommandDetails(e.target.value);
+            const selectedValue = e.target.value;
+            console.log('Command select changed to:', selectedValue);
+
+            // Only fetch details if a valid command is selected
+            if (selectedValue && selectedValue !== '') {
+                fetchCommandDetails(selectedValue);
+            } else {
+                // Clear the display when no command is selected
+                currentCommand = null;
+                const docContainer = document.getElementById('doc-container');
+                const payloadBuilderContainer = document.getElementById('payload-builder-container');
+                const builderHeader = document.querySelector('.payload-builder-header');
+
+                if (docContainer) {
+                    docContainer.innerHTML = `<p>${i18nManager.t('main.selectCommandDoc')}</p>`;
+                }
+                if (payloadBuilderContainer) {
+                    payloadBuilderContainer.innerHTML = '';
+                }
+                if (builderHeader) {
+                    builderHeader.style.display = 'none';
+                }
+
+                generateOutput();
+            }
         });
         payloadBuilderContainer.addEventListener('change', generateOutput);
         payloadBuilderContainer.addEventListener('keyup', generateOutput);
@@ -570,12 +600,44 @@
         // --- INITIALIZATION ---
         const init = async () => {
             if (await checkSession()) {
+                // Clear any existing content first
+                clearAllContent();
+
                 await initializeCommands();
                 fetchCommands();
 
                 // Apply initial language
                 applyLanguage(currentLanguage);
             }
+        };
+
+        // Function to clear all content areas
+        const clearAllContent = () => {
+            console.log('Clearing all content areas');
+
+            // Clear current command
+            currentCommand = null;
+
+            // Clear documentation area
+            const docContainer = document.getElementById('doc-container');
+            if (docContainer) {
+                docContainer.innerHTML = `<p>${i18nManager.t('main.selectCommandDoc')}</p>`;
+            }
+
+            // Clear payload builder area
+            const payloadBuilderContainer = document.getElementById('payload-builder-container');
+            if (payloadBuilderContainer) {
+                payloadBuilderContainer.innerHTML = '';
+            }
+
+            // Hide builder header
+            const builderHeader = document.querySelector('.payload-builder-header');
+            if (builderHeader) {
+                builderHeader.style.display = 'none';
+            }
+
+            // Clear output
+            generateOutput();
         };
 
         // Language toggle functionality
@@ -886,20 +948,37 @@
 
         const editBtn = document.getElementById('edit-builder-btn');
         const container = document.getElementById('payload-builder-container');
+        const builderHeader = document.querySelector('.payload-builder-header');
 
         if (!window.builderEditMode) {
             // Entering edit mode
             window.builderEditMode = true;
-            editBtn.textContent = 'Save';
+
+            // Update header with Save and Cancel buttons
+            if (builderHeader) {
+                builderHeader.innerHTML = `
+                    <div>
+                        <button id="save-builder-btn" class="button" onclick="window.saveBuilderChanges()">Save</button>
+                        <button id="cancel-builder-btn" class="cancel-btn" onclick="window.cancelBuilderEdit()" style="margin-left: 0.5rem;">Cancel</button>
+                    </div>
+                `;
+            }
+
             if (window.currentCommandHandler.renderEditMode) {
                 window.currentCommandHandler.renderEditMode(container);
             }
-        } else {
-            // Saving changes (exitEditMode will be called by saveChanges)
-            if (window.currentCommandHandler.saveChanges) {
-                window.currentCommandHandler.saveChanges();
-            }
-            // Note: builderEditMode will be reset by exitEditMode in saveChanges
+        }
+    }
+
+    window.saveBuilderChanges = function() {
+        if (window.currentCommandHandler && window.currentCommandHandler.saveChanges) {
+            window.currentCommandHandler.saveChanges();
+        }
+    }
+
+    window.cancelBuilderEdit = function() {
+        if (window.currentCommandHandler && window.currentCommandHandler.cancelEdit) {
+            window.currentCommandHandler.cancelEdit();
         }
     }
 
