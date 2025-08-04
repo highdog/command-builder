@@ -69,3 +69,9 @@ db.sqlite
 # Temporary files
 tmp/
 temp/
+db.sqlite
+builder-configs.json
+*.log
+db.sqlite
+builder-configs.json
+*.log
