@@ -1,61 +1,182 @@
 /**
  * Command 0x37 - Get ANC On Mode
- * 获取ANC开启模式（自适应/非自适应）
+ * Handles ANC on mode queries and responses (adaptive/non-adaptive)
  */
 class Command37 extends BaseCommand {
     constructor(commandId) {
         super(commandId);
-        
-        // ANC模式定义
-        this.ancModes = {
-            'ADAPTIVE': 0x00,
-            'NON_ADAPTIVE': 0x01
+    }
+
+    // Get default configuration
+    getDefaultConfig() {
+        return {
+            fields: [
+                {
+                    id: 'packetType',
+                    name: 'Packet Type',
+                    options: [
+                        { value: '0', label: 'COMMAND (get)' },
+                        { value: '2', label: 'RESPONSE (device reply)' }
+                    ]
+                },
+                {
+                    id: 'ancMode',
+                    name: 'ANC Mode',
+                    options: [
+                        { value: '0x00', label: 'ADAPTIVE' },
+                        { value: '0x01', label: 'NON_ADAPTIVE' }
+                    ],
+                    showWhen: {
+                        fieldId: 'packetType',
+                        value: '2'
+                    }
+                }
+            ]
         };
     }
 
     render(container) {
+        console.log('Command37 render called with container:', container);
+        console.log('Current config:', this.config);
+
         const currentLang = i18nManager.getCurrentLanguage();
         const isZh = currentLang === 'zh';
 
-        const html = `
-            <div class="form-group">
-                <label for="field-packet-type-0x37">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
-                <select id="field-packet-type-0x37" class="payload-input">
-                    <option value="0">COMMAND (get)</option>
-                    <option value="2" selected>RESPONSE (device reply)</option>
-                </select>
-            </div>
-            <div id="response-options-0x37">
-                <div class="form-group">
-                    <label for="field-anc-mode-0x37">${isZh ? 'ANC开启模式:' : 'ANC Mode:'}</label>
-                    <select id="field-anc-mode-0x37" class="payload-input">
-                        <option value="0x00">${isZh ? 'ADAPTIVE (自适应)' : 'ADAPTIVE'}</option>
-                        <option value="0x01">${isZh ? 'NON_ADAPTIVE (非自适应)' : 'NON_ADAPTIVE'}</option>
+        // Safety check for config
+        if (!this.config || !this.config.fields || !Array.isArray(this.config.fields)) {
+            console.error('Invalid config in Command37 render, using defaults');
+            this.config = this.getDefaultConfig();
+        }
+
+        // Generate dynamic fields based on configuration
+        const fieldsHtml = this.config.fields.map(field => {
+            const fieldId = `field-${field.id}-0x37`;
+            const groupId = `field-group-${field.id}-0x37`;
+
+            // Determine initial visibility for conditional fields
+            let initialStyle = '';
+            if (field.showWhen) {
+                initialStyle = 'style="display: none;"';
+            }
+
+            let fieldName = field.name;
+            if (isZh) {
+                if (fieldName === 'ANC Mode') fieldName = 'ANC开启模式';
+            }
+
+            // Generate options HTML with localized labels
+            const optionsHtml = field.options.map(option => {
+                let label = option.label;
+                // Localize common labels
+                if (isZh) {
+                    if (label === 'ADAPTIVE') label = 'ADAPTIVE (自适应)';
+                    else if (label === 'NON_ADAPTIVE') label = 'NON_ADAPTIVE (非自适应)';
+                }
+                return `<option value="${option.value}">${label}</option>`;
+            }).join('');
+
+            const fieldHtml = `
+                <div class="form-group" id="${groupId}" ${initialStyle}>
+                    <label for="${fieldId}">${fieldName}:</label>
+                    <select id="${fieldId}" class="payload-input">
+                        ${optionsHtml}
                     </select>
                 </div>
-            </div>
-        `;
+            `;
+
+            return fieldHtml;
+        }).join('');
+
+        const html = `<div class="dynamic-fields">
+                ${fieldsHtml}
+            </div>`;
+
+        console.log('Setting container innerHTML:', html);
         container.innerHTML = html;
+
+        // Use setTimeout to ensure DOM is fully rendered before setting defaults
+        setTimeout(() => {
+            this.setDefaultValues();
+        }, 0);
+
         this.attachListeners();
     }
 
+    setDefaultValues() {
+        // Set packet type to RESPONSE by default
+        const packetTypeField = document.getElementById('field-packetType-0x37');
+        if (packetTypeField) {
+            packetTypeField.value = '2';
+            packetTypeField.dispatchEvent(new Event('change'));
+        }
+
+        // Set initial visibility for conditional fields
+        this.updateFieldVisibility();
+    }
+
+    updateFieldVisibility() {
+        this.config.fields.forEach(field => {
+            if (field.showWhen) {
+                const triggerFieldId = `field-${field.showWhen.fieldId}-0x37`;
+                const targetGroupId = `field-group-${field.id}-0x37`;
+
+                const triggerElement = document.getElementById(triggerFieldId);
+                const targetGroup = document.getElementById(targetGroupId);
+
+                if (triggerElement && targetGroup) {
+                    if (triggerElement.value === field.showWhen.value) {
+                        targetGroup.style.display = 'block';
+                    } else {
+                        targetGroup.style.display = 'none';
+                    }
+                }
+            }
+        });
+    }
+
     attachListeners() {
-        this.addListener('field-packet-type-0x37', 'change', (e) => {
-            document.getElementById('response-options-0x37').style.display = 
-                e.target.value === '2' ? 'block' : 'none';
+        // Add listeners for conditional field display
+        this.config.fields.forEach(field => {
+            if (field.showWhen) {
+                const triggerFieldId = `field-${field.showWhen.fieldId}-0x37`;
+                const targetGroupId = `field-group-${field.id}-0x37`;
+
+                const triggerElement = document.getElementById(triggerFieldId);
+                const targetGroup = document.getElementById(targetGroupId);
+
+                if (triggerElement && targetGroup) {
+                    triggerElement.addEventListener('change', (e) => {
+                        if (e.target.value === field.showWhen.value) {
+                            targetGroup.style.display = 'block';
+                        } else {
+                            targetGroup.style.display = 'none';
+                        }
+                    });
+                }
+            }
+        });
+
+        // Add listeners for all fields to trigger output generation
+        this.config.fields.forEach(field => {
+            const fieldId = `field-${field.id}-0x37`;
+            this.addListener(fieldId, 'change');
         });
     }
 
     getPayload() {
-        if (this.getPacketType() === 0) return []; // COMMAND - 空载荷
-        
-        // RESPONSE - 返回ANC模式
-        const ancMode = parseInt(document.getElementById('field-anc-mode-0x37').value, 16);
+        if (this.getPacketType() === 0) return []; // COMMAND - empty payload
+
+        // RESPONSE - return ANC mode
+        const ancModeElement = document.getElementById('field-ancMode-0x37');
+        if (!ancModeElement) return [];
+
+        const ancMode = parseInt(ancModeElement.value, 16);
         return [ancMode];
     }
 
     getPacketType() {
-        return parseInt(document.getElementById('field-packet-type-0x37').value, 10);
+        const packetTypeElement = document.getElementById('field-packetType-0x37');
+        return packetTypeElement ? parseInt(packetTypeElement.value, 10) : 0;
     }
 }
 
