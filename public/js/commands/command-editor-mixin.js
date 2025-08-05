@@ -134,6 +134,9 @@ class CommandEditorMixin {
                         <button type="button" class="button" onclick="window.currentCommandHandler.setFieldType(${fieldIndex}, 'mac')">
                             ${isZh ? 'MAC地址字段 (MAC Address)' : 'MAC Address Field'}
                         </button>
+                        <button type="button" class="button" onclick="window.currentCommandHandler.setFieldType(${fieldIndex}, 'info')">
+                            ${isZh ? '信息字段 (Info)' : 'Info Field'}
+                        </button>
                     </div>
                     <p style="color: #6c757d; font-size: 0.9rem; margin-top: 0.5rem;">
                         ${isZh ? '选择字段类型后可以配置具体选项' : 'Select a field type to configure options'}
@@ -283,6 +286,27 @@ class CommandEditorMixin {
                         <p style="color: #6c757d; font-size: 0.9rem;">
                             ${isZh ? 'MAC地址格式: AA:BB:CC:DD:EE:FF (十六进制，用冒号分隔)' : 'MAC Address format: AA:BB:CC:DD:EE:FF (hexadecimal, colon-separated)'}
                         </p>
+                    </div>
+                </div>
+            `;
+        } else if (field.type === 'info') {
+            // Info field configuration
+            fieldSpecificContent = `
+                <div class="info-field-config">
+                    <h5>${isZh ? '信息字段配置' : 'Info Field Configuration'}</h5>
+
+                    <div class="config-item">
+                        <label>${isZh ? '英文内容:' : 'English Content:'}</label>
+                        <textarea rows="3"
+                                  onchange="window.currentCommandHandler.updateInfoFieldContent(${fieldIndex}, 'en', this.value)"
+                                  placeholder="${isZh ? '输入英文描述...' : 'Enter English description...'}">${field.content?.en || ''}</textarea>
+                    </div>
+
+                    <div class="config-item">
+                        <label>${isZh ? '中文内容:' : 'Chinese Content:'}</label>
+                        <textarea rows="3"
+                                  onchange="window.currentCommandHandler.updateInfoFieldContent(${fieldIndex}, 'zh', this.value)"
+                                  placeholder="${isZh ? '输入中文描述...' : 'Enter Chinese description...'}">${field.content?.zh || ''}</textarea>
                     </div>
                 </div>
             `;
@@ -511,6 +535,21 @@ class CommandEditorMixin {
     }
 
     /**
+     * Update info field content
+     * @param {number} fieldIndex - Index of field to update
+     * @param {string} language - Language ('en' or 'zh')
+     * @param {string} content - New content
+     */
+    updateInfoFieldContent(fieldIndex, language, content) {
+        const field = this.config.fields[fieldIndex];
+        if (field && field.type === 'info') {
+            if (!field.content) field.content = {};
+            field.content[language] = content;
+            console.log(`Updated info field ${fieldIndex} ${language} content to:`, content);
+        }
+    }
+
+    /**
      * Set field type and initialize appropriate properties
      * @param {number} fieldIndex - Index of field to update
      * @param {string} type - Field type ('select' or 'text')
@@ -604,6 +643,24 @@ class CommandEditorMixin {
             delete field.hasOfflineOption;
             delete field.itemTemplate;
             delete field.defaultItems;
+        } else if (type === 'info') {
+            // Initialize info field properties
+            field.content = {
+                en: isZh ? 'Information content in English' : 'Information content in English',
+                zh: isZh ? '中文信息内容' : '中文信息内容'
+            };
+            // Remove other field properties
+            delete field.options;
+            delete field.maxLength;
+            delete field.min;
+            delete field.max;
+            delete field.bitPosition;
+            delete field.invertLogic;
+            delete field.offlineValue;
+            delete field.hasOfflineOption;
+            delete field.itemTemplate;
+            delete field.defaultItems;
+            delete field.defaultValue;
         } else if (type === 'select') {
             // Initialize select field properties
             field.options = [

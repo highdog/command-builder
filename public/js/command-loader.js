@@ -155,7 +155,7 @@ class CommandLoader {
             const methodsToEnsure = [
                 'canEdit', 'renderEditMode', 'addOption', 'removeOption', 'addField', 'removeField',
                 'selectField', 'editFieldName', 'updateFieldName', 'updateFieldProperty', 'updateOfflineValue', 'setFieldType', 'updateOption', 'updateCondition', 'refreshModal',
-                'addDynamicGroupItem', 'removeDynamicGroupItem', 'updateDynamicGroupItem',
+                'addDynamicGroupItem', 'removeDynamicGroupItem', 'updateDynamicGroupItem', 'updateInfoFieldContent',
                 'closeEditModal', 'saveModalChanges', 'showEditModal', 'renderFieldList', 'renderConditionEditor',
                 'previewBuilder', 'saveChanges', 'cancelEdit'
             ];

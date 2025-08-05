@@ -842,8 +842,37 @@ select:focus, input:focus, textarea:focus {
 .checkbox-field-config,
 .version-field-config,
 .dynamic-group-config,
-.mac-field-config {
+.mac-field-config,
+.info-field-config {
     margin-bottom: 1rem;
+}
+
+/* Info field styles */
+.info-field {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 1rem;
+    margin: 0.5rem 0;
+}
+
+.info-field h5 {
+    margin: 0 0 0.5rem 0;
+    color: #495057;
+}
+
+.info-field p {
+    margin: 0;
+}
+
+.info-field-config textarea {
+    width: 100%;
+    min-height: 60px;
+    padding: 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-family: inherit;
+    resize: vertical;
 }
 
 /* Dynamic group field styles */
