@@ -1,53 +1,117 @@
 /**
  * Command 0x68 - Get LED Brightness
- * 获取LED亮度
+ * Handles LED brightness queries and responses
  */
 class Command68 extends BaseCommand {
     constructor(commandId) {
         super(commandId);
     }
 
+    getDefaultConfig() {
+        return {
+            fields: [
+                {
+                    id: 'packetType',
+                    name: 'Packet Type',
+                    options: [
+                        { value: '0', label: 'COMMAND (get brightness)' },
+                        { value: '2', label: 'RESPONSE (device reply)' }
+                    ]
+                },
+                {
+                    id: 'ledBrightness',
+                    name: 'LED Brightness',
+                    type: 'number',
+                    min: 0,
+                    max: 100,
+                    defaultValue: 50,
+                    showWhen: { fieldId: 'packetType', value: '2' }
+                }
+            ]
+        };
+    }
+
     render(container) {
+        if (!this.config) this.config = this.getDefaultConfig();
         const currentLang = i18nManager.getCurrentLanguage();
         const isZh = currentLang === 'zh';
-        
-        const html = `
-            <div class="form-group">
-                <label for="field-packet-type-0x68">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
-                <select id="field-packet-type-0x68" class="payload-input">
-                    <option value="0">COMMAND (get)</option>
-                    <option value="2" selected>RESPONSE (device reply)</option>
-                </select>
-            </div>
-            <div id="response-options-0x68">
-                <div class="form-group">
-                    <label for="field-value-0x68">${isZh ? '值:' : 'Value:'}</label>
-                    <input type="number" id="field-value-0x68" min="0" max="255" value="0" style="width: 80px;">
-                    <small>0-255</small>
-                </div>
-            </div>
-        `;
-        container.innerHTML = html;
+
+        const fieldsHtml = this.config.fields.map(field => {
+            const fieldId = `field-${field.id}-0x68`;
+            const groupId = `field-group-${field.id}-0x68`;
+            let initialStyle = field.showWhen ? 'style="display: none;"' : '';
+            let fieldName = field.name;
+
+            if (isZh && fieldName === 'LED Brightness') fieldName = 'LED亮度';
+
+            if (field.type === 'number') {
+                return `
+                    <div class="form-group" id="${groupId}" ${initialStyle}>
+                        <label for="${fieldId}">${fieldName} (${field.min}-${field.max}):</label>
+                        <input type="number" id="${fieldId}" class="payload-input"
+                               min="${field.min}" max="${field.max}"
+                               value="${field.defaultValue}" style="width: 80px;">
+                        <span>%</span>
+                    </div>
+                `;
+            } else {
+                const optionsHtml = field.options.map(option =>
+                    `<option value="${option.value}">${option.label}</option>`
+                ).join('');
+                return `
+                    <div class="form-group" id="${groupId}" ${initialStyle}>
+                        <label for="${fieldId}">${fieldName}:</label>
+                        <select id="${fieldId}" class="payload-input">${optionsHtml}</select>
+                    </div>
+                `;
+            }
+        }).join('');
+
+        container.innerHTML = `<div class="dynamic-fields">${fieldsHtml}</div>`;
+        setTimeout(() => {
+            const packetTypeField = document.getElementById('field-packetType-0x68');
+            if (packetTypeField) {
+                packetTypeField.value = '2';
+                packetTypeField.dispatchEvent(new Event('change'));
+            }
+            this.updateFieldVisibility();
+        }, 0);
         this.attachListeners();
     }
 
+    updateFieldVisibility() {
+        this.config.fields.forEach(field => {
+            if (field.showWhen) {
+                const triggerElement = document.getElementById(`field-${field.showWhen.fieldId}-0x68`);
+                const targetGroup = document.getElementById(`field-group-${field.id}-0x68`);
+                if (triggerElement && targetGroup) {
+                    targetGroup.style.display = triggerElement.value === field.showWhen.value ? 'block' : 'none';
+                }
+            }
+        });
+    }
+
     attachListeners() {
-        this.addListener('field-packet-type-0x68', 'change', (e) => {
-            document.getElementById('response-options-0x68').style.display = 
-                e.target.value === '2' ? 'block' : 'none';
+        this.config.fields.forEach(field => {
+            if (field.showWhen) {
+                const triggerElement = document.getElementById(`field-${field.showWhen.fieldId}-0x68`);
+                if (triggerElement) {
+                    triggerElement.addEventListener('change', () => this.updateFieldVisibility());
+                }
+            }
+            this.addListener(`field-${field.id}-0x68`, field.type === 'number' ? 'input' : 'change');
         });
     }
 
     getPayload() {
-        if (this.getPacketType() === 0) return []; // COMMAND - 空载荷
-        
-        // RESPONSE - 返回值
-        const value = parseInt(document.getElementById('field-value-0x68').value) || 0;
-        return [value];
+        if (this.getPacketType() === 0) return [];
+        const brightnessElement = document.getElementById('field-ledBrightness-0x68');
+        return brightnessElement ? [parseInt(brightnessElement.value) || 0] : [];
     }
 
     getPacketType() {
-        return parseInt(document.getElementById('field-packet-type-0x68').value, 10);
+        const element = document.getElementById('field-packetType-0x68');
+        return element ? parseInt(element.value, 10) : 0;
     }
 }
 
