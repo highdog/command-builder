@@ -1,68 +1,190 @@
 /**
- * Command 0x59 - Button Mapping Configuration
- * Handles button mapping configuration for earbuds and headsets
+ * Command 0x59 - Get Custom Keys
+ * Handles custom key mapping queries and responses
  */
 class Command59 extends BaseCommand {
     constructor(commandId) {
         super(commandId);
-        
-        // Constants for v2 payload
+
+        // Constants for button mapping
         this.locations = {
             earbuds: { 'LEFT': 0, 'RIGHT': 1 },
             headset: { 'MFB': 0, 'Volume+': 1, 'Volume-': 2 }
         };
-        
-        this.triggers = { 
-            'SINGLE_TAP': 0, 
-            'DOUBLE_TAP': 1, 
-            'TRIPLE_TAP': 2, 
-            'LONG_PRESS': 3, 
-            'SINGLE_THEN_LONG_PRESS': 4, 
-            'DOUBLE_THEN_LONG_PRESS': 5, 
-            'FOUR_TAP': 6 
+
+        this.triggers = {
+            'SINGLE_TAP': 0,
+            'DOUBLE_TAP': 1,
+            'TRIPLE_TAP': 2,
+            'LONG_PRESS': 3,
+            'SINGLE_THEN_LONG_PRESS': 4,
+            'DOUBLE_THEN_LONG_PRESS': 5,
+            'FOUR_TAP': 6
         };
-        
-        this.actions = { 
-            'NONE': 0, 
-            'PLAY_PAUSE': 1, 
-            'NEXT_SONG': 2, 
-            'PREVIOUS_SONG': 3, 
-            'VOICE_ASSISTANT': 4, 
-            'VOLUME_UP': 5, 
-            'VOLUME_DOWN': 6, 
-            'SWITCH_ANC_MODE': 7, 
-            'SWITCH_TRANSPARENCY_MODE': 8, 
-            'SWITCH_GAMING_MODE': 9 
+
+        this.actions = {
+            'NONE': 0,
+            'PLAY_PAUSE': 1,
+            'NEXT_SONG': 2,
+            'PREVIOUS_SONG': 3,
+            'VOICE_ASSISTANT': 4,
+            'VOLUME_UP': 5,
+            'VOLUME_DOWN': 6,
+            'SWITCH_ANC_MODE': 7,
+            'SWITCH_TRANSPARENCY_MODE': 8,
+            'SWITCH_GAMING_MODE': 9
+        };
+    }
+
+    // Get default configuration
+    getDefaultConfig() {
+        return {
+            fields: [
+                {
+                    id: 'packetType',
+                    name: 'Packet Type',
+                    options: [
+                        { value: '0', label: 'COMMAND (get keys)' },
+                        { value: '2', label: 'RESPONSE (device reply)' }
+                    ]
+                },
+                {
+                    id: 'productType',
+                    name: 'Product Type',
+                    options: [
+                        { value: 'earbuds', label: 'Earbuds' },
+                        { value: 'headset', label: 'Headset' }
+                    ],
+                    showWhen: {
+                        fieldId: 'packetType',
+                        value: '2'
+                    }
+                }
+            ]
         };
     }
 
     render(container) {
+        console.log('Command59 render called with container:', container);
+        console.log('Current config:', this.config);
+
         const currentLang = i18nManager.getCurrentLanguage();
         const isZh = currentLang === 'zh';
 
-        const html = `
-            <div class="form-group">
-                <label for="field-packet-type-0x59">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
-                <select id="field-packet-type-0x59" class="payload-input">
-                    <option value="0">COMMAND (get)</option>
-                    <option value="2" selected>RESPONSE</option>
-                </select>
-            </div>
-            <div id="response-options-0x59">
-                <div class="form-group">
-                    <label for="field-product-type-0x59">${isZh ? '产品类型:' : 'Product Type:'}</label>
-                    <select id="field-product-type-0x59" class="payload-input">
-                        <option value="earbuds">${isZh ? '耳机' : 'Earbuds'}</option>
-                        <option value="headset">${isZh ? '头戴式耳机' : 'Headset'}</option>
+        // Safety check for config
+        if (!this.config || !this.config.fields || !Array.isArray(this.config.fields)) {
+            console.error('Invalid config in Command59 render, using defaults');
+            this.config = this.getDefaultConfig();
+        }
+
+        // Generate basic fields
+        const basicFieldsHtml = this.config.fields.map(field => {
+            const fieldId = `field-${field.id}-0x59`;
+            const groupId = `field-group-${field.id}-0x59`;
+
+            // Determine initial visibility for conditional fields
+            let initialStyle = '';
+            if (field.showWhen) {
+                initialStyle = 'style="display: none;"';
+            }
+
+            let fieldName = field.name;
+            if (isZh) {
+                if (fieldName === 'Product Type') fieldName = '产品类型';
+            }
+
+            // Generate options HTML with localized labels
+            const optionsHtml = field.options.map(option => {
+                let label = option.label;
+                if (isZh) {
+                    if (label === 'Earbuds') label = '耳机';
+                    else if (label === 'Headset') label = '头戴式耳机';
+                }
+                return `<option value="${option.value}">${label}</option>`;
+            }).join('');
+
+            return `
+                <div class="form-group" id="${groupId}" ${initialStyle}>
+                    <label for="${fieldId}">${fieldName}:</label>
+                    <select id="${fieldId}" class="payload-input">
+                        ${optionsHtml}
                     </select>
                 </div>
-                <div id="mappings-container-0x59"></div>
-                <button type="button" id="add-mapping-btn-0x59" class="button" style="width: 100%; margin-top: 1rem;">${isZh ? '+ 添加按键映射' : '+ Add Button Mapping'}</button>
-            </div>
+            `;
+        }).join('');
+
+        // Custom button mapping container (keep original complex logic)
+        const buttonMappingHtml = `
+            <div id="mappings-container-0x59" style="display: none;"></div>
+            <button type="button" id="add-mapping-btn-0x59" class="button" style="width: 100%; margin-top: 1rem; display: none;">${isZh ? '+ 添加按键映射' : '+ Add Button Mapping'}</button>
         `;
+
+        const html = `<div class="dynamic-fields">
+                ${basicFieldsHtml}
+                ${buttonMappingHtml}
+            </div>`;
+
+        console.log('Setting container innerHTML:', html);
         container.innerHTML = html;
+
+        // Use setTimeout to ensure DOM is fully rendered before setting defaults
+        setTimeout(() => {
+            this.setDefaultValues();
+        }, 0);
+
         this.attachListeners();
-        this.addMappingRow(); // Add one row by default
+    }
+
+    setDefaultValues() {
+        // Set packet type to RESPONSE by default
+        const packetTypeField = document.getElementById('field-packetType-0x59');
+        if (packetTypeField) {
+            packetTypeField.value = '2';
+            packetTypeField.dispatchEvent(new Event('change'));
+        }
+
+        // Set initial visibility for conditional fields
+        this.updateFieldVisibility();
+
+        // Add one mapping row by default when in response mode
+        setTimeout(() => {
+            this.addMappingRow();
+        }, 100);
+    }
+
+    updateFieldVisibility() {
+        this.config.fields.forEach(field => {
+            if (field.showWhen) {
+                const triggerFieldId = `field-${field.showWhen.fieldId}-0x59`;
+                const targetGroupId = `field-group-${field.id}-0x59`;
+
+                const triggerElement = document.getElementById(triggerFieldId);
+                const targetGroup = document.getElementById(targetGroupId);
+
+                if (triggerElement && targetGroup) {
+                    if (triggerElement.value === field.showWhen.value) {
+                        targetGroup.style.display = 'block';
+                    } else {
+                        targetGroup.style.display = 'none';
+                    }
+                }
+            }
+        });
+
+        // Show/hide button mapping container based on packet type
+        const packetTypeElement = document.getElementById('field-packetType-0x59');
+        const mappingsContainer = document.getElementById('mappings-container-0x59');
+        const addMappingBtn = document.getElementById('add-mapping-btn-0x59');
+
+        if (packetTypeElement && mappingsContainer && addMappingBtn) {
+            if (packetTypeElement.value === '2') {
+                mappingsContainer.style.display = 'block';
+                addMappingBtn.style.display = 'block';
+            } else {
+                mappingsContainer.style.display = 'none';
+                addMappingBtn.style.display = 'none';
+            }
+        }
     }
 
     addMappingRow(location = 0, trigger = 0, action = 0) {
@@ -70,7 +192,11 @@ class Command59 extends BaseCommand {
         const isZh = currentLang === 'zh';
 
         const container = document.getElementById('mappings-container-0x59');
-        const productType = document.getElementById('field-product-type-0x59').value;
+        const productTypeElement = document.getElementById('field-productType-0x59');
+
+        if (!container || !productTypeElement) return;
+
+        const productType = productTypeElement.value;
         const locationOptions = this.locations[productType];
 
         const fieldset = document.createElement('fieldset');
@@ -96,26 +222,66 @@ class Command59 extends BaseCommand {
     }
 
     attachListeners() {
-        this.addListener('field-packet-type-0x59', 'change', (e) => {
-            document.getElementById('response-options-0x59').style.display = 
-                e.target.value !== '0' ? 'block' : 'none';
-        });
+        // Add listeners for conditional field display
+        this.config.fields.forEach(field => {
+            if (field.showWhen) {
+                const triggerFieldId = `field-${field.showWhen.fieldId}-0x59`;
+                const targetGroupId = `field-group-${field.id}-0x59`;
 
-        document.getElementById('add-mapping-btn-0x59').addEventListener('click', () => {
-            this.addMappingRow();
-        });
-        
-        document.getElementById('mappings-container-0x59').addEventListener('click', (e) => {
-            if (e.target && e.target.classList.contains('remove-mapping-btn')) {
-                e.target.closest('.mapping-row').remove();
-                if (typeof generateOutput === 'function') generateOutput();
+                const triggerElement = document.getElementById(triggerFieldId);
+                const targetGroup = document.getElementById(targetGroupId);
+
+                if (triggerElement && targetGroup) {
+                    triggerElement.addEventListener('change', (e) => {
+                        if (e.target.value === field.showWhen.value) {
+                            targetGroup.style.display = 'block';
+                        } else {
+                            targetGroup.style.display = 'none';
+                        }
+
+                        // Update button mapping visibility
+                        this.updateFieldVisibility();
+                    });
+                }
             }
         });
-        
-        this.addListener('field-product-type-0x59', 'change', () => {
-            document.getElementById('mappings-container-0x59').innerHTML = '';
-            this.addMappingRow();
+
+        // Add listeners for all fields to trigger output generation
+        this.config.fields.forEach(field => {
+            const fieldId = `field-${field.id}-0x59`;
+            this.addListener(fieldId, 'change');
         });
+
+        // Add listener for add mapping button
+        const addMappingBtn = document.getElementById('add-mapping-btn-0x59');
+        if (addMappingBtn) {
+            addMappingBtn.addEventListener('click', () => {
+                this.addMappingRow();
+            });
+        }
+
+        // Add listener for remove mapping buttons
+        const mappingsContainer = document.getElementById('mappings-container-0x59');
+        if (mappingsContainer) {
+            mappingsContainer.addEventListener('click', (e) => {
+                if (e.target && e.target.classList.contains('remove-mapping-btn')) {
+                    e.target.closest('.mapping-row').remove();
+                    if (typeof generateOutput === 'function') generateOutput();
+                }
+            });
+        }
+
+        // Add listener for product type change to update mappings
+        const productTypeField = document.getElementById('field-productType-0x59');
+        if (productTypeField) {
+            productTypeField.addEventListener('change', () => {
+                const mappingsContainer = document.getElementById('mappings-container-0x59');
+                if (mappingsContainer) {
+                    mappingsContainer.innerHTML = '';
+                    this.addMappingRow();
+                }
+            });
+        }
     }
 
     getPayload() {
@@ -139,7 +305,8 @@ class Command59 extends BaseCommand {
     }
 
     getPacketType() {
-        return parseInt(document.getElementById('field-packet-type-0x59').value, 10);
+        const packetTypeElement = document.getElementById('field-packetType-0x59');
+        return packetTypeElement ? parseInt(packetTypeElement.value, 10) : 0;
     }
 }
 

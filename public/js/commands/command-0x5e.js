@@ -1,53 +1,115 @@
 /**
- * Command 0x5e - Get Prompt Sound State
- * 获取提示音状态
+ * Command 0x5E - Get Prompt Sound State
+ * Handles prompt sound state queries and responses
  */
 class Command5E extends BaseCommand {
     constructor(commandId) {
         super(commandId);
     }
 
+    getDefaultConfig() {
+        return {
+            fields: [
+                {
+                    id: 'packetType',
+                    name: 'Packet Type',
+                    options: [
+                        { value: '0', label: 'COMMAND (get state)' },
+                        { value: '2', label: 'RESPONSE (device reply)' }
+                    ]
+                },
+                {
+                    id: 'promptSoundEnabled',
+                    name: 'Prompt Sound Enabled',
+                    type: 'checkbox',
+                    defaultValue: true,
+                    showWhen: { fieldId: 'packetType', value: '2' }
+                }
+            ]
+        };
+    }
+
     render(container) {
+        if (!this.config) this.config = this.getDefaultConfig();
         const currentLang = i18nManager.getCurrentLanguage();
         const isZh = currentLang === 'zh';
 
-        const html = `
-            <div class="form-group">
-                <label for="field-packet-type-0x5e">${isZh ? '数据包类型:' : 'Packet Type:'}</label>
-                <select id="field-packet-type-0x5e" class="payload-input">
-                    <option value="0">COMMAND (get)</option>
-                    <option value="2" selected>RESPONSE (device reply)</option>
-                </select>
-            </div>
-            <div id="response-options-0x5e">
-                <div class="form-group">
-                    <label for="field-value-0x5e">${isZh ? '值:' : 'Value:'}</label>
-                    <input type="number" id="field-value-0x5e" min="0" max="255" value="0" style="width: 80px;">
-                    <small>0-255</small>
-                </div>
-            </div>
-        `;
-        container.innerHTML = html;
+        const fieldsHtml = this.config.fields.map(field => {
+            const fieldId = `field-${field.id}-0x5E`;
+            const groupId = `field-group-${field.id}-0x5E`;
+            let initialStyle = field.showWhen ? 'style="display: none;"' : '';
+            let fieldName = field.name;
+
+            if (isZh && fieldName === 'Prompt Sound Enabled') fieldName = '提示音启用';
+
+            if (field.type === 'checkbox') {
+                return `
+                    <div class="form-group" id="${groupId}" ${initialStyle}>
+                        <label>
+                            <input type="checkbox" id="${fieldId}" class="payload-input"
+                                   ${field.defaultValue ? 'checked' : ''}>
+                            ${fieldName}
+                        </label>
+                    </div>
+                `;
+            } else {
+                const optionsHtml = field.options.map(option =>
+                    `<option value="${option.value}">${option.label}</option>`
+                ).join('');
+                return `
+                    <div class="form-group" id="${groupId}" ${initialStyle}>
+                        <label for="${fieldId}">${fieldName}:</label>
+                        <select id="${fieldId}" class="payload-input">${optionsHtml}</select>
+                    </div>
+                `;
+            }
+        }).join('');
+
+        container.innerHTML = `<div class="dynamic-fields">${fieldsHtml}</div>`;
+        setTimeout(() => {
+            const packetTypeField = document.getElementById('field-packetType-0x5E');
+            if (packetTypeField) {
+                packetTypeField.value = '2';
+                packetTypeField.dispatchEvent(new Event('change'));
+            }
+            this.updateFieldVisibility();
+        }, 0);
         this.attachListeners();
     }
 
+    updateFieldVisibility() {
+        this.config.fields.forEach(field => {
+            if (field.showWhen) {
+                const triggerElement = document.getElementById(`field-${field.showWhen.fieldId}-0x5E`);
+                const targetGroup = document.getElementById(`field-group-${field.id}-0x5E`);
+                if (triggerElement && targetGroup) {
+                    targetGroup.style.display = triggerElement.value === field.showWhen.value ? 'block' : 'none';
+                }
+            }
+        });
+    }
+
     attachListeners() {
-        this.addListener('field-packet-type-0x5e', 'change', (e) => {
-            document.getElementById('response-options-0x5e').style.display = 
-                e.target.value === '2' ? 'block' : 'none';
+        this.config.fields.forEach(field => {
+            if (field.showWhen) {
+                const triggerElement = document.getElementById(`field-${field.showWhen.fieldId}-0x5E`);
+                if (triggerElement) {
+                    triggerElement.addEventListener('change', () => this.updateFieldVisibility());
+                }
+            }
+            this.addListener(`field-${field.id}-0x5E`, field.type === 'checkbox' ? 'change' : 'change');
         });
     }
 
     getPayload() {
-        if (this.getPacketType() === 0) return []; // COMMAND - 空载荷
-        
-        // RESPONSE - 返回值
-        const value = parseInt(document.getElementById('field-value-0x5e').value) || 0;
-        return [value];
+        if (this.getPacketType() === 0) return [];
+        const enabledElement = document.getElementById('field-promptSoundEnabled-0x5E');
+        return enabledElement ? [enabledElement.checked ? 0x01 : 0x00] : [];
     }
 
     getPacketType() {
-        return parseInt(document.getElementById('field-packet-type-0x5e').value, 10);
+        const element = document.getElementById('field-packetType-0x5E');
+        return element ? parseInt(element.value, 10) : 0;
     }
 }
 
