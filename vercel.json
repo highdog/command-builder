@@ -2,7 +2,6 @@
   "version": 2,
   "functions": {
     "api/index.js": {
-      "runtime": "nodejs20.x",
       "includeFiles": "{public/**,Mobile.md,Mobile-zh-CN.md,db.sqlite,builder-configs.json}"
     }
   },
