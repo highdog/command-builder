@@ -869,7 +869,7 @@ class CommandEditorMixin {
         const config = this.collectConfig ? this.collectConfig() : this.config;
         
         try {
-            const response = await fetch(`/api/commands/${this.commandId}/builder-config`, {
+            const response = await fetch(`api/commands/${this.commandId}/builder-config`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

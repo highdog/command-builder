@@ -14,6 +14,20 @@ const port = Number(process.env.PORT || 3000);
 const dbMode = process.env.DB_MODE || (process.env.POSTGRES_URL || process.env.DATABASE_URL ? 'postgres' : 'sqlite');
 const isPostgres = dbMode === 'postgres';
 const pgUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+const rawBasePath = (process.env.BASE_PATH || '').trim();
+
+function normalizeBasePath(value) {
+  if (!value || value === '/') return '';
+  const ensured = value.startsWith('/') ? value : `/${value}`;
+  return ensured.replace(/\/+$/, '');
+}
+
+const basePath = normalizeBasePath(rawBasePath);
+
+function withBasePath(routePath) {
+  if (!basePath) return routePath;
+  return `${basePath}${routePath === '/' ? '/' : routePath}`;
+}
 
 const bundledDbPath = path.join(__dirname, 'db.sqlite');
 const dbPath = process.env.DB_PATH || bundledDbPath;
@@ -176,6 +190,7 @@ app.use(bodyParser.json());
 app.set('trust proxy', 1);
 
 const sessionOptions = {
+  name: process.env.SESSION_COOKIE_NAME || 'btcommand.sid',
   secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
   saveUninitialized: false,
@@ -183,7 +198,8 @@ const sessionOptions = {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     sameSite: 'lax',
-    maxAge: 24 * 60 * 60 * 1000
+    maxAge: 24 * 60 * 60 * 1000,
+    path: basePath || '/'
   }
 };
 
@@ -202,6 +218,27 @@ if (process.env.REDIS_URL) {
 }
 
 app.use(session(sessionOptions));
+app.use((req, res, next) => {
+  if (!basePath) {
+    next();
+    return;
+  }
+
+  if (req.url === basePath || req.url === `${basePath}/`) {
+    req.url = '/';
+    next();
+    return;
+  }
+
+  if (req.url.startsWith(`${basePath}/`)) {
+    req.url = req.url.slice(basePath.length) || '/';
+    next();
+    return;
+  }
+
+  next();
+});
+
 app.use((req, res, next) => {
   if (readyError) {
     res.status(500).json({ error: 'Database initialization failed.' });
@@ -251,7 +288,7 @@ function isAuthenticated(req, res, next) {
     if (req.path.startsWith('/api/')) {
       return res.status(401).json({ message: 'Not authenticated' });
     }
-    res.redirect('/login');
+    res.redirect(withBasePath('/login'));
   }
 }
 
@@ -292,9 +329,9 @@ app.post('/login', (req, res) => {
     if (err) return res.status(500).send('Internal server error');
     if (row) {
       req.session.user = row;
-      res.redirect('/');
+      res.redirect(withBasePath('/'));
     } else {
-      res.redirect('/login?error=1');
+      res.redirect(withBasePath('/login?error=1'));
     }
   });
 });
@@ -302,7 +339,7 @@ app.post('/login', (req, res) => {
 app.post('/logout', (req, res) => {
   req.session.destroy((err) => {
     if (err) return res.status(500).send('Could not log out.');
-    res.redirect('/login');
+    res.redirect(withBasePath('/login'));
   });
 });
 

@@ -165,8 +165,8 @@
     <!-- Top Navigation Bar -->
     <div class="top-nav">
       <div class="nav-links">
-        <a href="/" data-i18n="nav.commandBuilder">Command Builder</a>
-        <a href="/documentation" class="active" data-i18n="nav.documentation">Documentation</a>
+        <a href="./" data-i18n="nav.commandBuilder">Command Builder</a>
+        <a href="documentation" class="active" data-i18n="nav.documentation">Documentation</a>
       </div>
       <div class="nav-search">
         <input type="search" id="global-search-box" placeholder="Search all commands..." data-i18n="sidebar.searchPlaceholder">
@@ -176,8 +176,8 @@
           <button class="language-btn active" data-lang="zh">中</button>
           <button class="language-btn" data-lang="en">EN</button>
         </div>
-        <a href="/admin" id="ui-admin-link" style="display: none; margin-right: 1rem; color: #007bff; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; transition: background-color 0.2s;">Admin</a>
-        <form action="/logout" method="POST" style="margin: 0;">
+        <a href="admin" id="ui-admin-link" style="display: none; margin-right: 1rem; color: #007bff; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; transition: background-color 0.2s;">Admin</a>
+        <form action="logout" method="POST" style="margin: 0;">
           <button type="submit" class="logout-btn">Logout</button>
         </form>
       </div>
@@ -290,7 +290,7 @@
 
       const checkSession = async () => {
         try {
-          const response = await fetch('/api/session');
+          const response = await fetch('api/session');
           const data = await response.json();
           if (data.loggedIn) {
             currentUser = data.user;
@@ -299,7 +299,7 @@
               addCommandBtn.style.display = 'block';
             }
           } else {
-            window.location.href = '/login';
+            window.location.href = 'login';
           }
         } catch (error) {
           console.error('Session check failed:', error);
@@ -308,7 +308,7 @@
 
       const fetchCommands = (lang = null) => {
         const language = lang || i18nManager.getCurrentLanguage();
-        fetch(`/api/commands?lang=${language}`)
+        fetch(`api/commands?lang=${language}`)
           .then(response => response.json())
           .then(data => {
             allCommands = data;
@@ -326,7 +326,7 @@
 
         // Use server-side search for better multilingual support
         const language = i18nManager.getCurrentLanguage();
-        fetch(`/api/search?q=${encodeURIComponent(searchTerm)}&lang=${language}`)
+        fetch(`api/search?q=${encodeURIComponent(searchTerm)}&lang=${language}`)
           .then(response => response.json())
           .then(data => {
             renderCommandList(data, docsListContainer);
@@ -383,7 +383,7 @@
         commandName.textContent = 'Loading...';
         commandDisplayContainer.innerHTML = '';
         
-        fetch(`/api/commands/${id}`)
+        fetch(`api/commands/${id}`)
           .then(response => response.json())
           .then(data => {
             currentCommandData = data;
@@ -455,7 +455,7 @@
           description_zh: document.getElementById('inline-description-zh').value,
         };
         try {
-          const response = await fetch(`/api/commands/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+          const response = await fetch(`api/commands/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
           if (!response.ok) throw new Error('Failed to save');
           fetchCommands();
           displayCommand(id);
@@ -473,7 +473,7 @@
 
       const saveModalForm = async () => {
         const id = document.getElementById('modal-command-id').value;
-        const url = id ? `/api/commands/${id}` : '/api/commands';
+        const url = id ? `api/commands/${id}` : 'api/commands';
         const method = id ? 'PUT' : 'POST';
         const body = {
           category_en: document.getElementById('modal-category-en').value,

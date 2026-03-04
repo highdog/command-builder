@@ -24,6 +24,7 @@ openssl rand -base64 32
 
 npx vercel env add NODE_ENV production
 npx vercel env add DB_MODE production
+npx vercel env add BASE_PATH production
 npx vercel env add POSTGRES_URL production
 npx vercel env add REDIS_URL production
 npx vercel env add SESSION_SECRET production
@@ -31,6 +32,7 @@ npx vercel env add SESSION_SECRET production
 
 说明：
 - `DB_MODE` 值填 `postgres`
+- `BASE_PATH` 如果走二级路径部署，填 `/btcommand`（根域部署则留空）
 - `POSTGRES_URL` 填完整连接串
 - `REDIS_URL` 填完整连接串
 

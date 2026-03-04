@@ -16,16 +16,16 @@
     <!-- Top Navigation Bar -->
     <div class="top-nav">
       <div class="nav-links">
-        <a href="/" class="active" data-i18n="nav.commandBuilder">Command Builder</a>
-        <a href="/documentation" data-i18n="nav.documentation">Documentation</a>
+        <a href="./" class="active" data-i18n="nav.commandBuilder">Command Builder</a>
+        <a href="documentation" data-i18n="nav.documentation">Documentation</a>
       </div>
       <div class="logout-container">
         <div class="language-toggle">
           <button class="language-btn active" data-lang="zh">中</button>
           <button class="language-btn" data-lang="en">EN</button>
         </div>
-        <a href="/admin" id="ui-admin-link" style="display: none; margin-right: 1rem; color: #007bff; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; transition: background-color 0.2s;">Admin</a>
-        <form action="/logout" method="POST" style="margin: 0;">
+        <a href="admin" id="ui-admin-link" style="display: none; margin-right: 1rem; color: #007bff; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; transition: background-color 0.2s;">Admin</a>
+        <form action="logout" method="POST" style="margin: 0;">
           <button type="submit" class="logout-btn">Logout</button>
         </form>
       </div>
@@ -134,9 +134,9 @@
   </div>
 
   <!-- Load the new modular command system -->
-  <script src="/js/commands/command-editor-mixin.js"></script>
-  <script src="/js/commands/base-command.js"></script>
-  <script src="/js/command-loader.js"></script>
+  <script src="js/commands/command-editor-mixin.js"></script>
+  <script src="js/commands/base-command.js"></script>
+  <script src="js/command-loader.js"></script>
   <script>
     // This variable needs to be accessible by the handlers
     let generateOutput;
@@ -266,7 +266,7 @@
 
         const checkSession = async () => {
             try {
-                const response = await fetch('/api/session');
+                const response = await fetch('api/session');
                 if (!response.ok) throw new Error('Session check failed');
                 const data = await response.json();
                 if (data.loggedIn) {
@@ -282,12 +282,12 @@
                     }
                     return true;
                 } else {
-                    window.location.href = '/login';
+                    window.location.href = 'login';
                     return false;
                 }
             } catch (error) {
                 console.error(error);
-                window.location.href = '/login';
+                window.location.href = 'login';
                 return false;
             }
         };
@@ -295,7 +295,7 @@
         const fetchCommands = async (lang = null) => {
             try {
                 const language = lang || currentLanguage;
-                const response = await fetch(`/api/commands?lang=${language}`);
+                const response = await fetch(`api/commands?lang=${language}`);
                 if (!response.ok) throw new Error('Failed to fetch commands');
                 allCommands = await response.json();
                 renderCommandSelect();
@@ -319,7 +319,7 @@
             }
 
             try {
-                const response = await fetch(`/api/commands/${commandId}`);
+                const response = await fetch(`api/commands/${commandId}`);
                 if (!response.ok) throw new Error('Failed to fetch command details');
                 currentCommand = await response.json();
 
@@ -603,7 +603,7 @@
                 console.log('Falling back to old command_handlers.js...');
                 try {
                     const script = document.createElement('script');
-                    script.src = '/js/command_handlers.js';
+                    script.src = 'js/command_handlers.js';
                     script.onload = () => {
                         if (window.customCommandHandlers) {
                             customCommandHandlers = window.customCommandHandlers;
@@ -792,7 +792,7 @@
             };
 
             // Save to server
-            fetch('/api/admin/update-command', {
+            fetch('api/admin/update-command', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -42,7 +42,7 @@ class Command00 extends BaseCommand {
     // Load configuration from server
     async loadConfigFromServer() {
         try {
-            const response = await fetch('/api/commands/0x00/builder-config');
+            const response = await fetch('api/commands/0x00/builder-config');
             if (response.ok) {
                 const savedConfig = await response.json();
                 console.log('Loaded saved config from server:', savedConfig);
@@ -631,7 +631,7 @@ class Command00 extends BaseCommand {
         console.log('Saving config:', config);
 
         try {
-            const url = '/api/commands/0x00/builder-config';
+            const url = 'api/commands/0x00/builder-config';
             console.log('Posting to:', url);
 
             const response = await fetch(url, {

@@ -79,7 +79,7 @@ class BaseCommand {
      */
     async loadConfigFromServer() {
         try {
-            const response = await fetch(`/api/commands/${this.commandId}/builder-config`);
+            const response = await fetch(`api/commands/${this.commandId}/builder-config`);
             if (response.ok) {
                 const savedConfig = await response.json();
                 console.log(`Loaded saved config for ${this.commandId}:`, savedConfig);
