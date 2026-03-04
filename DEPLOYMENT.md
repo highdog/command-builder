@@ -1,5 +1,55 @@
 # 生产环境部署指南
 
+## Vercel 生产级持久化部署（Postgres + Redis）
+
+### 1. 安装/登录 Vercel CLI
+```bash
+npm install
+npx vercel login
+```
+
+### 2. 关联项目并初始化
+```bash
+npx vercel link
+```
+
+### 3. 在 Vercel 控制台创建托管服务
+- 创建 Postgres（或使用外部 Postgres），拿到连接串 `POSTGRES_URL`
+- 创建 Redis（推荐 Upstash Redis），拿到连接串 `REDIS_URL`
+
+### 4. 配置 Vercel 环境变量
+```bash
+# 生成安全 session secret
+openssl rand -base64 32
+
+npx vercel env add NODE_ENV production
+npx vercel env add DB_MODE production
+npx vercel env add POSTGRES_URL production
+npx vercel env add REDIS_URL production
+npx vercel env add SESSION_SECRET production
+```
+
+说明：
+- `DB_MODE` 值填 `postgres`
+- `POSTGRES_URL` 填完整连接串
+- `REDIS_URL` 填完整连接串
+
+### 5. 执行数据迁移（本地 SQLite -> Postgres）
+```bash
+export POSTGRES_URL="你的Postgres连接串"
+npm run migrate:pg
+```
+
+### 6. 部署到生产
+```bash
+npx vercel --prod
+```
+
+### 7. 验证
+```bash
+curl -I https://你的域名/login
+```
+
 ## 服务器部署步骤
 
 ### 1. 拉取最新代码

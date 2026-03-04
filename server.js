@@ -1,19 +1,167 @@
 const express = require('express');
 const fs = require('fs');
 const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
+const { RedisStore } = require('connect-redis');
+const { createClient } = require('redis');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const path = require('path');
 
 const app = express();
-const port = 3000;
+const isVercel = process.env.VERCEL === '1';
+const port = Number(process.env.PORT || 3000);
+const dbMode = process.env.DB_MODE || (process.env.POSTGRES_URL || process.env.DATABASE_URL ? 'postgres' : 'sqlite');
+const isPostgres = dbMode === 'postgres';
+const pgUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
 
-// Database connection
-const db = new sqlite3.Database('./db.sqlite', (err) => {
-  if (err) {
-    console.error(err.message);
+const bundledDbPath = path.join(__dirname, 'db.sqlite');
+const dbPath = process.env.DB_PATH || bundledDbPath;
+const builderConfigPath = process.env.BUILDER_CONFIG_PATH || path.join(__dirname, 'builder-configs.json');
+
+if (!isPostgres && isVercel && dbPath.startsWith('/tmp') && !fs.existsSync(dbPath)) {
+  fs.copyFileSync(bundledDbPath, dbPath);
+}
+
+function normalizeParams(params) {
+  if (params === undefined || params === null) return [];
+  return Array.isArray(params) ? params : [params];
+}
+
+function toPostgresPlaceholders(query) {
+  let index = 0;
+  return query.replace(/\?/g, () => `$${++index}`);
+}
+
+function createSqliteDb() {
+  const sqliteDb = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+      console.error('SQLite connection error:', err.message);
+      return;
+    }
+    console.log(`Connected to SQLite database at ${dbPath}`);
+  });
+
+  return {
+    get(query, params, callback) {
+      sqliteDb.get(query, normalizeParams(params), callback);
+    },
+    all(query, params, callback) {
+      sqliteDb.all(query, normalizeParams(params), callback);
+    },
+    run(query, params, callback) {
+      sqliteDb.run(query, normalizeParams(params), callback);
+    }
+  };
+}
+
+function createPostgresDb() {
+  if (!pgUrl) {
+    throw new Error('POSTGRES_URL (or DATABASE_URL) is required when DB_MODE=postgres.');
   }
-  console.log('Connected to the SQLite database.');
+
+  const pool = new Pool({ connectionString: pgUrl });
+  console.log('Using PostgreSQL backend');
+
+  return {
+    async init() {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS commands (
+          id SERIAL PRIMARY KEY,
+          hex_id TEXT,
+          type TEXT,
+          category_en TEXT,
+          name_en TEXT,
+          description_en TEXT,
+          category_zh TEXT,
+          name_zh TEXT,
+          description_zh TEXT
+        )
+      `);
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS users (
+          id SERIAL PRIMARY KEY,
+          username TEXT UNIQUE,
+          password TEXT,
+          role TEXT NOT NULL DEFAULT 'user'
+        )
+      `);
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS packet_types (
+          id SERIAL PRIMARY KEY,
+          command_id INTEGER NOT NULL REFERENCES commands(id) ON DELETE CASCADE,
+          name TEXT NOT NULL
+        )
+      `);
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS payload_fields (
+          id SERIAL PRIMARY KEY,
+          packet_type_id INTEGER NOT NULL REFERENCES packet_types(id) ON DELETE CASCADE,
+          field_name TEXT NOT NULL,
+          display_name TEXT NOT NULL,
+          type TEXT NOT NULL,
+          default_value TEXT,
+          is_readonly BOOLEAN DEFAULT FALSE,
+          bit_position INTEGER,
+          max_length INTEGER,
+          display_order INTEGER
+        )
+      `);
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS enum_values (
+          id SERIAL PRIMARY KEY,
+          field_id INTEGER NOT NULL REFERENCES payload_fields(id) ON DELETE CASCADE,
+          name TEXT NOT NULL,
+          value TEXT NOT NULL,
+          display_order INTEGER
+        )
+      `);
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS builder_configs (
+          hex_id TEXT PRIMARY KEY,
+          config JSONB NOT NULL,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `);
+    },
+    get(query, params, callback) {
+      pool.query(toPostgresPlaceholders(query), normalizeParams(params))
+        .then((result) => callback(null, result.rows[0]))
+        .catch((error) => callback(error));
+    },
+    all(query, params, callback) {
+      pool.query(toPostgresPlaceholders(query), normalizeParams(params))
+        .then((result) => callback(null, result.rows))
+        .catch((error) => callback(error));
+    },
+    run(query, params, callback) {
+      const inputQuery = toPostgresPlaceholders(query);
+      const shouldReturnId =
+        /^\s*insert\b/i.test(inputQuery) &&
+        !/\breturning\b/i.test(inputQuery) &&
+        !/\binsert\s+into\s+builder_configs\b/i.test(inputQuery);
+      const runQuery = shouldReturnId
+        ? `${inputQuery} RETURNING id`
+        : inputQuery;
+
+      pool.query(runQuery, normalizeParams(params))
+        .then((result) => {
+          const context = {
+            lastID: result.rows[0] && result.rows[0].id ? Number(result.rows[0].id) : undefined,
+            changes: result.rowCount || 0
+          };
+          callback.call(context, null);
+        })
+        .catch((error) => callback.call({}, error));
+    }
+  };
+}
+
+const db = isPostgres ? createPostgresDb() : createSqliteDb();
+let readyError = null;
+const readyPromise = (isPostgres ? db.init() : Promise.resolve()).catch((error) => {
+  readyError = error;
+  console.error('Database initialization failed:', error);
 });
 
 // Middleware
@@ -25,12 +173,42 @@ app.use((req, res, next) => {
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(session({
-  secret: 'your-secret-key',
+app.set('trust proxy', 1);
+
+const sessionOptions = {
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
-  saveUninitialized: true,
-  cookie: { secure: false }
-}));
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000
+  }
+};
+
+if (process.env.REDIS_URL) {
+  const redisClient = createClient({ url: process.env.REDIS_URL });
+  redisClient.on('error', (error) => {
+    console.error('Redis error:', error);
+  });
+  redisClient.connect().catch((error) => {
+    console.error('Redis connect failed:', error);
+  });
+  sessionOptions.store = new RedisStore({ client: redisClient, prefix: 'docqa:sess:' });
+  console.log('Using Redis session store');
+} else {
+  console.warn('REDIS_URL is not set; using in-memory sessions (not production-safe).');
+}
+
+app.use(session(sessionOptions));
+app.use((req, res, next) => {
+  if (readyError) {
+    res.status(500).json({ error: 'Database initialization failed.' });
+    return;
+  }
+  readyPromise.then(() => next()).catch(next);
+});
 
 // --- ASYNC DB HELPERS ---
 function dbGet(query, params = []) {
@@ -561,23 +739,30 @@ app.post('/api/commands/:hex_id/builder-config', isAuthenticated, isAdmin, (req,
 
   console.log(`Saving builder config for ${hex_id}:`, config);
 
-  // For now, we'll store builder configs in a simple JSON file
-  const fs = require('fs');
-  const configPath = path.join(__dirname, 'builder-configs.json');
+  if (isPostgres) {
+    dbRun(
+      `INSERT INTO builder_configs (hex_id, config, updated_at)
+       VALUES (?, ?::jsonb, NOW())
+       ON CONFLICT (hex_id)
+       DO UPDATE SET config = EXCLUDED.config, updated_at = NOW()`,
+      [hex_id, JSON.stringify(config)]
+    ).then(() => {
+      console.log(`Builder config saved for ${hex_id}`);
+      res.json({ success: true });
+    }).catch((error) => {
+      console.error('Error saving builder config:', error);
+      res.status(500).json({ error: 'Failed to save builder configuration' });
+    });
+    return;
+  }
 
   let configs = {};
   try {
-    if (fs.existsSync(configPath)) {
-      configs = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    if (fs.existsSync(builderConfigPath)) {
+      configs = JSON.parse(fs.readFileSync(builderConfigPath, 'utf8'));
     }
-  } catch (error) {
-    console.error('Error reading builder configs:', error);
-  }
-
-  configs[hex_id] = config;
-
-  try {
-    fs.writeFileSync(configPath, JSON.stringify(configs, null, 2));
+    configs[hex_id] = config;
+    fs.writeFileSync(builderConfigPath, JSON.stringify(configs, null, 2));
     console.log(`Builder config saved for ${hex_id}`);
     res.json({ success: true });
   } catch (error) {
@@ -589,27 +774,43 @@ app.post('/api/commands/:hex_id/builder-config', isAuthenticated, isAdmin, (req,
 app.get('/api/commands/:hex_id/builder-config', isAuthenticated, (req, res) => {
   const { hex_id } = req.params;
 
-  const fs = require('fs');
-  const configPath = path.join(__dirname, 'builder-configs.json');
+  if (isPostgres) {
+    dbGet('SELECT config FROM builder_configs WHERE hex_id = ?', [hex_id])
+      .then((row) => {
+        if (!row) {
+          res.status(404).json({ error: 'Builder configuration not found' });
+          return;
+        }
+        res.json(row.config);
+      })
+      .catch((error) => {
+        console.error('Error reading builder config:', error);
+        res.status(500).json({ error: 'Failed to read builder configuration' });
+      });
+    return;
+  }
 
   try {
-    if (fs.existsSync(configPath)) {
-      const configs = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-      if (configs[hex_id]) {
-        res.json(configs[hex_id]);
-      } else {
-        res.status(404).json({ error: 'Builder configuration not found' });
-      }
-    } else {
+    if (!fs.existsSync(builderConfigPath)) {
       res.status(404).json({ error: 'No builder configurations found' });
+      return;
     }
+    const configs = JSON.parse(fs.readFileSync(builderConfigPath, 'utf8'));
+    if (!configs[hex_id]) {
+      res.status(404).json({ error: 'Builder configuration not found' });
+      return;
+    }
+    res.json(configs[hex_id]);
   } catch (error) {
     console.error('Error reading builder config:', error);
     res.status(500).json({ error: 'Failed to read builder configuration' });
   }
 });
 
-// Start server
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+  });
+}
+
+module.exports = app;

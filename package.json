@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "start": "node server.js",
+    "migrate:pg": "node scripts/migrate-sqlite-to-postgres.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -11,9 +13,12 @@
   "description": "",
   "dependencies": {
     "body-parser": "^2.2.0",
+    "connect-redis": "^8.1.0",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
     "pdf-parse": "^1.1.1",
+    "pg": "^8.16.3",
+    "redis": "^5.8.2",
     "sqlite3": "^5.1.7"
   }
 }
