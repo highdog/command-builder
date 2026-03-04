@@ -219,18 +219,22 @@ if (process.env.REDIS_URL) {
 
 app.use(session(sessionOptions));
 app.use((req, res, next) => {
+  req.isBasePathRequest = false;
+
   if (!basePath) {
     next();
     return;
   }
 
   if (req.url === basePath || req.url === `${basePath}/`) {
+    req.isBasePathRequest = true;
     req.url = '/';
     next();
     return;
   }
 
   if (req.url.startsWith(`${basePath}/`)) {
+    req.isBasePathRequest = true;
     req.url = req.url.slice(basePath.length) || '/';
     next();
     return;
@@ -744,12 +748,24 @@ app.use(express.static(path.join(__dirname, 'public'), {
   }
 }));
 app.get('/login', (req, res) => {
+  if (basePath && !req.isBasePathRequest) {
+    res.redirect(withBasePath('/login'));
+    return;
+  }
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
-app.get('/', isAuthenticated, (req, res) => {
+app.get('/', (req, res, next) => {
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  res.sendFile(path.join(__dirname, 'public', 'command_builder.html'));
+
+  if (basePath && !req.isBasePathRequest) {
+    res.sendFile(path.join(__dirname, 'public', 'landing.html'));
+    return;
+  }
+
+  isAuthenticated(req, res, () => {
+    res.sendFile(path.join(__dirname, 'public', 'command_builder.html'));
+  });
 });
 app.get('/documentation', isAuthenticated, (req, res) => {
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
