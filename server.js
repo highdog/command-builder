@@ -172,11 +172,20 @@ function createPostgresDb() {
 }
 
 const db = isPostgres ? createPostgresDb() : createSqliteDb();
-let readyError = null;
-const readyPromise = (isPostgres ? db.init() : Promise.resolve()).catch((error) => {
-  readyError = error;
-  console.error('Database initialization failed:', error);
-});
+let dbInitPromise = null;
+
+async function ensureDatabaseReady() {
+  if (!isPostgres) return;
+
+  if (!dbInitPromise) {
+    dbInitPromise = db.init().catch((error) => {
+      dbInitPromise = null;
+      throw error;
+    });
+  }
+
+  await dbInitPromise;
+}
 
 // Middleware
 // Set default charset for all responses
@@ -244,11 +253,12 @@ app.use((req, res, next) => {
 });
 
 app.use((req, res, next) => {
-  if (readyError) {
-    res.status(500).json({ error: 'Database initialization failed.' });
-    return;
-  }
-  readyPromise.then(() => next()).catch(next);
+  ensureDatabaseReady()
+    .then(() => next())
+    .catch((error) => {
+      console.error('Database initialization failed:', error);
+      res.status(500).json({ error: 'Database initialization failed.' });
+    });
 });
 
 // --- ASYNC DB HELPERS ---
