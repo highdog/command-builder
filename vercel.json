@@ -3,11 +3,7 @@
   "functions": {
     "api/index.js": {
       "runtime": "nodejs20.x",
-      "includeFiles": [
-        "db.sqlite",
-        "builder-configs.json",
-        "public/**"
-      ]
+      "includeFiles": "{public/**,Mobile.md,Mobile-zh-CN.md,db.sqlite,builder-configs.json}"
     }
   },
   "rewrites": [
